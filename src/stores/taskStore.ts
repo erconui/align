@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { TaskInstance } from '../types';
-import { storage, initStorage } from '../database/storage';
+import { storage, initStorage } from '../storage/storage';
 
 interface TaskStore {
     tasks: TaskInstance[];
