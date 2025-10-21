@@ -49,6 +49,13 @@ export default function HomeScreen() {
                         </Text>
                     </TouchableOpacity>
                 </Link>
+                <Link href="/template" asChild>
+                    <TouchableOpacity className="bg-green-500 px-4 py-2 rounded-lg mt-2">
+                        <Text className="text-white font-semibold text-center">
+                            Go to Templates
+                        </Text>
+                    </TouchableOpacity>
+                </Link>
                 <Pressable onPress={initDB} className='mt-2' >
                     <Text className={"text-blue-500 font-medium"}>Init Database</Text>
                 </Pressable>

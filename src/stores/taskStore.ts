@@ -23,11 +23,24 @@ interface TaskStore {
     toggleTask: (id: string) => Promise<void>;
     recursiveUpdateChildren: (id: string, completed: boolean) => Promise<void>;
     recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
+
+    // templates
+    createTemplate: (title: string, parentTemplateId?: string | null) => Promise<void>;
+    getTemplateHierarchy: () => Promise<void>;
+    getRootTemplates: () => Promise<TaskTemplate[]>;
+    getTemplateChildren: (templateId: string) => Promise<TaskTemplate[]>;
+    createTaskFromTemplate: (templateId: string, parentInstanceId?: string | null) => Promise<void>;
+    updateTemplate: (templateId: string, newTitle: string, newChildren: string[]) => Promise<void>;
+    deleteTemplate: (id: string) => Promise<void>;
+    addTemplateRelation: (parentTemplateId: string, childTemplateId: string, sortOrder?: number) => Promise<void>;
+    loadTemplates: () => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
     tasks: [],
     flatTasks: [],
+    templates: [],
+    templateHierarchy: { templates: [], relations: [] },
     isLoading: false,
     error: null,
 
@@ -230,4 +243,74 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
             await get().recursiveUpdateParents(task.parent_id, completed);
         }
     },
+  // Template actions
+  createTemplate: async (title: string, parentTemplateId: string | null = null) => {
+    if (!title.trim()) return;
+
+    try {
+      await storage.createTemplate(title, parentTemplateId);
+      await get().loadTemplates();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  getTemplateHierarchy: async () => {
+    try {
+      const hierarchy = await storage.getTemplateHierarchy();
+      set({ templateHierarchy: hierarchy, error: null });
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  getRootTemplates: async (): Promise<TaskTemplate[]> => {
+    return await storage.getRootTemplates();
+  },
+  getTemplateChildren: async (templateId: string): Promise<TaskTemplate[]> => {
+    return await storage.getTemplateChildren(templateId);
+  },
+  createTaskFromTemplate: async (templateId: string, parentInstanceId: string | null = null) => {
+    try {
+      await storage.createTaskFromTemplate(templateId, parentInstanceId);
+      await get().loadTasks();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  updateTemplate: async (templateId: string, newTitle: string, newChildren: string[]) => {
+    try {
+      await storage.updateTemplate(templateId, newTitle, newChildren);
+      await get().loadTemplates();
+      await get().loadTasks(); // Refresh tasks to show template changes
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  deleteTemplate: async (id: string) => {
+    try {
+      await storage.deleteTemplate(id);
+      await get().loadTemplates();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, sortOrder: number = 0) => {
+    try {
+      await storage.addTemplateRelation(parentTemplateId, childTemplateId, sortOrder);
+      await get().loadTemplates();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  loadTemplates: async () => {
+    try {
+      const hierarchy = await storage.getTemplateHierarchy();
+      set({
+        templates: hierarchy.templates,
+        templateHierarchy: hierarchy,
+        error: null
+      });
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
 }));

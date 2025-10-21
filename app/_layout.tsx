@@ -11,8 +11,10 @@ export default function RootLayout() {
 
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ title: 'My Tasks' }} />
-      <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
+        <Stack.Screen name="index" options={{ title: 'Tasks' }} />
+        <Stack.Screen name="template" options={{ title: 'Template' }} />
+        <Stack.Screen name="template-selector" />
+        <Stack.Screen name="calendar" options={{ title: 'Calendar' }} />
     </Stack>
   );
 }
