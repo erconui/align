@@ -5,13 +5,15 @@ import {
     TextInput,
     TouchableOpacity,
     FlatList,
-    ActivityIndicator
+    ActivityIndicator,
+    StyleSheet, Pressable
 } from 'react-native';
 import { useTaskStore } from '../src/stores/taskStore';
 import { TaskItem } from '../src/components/TaskItem';
+import { Link } from 'expo-router';
 
 export default function HomeScreen() {
-    const { tasks, isLoading, error, addTask, toggleTask, deleteTask, updateTaskTitle } = useTaskStore();
+    const { getTree, tasks, flatTasks, isLoading, error, addTask, toggleTask, deleteTask, updateTaskTitle, initDB } = useTaskStore();
     const [newTaskTitle, setNewTaskTitle] = useState('');
 
     const handleAddTask = () => {
@@ -20,7 +22,6 @@ export default function HomeScreen() {
             setNewTaskTitle('');
         }
     };
-
     if (isLoading) {
         return (
             <View className="flex-1 items-center justify-center bg-gray-50">
@@ -30,7 +31,7 @@ export default function HomeScreen() {
         );
     }
 
-    const remainingTasks = tasks.filter(t => !t.is_completed).length;
+    const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
     return (
         <View className="flex-1 bg-gray-50">
@@ -40,6 +41,17 @@ export default function HomeScreen() {
                 <Text className="text-gray-600 mt-1">
                     {remainingTasks} {remainingTasks === 1 ? 'task' : 'tasks'} remaining
                 </Text>
+                {/* Navigation to Calendar */}
+                <Link href="/calendar" asChild>
+                    <TouchableOpacity className="bg-green-500 px-4 py-2 rounded-lg mt-2">
+                        <Text className="text-white font-semibold text-center">
+                            Go to Calendar
+                        </Text>
+                    </TouchableOpacity>
+                </Link>
+                <Pressable onPress={initDB} className='mt-2' >
+                    <Text className={"text-blue-500 font-medium"}>Init Database</Text>
+                </Pressable>
             </View>
 
             {/* Add Task Form */}
@@ -68,28 +80,40 @@ export default function HomeScreen() {
                     <Text className="text-red-500 mt-2 text-sm">{error}</Text>
                 )}
             </View>
-
-            {/* Tasks List */}
-            <FlatList
-                data={tasks}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <TaskItem
-                        task={item}
-                        onToggle={toggleTask}
-                        onDelete={deleteTask}
-                        onUpdateTitle={updateTaskTitle}
-                    />
-                )}
-                className="flex-1 p-4"
-                contentContainerStyle={tasks.length === 0 ? { flex: 1 } : undefined}
-                ListEmptyComponent={
-                    <View className="flex-1 items-center justify-center py-8">
-                        <Text className="text-gray-500 text-lg">No tasks yet</Text>
-                        <Text className="text-gray-400 mt-2">Add a task to get started!</Text>
-                    </View>
-                }
-            />
+            <View className="flex-1">
+                <FlatList
+                    data={tasks}
+                    keyExtractor={item => item.id}
+                    renderItem={({ item }) => (
+                        <TaskItem
+                            key={item.id}
+                            taskNode={item}
+                            toggleTask={toggleTask}
+                            deleteTask={deleteTask}
+                            addTask={addTask}
+                            updateTaskTitle={updateTaskTitle}
+                            />
+                    )}/>
+            </View>
         </View>
     );
 }
+
+const styles = StyleSheet.create({
+    header: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
+    card: {
+        backgroundColor: "white",
+        padding: 12,
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: "#ccc",
+        padding: 8,
+        borderRadius: 6,
+        marginVertical: 8,
+    },
+    button: { backgroundColor: "#222", padding: 10, borderRadius: 6 },
+    buttonText: { color: "white", textAlign: "center" },
+});

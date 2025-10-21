@@ -13,7 +13,9 @@ export const webStorage = {
       return [];
     }
   },
-
+  getAllTasks: async (): Promise<TaskInstance[]> => {
+    return await webStorage.getTasks(); // webStorage already returns all tasks
+  },
   saveTasks: async (tasks: TaskInstance[]): Promise<void> => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
@@ -21,7 +23,6 @@ export const webStorage = {
       console.error('Error saving tasks to storage:', error);
     }
   },
-
   addTask: async (task: Omit<TaskInstance, 'id'>): Promise<string> => {
     const tasks = await webStorage.getTasks();
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -34,7 +35,6 @@ export const webStorage = {
     await webStorage.saveTasks(tasks);
     return id;
   },
-
   toggleTask: async (id: string, isCompleted: boolean): Promise<void> => {
     const tasks = await webStorage.getTasks();
     const taskIndex = tasks.findIndex(t => t.id === id);
@@ -42,20 +42,27 @@ export const webStorage = {
     if (taskIndex !== -1) {
       tasks[taskIndex] = {
         ...tasks[taskIndex],
-        is_completed: isCompleted,
-        completed_at: isCompleted ? new Date().toISOString() : null,
+        completed: isCompleted,
       };
 
       await webStorage.saveTasks(tasks);
     }
   },
-
-  deleteTask: async (id: string): Promise<void> => {
+  deleteTask: async (id: string) => {
     const tasks = await webStorage.getTasks();
-    const filteredTasks = tasks.filter(t => t.id !== id);
-    await webStorage.saveTasks(filteredTasks);
-  },
+    const ids: string[] = [id];
+    const findAllSubtasks = (parentId: string) => {
+      const subtasks = tasks.filter(t => t.parent_id === parentId);
+      subtasks.forEach((subtask) => {
+        ids.push(subtask.id);
+        findAllSubtasks(subtask.id);
+      })
+    };
+    findAllSubtasks(id);
+    const remainingTasks = tasks.filter(task => !ids.includes(task.id));
+    await webStorage.saveTasks(remainingTasks);
 
+  },
   updateTaskTitle: async (id: string, title: string): Promise<void> => {
     const tasks = await webStorage.getTasks();
     const taskIndex = tasks.findIndex(t => t.id === id);
