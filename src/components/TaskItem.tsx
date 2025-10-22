@@ -6,7 +6,8 @@ interface TaskItemProps {
     taskNode: TaskNode;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
-    addTask: (id: string, parentId: string | null) => void;
+    addSubTask: (id: string, parentId: string | null) => void;
+    addTaskAfter: (id: string, afterId: string | null) => void;
     updateTaskTitle: (id: string, title: string) => void;
 }
 
@@ -14,7 +15,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                       taskNode,
                                                       toggleTask,
                                                       deleteTask,
-                                                      addTask,
+                                                      addSubTask,
+                                                      addTaskAfter,
                                                       updateTaskTitle
                                                   }) => {
     const [isEditing, setIsEditing] = useState(false);
@@ -24,6 +26,14 @@ export const TaskItem: React.FC<TaskItemProps> = ({
     useEffect(() => {
         setEditTitle(taskNode.title);
     }, [taskNode.title]);
+
+    const handleSubmit = async () => {
+        if (editTitle !== taskNode.title) {
+            await updateTaskTitle(taskNode.id, editTitle);
+            setEditTitle(taskNode.title); //handle whitespace changes
+        }
+        await addTaskAfter("", taskNode.id);
+    };
 
     return (
         <View style={styles.container}>
@@ -40,11 +50,11 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                     style={styles.input}
                     value={editTitle}
                     onChangeText={setEditTitle}
-                    onSubmitEditing={() => updateTaskTitle(taskNode.id, editTitle)}
+                    onSubmitEditing={handleSubmit}
                     onBlur={() => updateTaskTitle(taskNode.id, editTitle)}
                     returnKeyType="done"
                 />
-                <Pressable onPress={ () => addTask("", taskNode.id)} style={styles.iconButton}>
+                <Pressable onPress={ () => addSubTask("", taskNode.id)} style={styles.iconButton}>
                     <Text style={styles.icon}>+</Text>
                 </Pressable>
 
@@ -61,7 +71,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                         taskNode={child}
                         toggleTask={toggleTask}
                         deleteTask={deleteTask}
-                        addTask={addTask}
+                        addSubTask={addSubTask}
+                        addTaskAfter={addTaskAfter}
                         updateTaskTitle={updateTaskTitle}
                     />
                 ))}

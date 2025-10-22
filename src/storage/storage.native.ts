@@ -1,4 +1,4 @@
-import { TaskInstance } from '../types';
+import {AddTaskParams, TaskInstance} from '../types';
 import { database, initDatabase } from '../database/database';
 
 const nativeStorage = {
@@ -18,7 +18,7 @@ const nativeStorage = {
       return [];
     }
   },
-  addTask: async (task: Omit<TaskInstance, 'id'>): Promise<string> => {
+  addTask: async (task: AddTaskParams): Promise<string> => {
     return await database.addTask(task);
   },
   toggleTask: async (id: string, isCompleted: boolean): Promise<void> => {

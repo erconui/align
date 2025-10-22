@@ -1,5 +1,5 @@
 import {create} from 'zustand';
-import {TaskInstance} from '../types';
+import {AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation} from '../types';
 import {initStorage, storage} from '../storage/storage';
 
 export type TaskNode = TaskInstance & { children: TaskNode[] };
@@ -7,6 +7,8 @@ export type TaskNode = TaskInstance & { children: TaskNode[] };
 interface TaskStore {
     tasks: TaskNode[];
     flatTasks: TaskInstance[];
+    templates: TaskTemplate[];
+    templateHierarchy: {templates:TaskTemplate[],relations:TaskTemplateRelation[]};
     isLoading: boolean;
     error: string | null;
 
@@ -15,7 +17,9 @@ interface TaskStore {
     initDB: () => Promise<void>;
     loadTasks: () => Promise<void>;
     getTree: (tasks: TaskInstance[]) => TaskNode[];
-    addTask: (title: string, parentId: string | null) => Promise<void>;
+    addTask: (task: AddTaskParams) => Promise<void>;
+    addSubTask: (title: string, parentId: string | null) => Promise<void>;
+    addTaskAfter: (title: string, afterId: string | null) => Promise<void>;
     addTaskWithoutLoad: (id: string, parentId: string | null) => Promise<string>;
     updateTaskTitle: (id: string, title: string) => Promise<void>;
     deleteTask: (id: string) => Promise<void>;
@@ -123,38 +127,29 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
       return roots;
     },
-    addTask: async (title: string, parentId: string | null) => {
-        if (!title.trim()) return;
-
+    addTask: async (task: AddTaskParams) => {
         try {
-            const newTask: Omit<TaskNode, 'id'> = {
-                template_id: null,
-                parent_id: parentId,
-                title: title.trim(),
-                completed: false,
-                sort_order: get().tasks.length,
-                children: []
-            };
-
-            await storage.addTask(newTask);
+            console.log(`add task ${task.title} under ${task.parent_id} after ${task.after_id}`);
+            let id = await storage.addTask(task);
             await get().loadTasks();
+            return id;
         } catch (error) {
             set({ error: (error as Error).message });
         }
+    },
+    addSubTask: async (title: string, parentId: string | null) => {
+        console.log(`Add task ${title} as subtask to parent ${parentId}`);
+        return get().addTask({title: title.trim(), parent_id: parentId, completed: false})
+    },
+    addTaskAfter: async(title: string, afterId: string | null) => {
+        let id = get().addTask({title: title.trim(), after_id: afterId, completed: false});
     },
     addTaskWithoutLoad: async (title: string, parentId: string | null = null) : Promise<string> => {
       if (!title.trim()) return '';
 
       try {
-        const newTask: Omit<TaskInstance, 'id'> = {
-          template_id: null,
-          parent_id: parentId,
-          title: title.trim(),
-          completed: false,
-          sort_order: 0,
-        };
 
-        return await storage.addTask(newTask);
+        return await storage.addTask({title: title.trim(), parent_id: parentId, completed: false});
         // Don't call loadTasks here
       } catch (error) {
         set({ error: (error as Error).message });

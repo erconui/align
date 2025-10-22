@@ -12,6 +12,15 @@ export interface TaskInstance {
   sort_order: number;
 }
 
+export interface AddTaskParams {
+  template_id?: string | null;
+  parent_id?: string | null;
+  title: string;
+  completed: boolean;
+  sort_order?: number | null;
+  after_id?: string | null;
+}
+
 export interface TaskTemplateRelation {
   id: string;
   parent_template_id: string;

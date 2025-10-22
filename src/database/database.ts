@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import {TaskInstance, TaskTemplate} from '../types';
+import {AddTaskParams, TaskInstance, TaskTemplate} from '../types';
 
 // Open database with async API
 const db = SQLite.openDatabaseAsync('tasks.db');
@@ -81,22 +81,41 @@ export const database = {
   },
 
   // Add a new task
-  addTask: async (task: Omit<TaskInstance, 'id'>): Promise<string> => {
+  addTask: async (task: AddTaskParams): Promise<string> => {
     try {
       const database = await db;
+      let parentId = task.parent_id;
+      let sortOrder = task.sort_order;
+
+      if (task.after_id) {
+        const prevTask = await database.getFirstAsync<TaskInstance>('SELECT * FROM tasks WHERE id = ?', [task.after_id]);
+        if (!prevTask) {
+          throw new Error('Task to insert after not found');
+        }
+        parentId = task.parent_id || prevTask.parent_id;
+
+        await database.runAsync('UPDATE tasks SET sort_order = sort_order + 1 WHERE parent_id IS ? AND sort_order > ?',
+            [parentId, prevTask.sort_order]);
+        sortOrder = prevTask.sort_order + 1;
+      } else if (sortOrder === undefined) {
+        const result = await database.getFirstAsync<{count: number }>('SELECT COUNT(*) as count FROM tasks WHERE parent_id IS ?',
+            [parentId]);
+        sortOrder = result?.count || 0;
+      }
+
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
       await database.runAsync(
         `INSERT INTO tasks 
-         (id, template_id, parent_id, title, sort_order)
-         VALUES (?, ?, ?, ?, ?)`,
+         (id, template_id, parent_id, title, completed, sort_order)
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           id,
           task.template_id || null,
-          task.parent_id || null,
+          parentId || null,
           task.title,
           task.completed ? 1 : 0,
-          task.sort_order || 0,
+          sortOrder,
         ]
       );
 

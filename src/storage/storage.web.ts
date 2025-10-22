@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TaskInstance } from '../types';
+import {AddTaskParams, TaskInstance} from '../types';
 
 const STORAGE_KEY = '@tasks_data';
 
@@ -7,7 +7,8 @@ export const webStorage = {
   getTasks: async (): Promise<TaskInstance[]> => {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEY);
-      return data ? JSON.parse(data) : [];
+      const tasks =  data ? JSON.parse(data) : [];
+      return tasks.sort((a: TaskInstance, b: TaskInstance) => a.sort_order - b.sort_order);
     } catch (error) {
       console.error('Error getting tasks from storage:', error);
       return [];
@@ -23,12 +24,38 @@ export const webStorage = {
       console.error('Error saving tasks to storage:', error);
     }
   },
-  addTask: async (task: Omit<TaskInstance, 'id'>): Promise<string> => {
+  addTask: async (task: AddTaskParams): Promise<string> => {
     const tasks = await webStorage.getTasks();
     const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+    console.log(`web basic add task ${task.title} under ${task.parent_id} after ${task.after_id} at ${task.sort_order}`);
+
+    let sortOrder = task.sort_order;
+    let parentId = task.parent_id;
+    if (task.after_id) {
+      const prevTask = tasks.find(t => t.id === task.after_id);
+      if (!prevTask) {
+        throw new Error('Task to insert after not found');
+      }
+      parentId = task.parent_id || prevTask.parent_id;
+      tasks.forEach(t => {
+        if (t.parent_id === parentId && t.sort_order > prevTask.sort_order) {
+          t.sort_order += 1;
+        }
+      });
+      sortOrder = prevTask.sort_order + 1;
+      console.log(`web add task ${task.title} under ${prevTask.parent_id} after ${prevTask.title} at ${sortOrder}`);
+    } else if (sortOrder === undefined) {
+      const siblings = tasks.filter(t=>t.parent_id === parentId);
+      sortOrder = siblings.length;
+    }
+    console.log(`web create task ${id}, ${task.title}, ${parentId}, ${sortOrder}`);
     const newTask: TaskInstance = {
-      ...task,
       id,
+      title: task.title,
+      parent_id: parentId,
+      template_id: task.template_id || null,
+      completed: task.completed ? 1 : 0,
+      sort_order: sortOrder,
     };
 
     tasks.push(newTask);

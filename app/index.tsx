@@ -13,12 +13,12 @@ import { TaskItem } from '../src/components/TaskItem';
 import { Link } from 'expo-router';
 
 export default function HomeScreen() {
-    const { getTree, tasks, flatTasks, isLoading, error, addTask, toggleTask, deleteTask, updateTaskTitle, initDB } = useTaskStore();
+    const { getTree, tasks, flatTasks, isLoading, error, addSubTask, addTaskAfter, toggleTask, deleteTask, updateTaskTitle, initDB } = useTaskStore();
     const [newTaskTitle, setNewTaskTitle] = useState('');
 
     const handleAddTask = () => {
         if (newTaskTitle.trim()) {
-            addTask(newTaskTitle.trim());
+            addSubTask(newTaskTitle.trim(), null);
             setNewTaskTitle('');
         }
     };
@@ -97,7 +97,8 @@ export default function HomeScreen() {
                             taskNode={item}
                             toggleTask={toggleTask}
                             deleteTask={deleteTask}
-                            addTask={addTask}
+                            addSubTask={addSubTask}
+                            addTaskAfter={addTaskAfter}
                             updateTaskTitle={updateTaskTitle}
                             />
                     )}/>
