@@ -1,6 +1,7 @@
+version: "3.8"
 services:
   expo-app:
-    restart: no
+    restart: "no"
     build: .
     ports:
         # Web, DevTools, Metro Bundler, DevServer
