@@ -1,0 +1,15 @@
+services:
+  expo-app:
+    restart: no
+    build: .
+    ports:
+        # Web, DevTools, Metro Bundler, DevServer
+      - "8081:8081"
+      - "19000:19000"
+      - "19001:19001"
+      - "19002:19002"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
