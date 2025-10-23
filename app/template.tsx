@@ -79,6 +79,7 @@ export default function TemplateScreen() {
 
     const buildTemplateTree = () => {
         const { templates, relations } = templateHierarchy;
+        console.log('build tree', templateHierarchy);
 
         // Find root templates (no parents OR have children)
         const rootTemplates = templates.filter(template => {
@@ -86,6 +87,7 @@ export default function TemplateScreen() {
             const hasChildren = relations.some(rel => rel.parent_template_id === template.id);
             return !hasParent || hasChildren;
         });
+        console.log(`build tree roots: ${rootTemplates}`);
 
         const buildHierarchy = (parentId: string): any[] => {
             const children = relations
@@ -101,6 +103,8 @@ export default function TemplateScreen() {
                     };
                 })
                 .filter(Boolean);
+            console.log(`build hierarchy: ${parentId} with children: ${children}`);
+            console.log(relations);
 
             return children;
         };

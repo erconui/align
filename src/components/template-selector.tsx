@@ -8,7 +8,7 @@ import {
     Pressable,
     Alert
 } from 'react-native';
-import { useTaskStore } from '../src/stores/taskStore';
+import { useTaskStore } from '../stores/taskStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export default function TemplateSelectorScreen() {
