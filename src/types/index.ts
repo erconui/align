@@ -23,7 +23,7 @@ export interface AddTaskParams {
 
 export interface TaskTemplateRelation {
   id: string;
-  parent_template_id: string;
-  child_template_id: string;
+  parent_id: string;
+  child_id: string;
   sort_order: number;
 }

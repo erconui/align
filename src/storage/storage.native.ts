@@ -2,7 +2,7 @@ import {AddTaskParams, TaskInstance} from '../types';
 import { database, initDatabase } from '../database/database';
 
 const nativeStorage = {
-  getTasks: async (): Promise<TaskInstance[]> => {
+  getRootTasks: async (): Promise<TaskInstance[]> => {
     try {
       return await database.getRootTasks();
     } catch (error) {
@@ -10,7 +10,7 @@ const nativeStorage = {
       return [];
     }
   },
-  getAllTasks: async (): Promise<TaskInstance[]> => {
+  getTasks: async (): Promise<TaskInstance[]> => {
     try {
       return await database.getAllTasks();
     } catch (error) {

@@ -8,6 +8,7 @@ interface TaskStore {
     tasks: TaskNode[];
     flatTasks: TaskInstance[];
     templates: TaskTemplate[];
+    relations: TaskTemplateRelation[];
     templateHierarchy: {templates:TaskTemplate[],relations:TaskTemplateRelation[]};
     isLoading: boolean;
     error: string | null;
@@ -44,6 +45,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     tasks: [],
     flatTasks: [],
     templates: [],
+    relations: [],
     templateHierarchy: { templates: [], relations: [] },
     isLoading: false,
     error: null,
@@ -53,6 +55,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
             set({ isLoading: true, error: null });
             await initStorage();
             await get().loadTasks();
+            await get().loadTemplates();
         } catch (error) {
             set({ error: (error as Error).message });
         } finally {
@@ -93,7 +96,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     },
     loadTasks: async () => {
         try {
-            const flatTasks = await storage.getAllTasks();
+            const flatTasks = await storage.getTasks();
             const tree = get().getTree(flatTasks);
             set({
                 tasks: tree,
@@ -240,7 +243,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     },
   // Template actions
   createTemplate: async (title: string, parentTemplateId: string | null = null) => {
-    if (!title.trim()) return;
+    // if (!title.trim()) return;
 
     try {
       await storage.createTemplate(title, parentTemplateId);
@@ -252,6 +255,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   getTemplateHierarchy: async () => {
     try {
       const hierarchy = await storage.getTemplateHierarchy();
+      console.log('store hierarchy', hierarchy);
       set({ templateHierarchy: hierarchy, error: null });
     } catch (error) {
       set({ error: (error as Error).message });
@@ -297,15 +301,19 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   loadTemplates: async () => {
-    try {
+    // try {
       const hierarchy = await storage.getTemplateHierarchy();
+      const temp = await storage.getTemplates();
+      const rel = await storage.getTemp
+      console.log("TEST", hierarchy);
       set({
         templates: hierarchy.templates,
+          relations: hierarchy.relations,
         templateHierarchy: hierarchy,
         error: null
       });
-    } catch (error) {
-      set({ error: (error as Error).message });
-    }
+    // } catch (error) {
+    //   set({ error: (error as Error).message });
+    // }
   },
 }));
