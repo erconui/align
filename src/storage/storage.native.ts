@@ -1,5 +1,5 @@
-import {AddTaskParams, TaskInstance} from '../types';
-import { database, initDatabase } from '../database/database';
+import {AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation} from '../types';
+import {database, initDatabase} from '../database/database';
 
 const nativeStorage = {
   getRootTasks: async (): Promise<TaskInstance[]> => {
