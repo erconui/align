@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {View, Text, TextInput, Pressable, Switch, StyleSheet} from "react-native";
 import {TaskNode} from '../stores/taskStore';
 
@@ -9,6 +9,7 @@ interface TaskItemProps {
   addSubTask: (id: string, parentId: string | null) => void;
   addTaskAfter: (id: string, afterId: string | null) => void;
   updateTaskTitle: (id: string, title: string) => void;
+  focusedId: string | null;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -17,21 +18,28 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                     deleteTask,
                                                     addSubTask,
                                                     addTaskAfter,
-                                                    updateTaskTitle
+                                                    updateTaskTitle,
+                                                    focusedId
                                                   }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(taskNode.title);
+  const textInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     setEditTitle(taskNode.title);
   }, [taskNode.title]);
 
-  const handleSubmit = async () => {
-    if (editTitle !== taskNode.title) {
-      await updateTaskTitle(taskNode.id, editTitle);
-      setEditTitle(taskNode.title); //handle whitespace changes
+  useEffect(() => {
+    if (focusedId === taskNode.id && textInputRef.current) {
+      textInputRef.current.focus();
     }
+  }, [focusedId, taskNode.id]);
+
+  const handleSubmit = async () => {
+    // if (editTitle !== taskNode.title) {
+      await updateTaskTitle(taskNode.id, editTitle);
+      // setEditTitle(taskNode.title); //handle whitespace changes
+    // }
     await addTaskAfter("", taskNode.id);
   };
 
@@ -43,11 +51,13 @@ export const TaskItem: React.FC<TaskItemProps> = ({
         </Pressable>
 
         <Switch
-          value={!!taskNode.completed}
+          value={taskNode.completed}
           onValueChange={() => toggleTask(taskNode.id)}
         />
         <TextInput
+          ref={textInputRef}
           style={styles.input}
+          autoFocus={focusedId===taskNode.id}
           value={editTitle}
           onChangeText={setEditTitle}
           onSubmitEditing={handleSubmit}
@@ -74,6 +84,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
               addSubTask={addSubTask}
               addTaskAfter={addTaskAfter}
               updateTaskTitle={updateTaskTitle}
+              focusedId={focusedId}
             />
           ))}
         </View>)}

@@ -14,6 +14,7 @@ import {Link} from 'expo-router';
 
 export default function HomeScreen() {
   const {
+    focusedId,
     tasks,
     flatTasks,
     isLoading,
@@ -94,6 +95,7 @@ export default function HomeScreen() {
               addSubTask={addSubTask}
               addTaskAfter={addTaskAfter}
               updateTaskTitle={updateTaskTitle}
+              focusedId={focusedId}
             />
           )}/>
       </View>
