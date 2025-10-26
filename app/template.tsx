@@ -15,11 +15,14 @@ import {Link} from 'expo-router';
 
 export default function TemplateScreen() {
   const {
+    focusedId,
     tree,
     templateHierarchy,
     isLoading,
     error,
     createTemplate,
+    addTemplateAfter,
+    updateTemplate,
     deleteTemplate,
     loadTemplates,
     createTaskFromTemplate
@@ -192,7 +195,10 @@ export default function TemplateScreen() {
                 onToggleExpand={toggleExpand}
                 onUseTemplate={handleUseTemplate}
                 deleteTemplate={deleteTemplate}
+                updateTemplate={updateTemplate}
+                addTemplateAfter={addTemplateAfter}
                 level={0}
+                focusedId={focusedId}
               />
             )}
           />

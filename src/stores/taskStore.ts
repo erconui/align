@@ -1,6 +1,6 @@
-import {create} from 'zustand';
-import {AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation} from '../types';
-import {initStorage, storage} from '../storage/storage';
+import { create } from 'zustand';
+import { initStorage, storage } from '../storage/storage';
+import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
 
 export type TaskNode = TaskInstance & { children: TaskNode[] };
 export type TemplateNode = TaskTemplate & { children: TaskTemplate[] };
@@ -32,14 +32,15 @@ interface TaskStore {
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
 
   // templates
-  createTemplate: (title: string, parentTemplateId?: string | null) => Promise<void>;
+  createTemplate: (title: string, parentId: string | null) => Promise<void>;
+  addTemplateAfter: (title: string, afterId: string | null) => Promise<string>;
   getTemplateHierarchy: () => Promise<void>;
   getRootTemplates: () => Promise<TaskTemplate[]>;
   getTemplateChildren: (templateId: string) => Promise<TaskTemplate[]>;
   createTaskFromTemplate: (templateId: string, parentInstanceId?: string | null) => Promise<void>;
-  updateTemplate: (templateId: string, newTitle: string, newChildren: string[]) => Promise<void>;
+  updateTemplate: (templateId: string, newTitle: string) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
-  addTemplateRelation: (parentTemplateId: string, childTemplateId: string, sortOrder?: number) => Promise<void>;
+  addTemplateRelation: (parentId: string, childTemplateId: string, sortOrder?: number) => Promise<void>;
   loadTemplates: () => Promise<void>;
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]) => TemplateNode[];
 }
@@ -148,7 +149,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   addSubTask: async (title: string, parentId: string | null): Promise<string> => {
     console.log(`Add task ${title} as subtask to parent ${parentId}`);
-    return get().addTask({title: title.trim(), parent_id: parentId, completed: false})
+    let id = await get().addTask({title: title.trim(), parent_id: parentId, completed: false})
+    set({focusedId: id});
+    return id;
   },
   addTaskAfter: async (title: string, afterId: string | null) : Promise<string> => {
     let id = await get().addTask({title: title.trim(), after_id: afterId, completed: false});
@@ -249,13 +252,24 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   // Template actions
-  createTemplate: async (title: string, parentTemplateId: string | null = null) => {
+  createTemplate: async (title: string, parentId: string | null) => {
     try {
-      await storage.createTemplate(title, parentTemplateId);
+      await storage.createTemplate({title: title, parent_id: parentId});
       await get().loadTemplates();
     } catch (error) {
       set({error: (error as Error).message});
     }
+  },
+  addTemplateAfter: async (title: string, afterId: string | null) : Promise<string> => {
+    try {
+      let id = storage.createTemplate({title: title.trim(), after_id: afterId});
+      await get().loadTemplates();
+      return id;
+    } catch (error) {
+      set({error: (error as Error).message});
+      throw error;
+    }
+
   },
   getTemplateHierarchy: async () => {
     try {
@@ -280,9 +294,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({error: (error as Error).message});
     }
   },
-  updateTemplate: async (templateId: string, newTitle: string, newChildren: string[]) => {
+  updateTemplate: async (templateId: string, newTitle: string) => {
     try {
-      await storage.updateTemplate(templateId, newTitle, newChildren);
+      await storage.updateTemplate(templateId, newTitle);
       await get().loadTemplates();
       await get().loadTasks(); // Refresh tasks to show template changes
     } catch (error) {
@@ -298,9 +312,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({error: (error as Error).message});
     }
   },
-  addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, sortOrder: number = 0) => {
+  addTemplateRelation: async (parentId: string, childTemplateId: string, sortOrder: number = 0) => {
     try {
-      await storage.addTemplateRelation(parentTemplateId, childTemplateId, sortOrder);
+      await storage.addTemplateRelation(parentId, childTemplateId, sortOrder);
       await get().loadTemplates();
     } catch (error) {
       set({error: (error as Error).message});

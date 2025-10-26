@@ -20,6 +20,14 @@ export interface AddTaskParams {
   sort_order?: number | null;
   after_id?: string | null;
 }
+export interface AddTemplateParams {
+  template_id?: string | null;
+  parent_id?: string | null;
+  title: string;
+  completed: boolean;
+  sort_order?: number | null;
+  after_id?: string | null;
+}
 
 export interface TaskTemplateRelation {
   id: string;
