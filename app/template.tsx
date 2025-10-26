@@ -1,17 +1,16 @@
-import React, {useState, useEffect} from 'react';
+import { Link } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  Pressable,
-  Alert
+  View
 } from 'react-native';
-import {useTaskStore} from '../src/stores/taskStore';
-import {TemplateItem} from '../src/components/TemplateItem';
-import {Link} from 'expo-router';
+import { TemplateItem } from '../src/components/TemplateItem';
+import { useTaskStore } from '../src/stores/taskStore';
 
 export default function TemplateScreen() {
   const {
@@ -36,7 +35,7 @@ export default function TemplateScreen() {
 
   const handleAddTemplate = () => {
     if (newTemplateTitle.trim()) {
-      createTemplate(newTemplateTitle.trim());
+      createTemplate(newTemplateTitle.trim(), null);
       setNewTemplateTitle('');
     }
   };
@@ -80,44 +79,6 @@ export default function TemplateScreen() {
     setExpandedTemplates(newExpanded);
   };
 
-  // const buildTemplateTree = () => {
-  //     const { templates, relations } = templateHierarchy;
-  //     console.log('build tree', templateHierarchy);
-  //
-  //     // Find root templates (no parents OR have children)
-  //     const rootTemplates = templates.filter(template => {
-  //         const hasParent = relations.some(rel => rel.child_template_id === template.id);
-  //         const hasChildren = relations.some(rel => rel.parent_template_id === template.id);
-  //         return !hasParent || hasChildren;
-  //     });
-  //     console.log(`build tree roots: ${rootTemplates}`);
-  //
-  //     const buildHierarchy = (parentId: string): any[] => {
-  //         const children = relations
-  //             .filter(rel => rel.parent_template_id === parentId)
-  //             .sort((a, b) => a.sort_order - b.sort_order)
-  //             .map(rel => {
-  //                 const template = templates.find(t => t.id === rel.child_template_id);
-  //                 if (!template) return null;
-  //
-  //                 return {
-  //                     ...template,
-  //                     children: buildHierarchy(template.id)
-  //                 };
-  //             })
-  //             .filter(Boolean);
-  //         console.log(`build hierarchy: ${parentId} with children: ${children}`);
-  //         console.log(relations);
-  //
-  //         return children;
-  //     };
-  //
-  //     return rootTemplates.map(template => ({
-  //         ...template,
-  //         children: buildHierarchy(template.id)
-  //     }));
-  // };
-
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-50">
@@ -126,9 +87,6 @@ export default function TemplateScreen() {
       </View>
     );
   }
-
-  // const templateTree = buildTemplateTree();
-  // console.log("templateTree", templateTree);
 
   return (
     <View className="flex-1 bg-gray-50">
@@ -160,15 +118,6 @@ export default function TemplateScreen() {
             onSubmitEditing={handleAddTemplate}
             className="flex-1 border border-gray-300 rounded-l-lg px-4 py-3 text-gray-900 bg-white"
           />
-          {/*<TouchableOpacity*/}
-          {/*    onPress={handleAddTemplate}*/}
-          {/*    disabled={!newTemplateTitle.trim()}*/}
-          {/*    className={`px-6 py-3 rounded-r-lg justify-center ${*/}
-          {/*        newTemplateTitle.trim() ? 'bg-green-500' : 'bg-green-300'*/}
-          {/*    }`}*/}
-          {/*>*/}
-          {/*    <Text className="text-white font-semibold">Create</Text>*/}
-          {/*</TouchableOpacity>*/}
         </View>
 
         {error && (
