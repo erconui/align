@@ -1,5 +1,5 @@
-import {AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation} from '../types';
-import {database, initDatabase} from '../database/database';
+import { database, initDatabase } from '../database/database';
+import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
 
 const nativeStorage = {
   getRootTasks: async (): Promise<TaskInstance[]> => {
@@ -58,8 +58,8 @@ const nativeStorage = {
     await database.deleteTemplate(id);
   },
 
-  addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, sortOrder: number = 0): Promise<void> => {
-    await database.addTemplateRelation(parentTemplateId, childTemplateId, sortOrder);
+  addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, position: number = 0): Promise<void> => {
+    await database.addTemplateRelation(parentTemplateId, childTemplateId, position);
   },
 };
 

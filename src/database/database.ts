@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import {AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation} from '../types';
+import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
 
 // Open database with async API
 const db = SQLite.openDatabaseAsync('tasks.db');
@@ -22,7 +22,7 @@ export const initDatabase = async (): Promise<void> => {
             id                 TEXT PRIMARY KEY,
             parent_template_id TEXT    NOT NULL,
             child_template_id  TEXT    NOT NULL,
-            sort_order         INTEGER NOT NULL,
+            position           INTEGER NOT NULL,
             FOREIGN KEY (parent_template_id) REFERENCES templates (id),
             FOREIGN KEY (child_template_id) REFERENCES templates (id)
         );
@@ -39,7 +39,7 @@ export const initDatabase = async (): Promise<void> => {
 --         due_date DATETIME,
 --         recurrence_rule TEXT,
 --         completed_at DATETIME,
-            sort_order  INTEGER NOT NULL DEFAULT 0,
+            position  INTEGER NOT NULL DEFAULT 0,
 --         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 --         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (template_id) REFERENCES templates (id),
@@ -64,7 +64,7 @@ export const database = {
         `SELECT *
          FROM tasks
          WHERE parent_id IS NULL
-         ORDER BY sort_order ASC`
+         ORDER BY position ASC`
       );
     } catch (error) {
       console.error('Error getting root tasks:', error);
@@ -77,7 +77,7 @@ export const database = {
       return await dbInstance.getAllAsync<TaskInstance>(
         `SELECT *
          FROM tasks
-         ORDER BY sort_order ASC`
+         ORDER BY position ASC`
       );
     } catch (error) {
       console.error('Error getting all tasks:', error);
@@ -90,7 +90,7 @@ export const database = {
     try {
       const dbInstance = await db;
       let parentId = task.parent_id ?? null;
-      let sortOrder = task.sort_order;
+      let position = task.position;
 
       if (task.after_id) {
         const prevTask = await dbInstance.getFirstAsync<TaskInstance>('SELECT * FROM tasks WHERE id = ?', [task.after_id]);
@@ -99,22 +99,22 @@ export const database = {
         }
         parentId = task.parent_id ?? prevTask.parent_id;
 
-        await dbInstance.runAsync('UPDATE tasks SET sort_order = sort_order + 1 WHERE parent_id IS ? AND sort_order > ?',
-          [parentId, prevTask.sort_order]);
-        sortOrder = prevTask.sort_order + 1;
-      } else if (sortOrder === undefined) {
+        await dbInstance.runAsync('UPDATE tasks SET position = position + 1 WHERE parent_id IS ? AND position > ?',
+          [parentId, prevTask.position]);
+        position = prevTask.position + 1;
+      } else if (position === undefined) {
         const result = await dbInstance.getFirstAsync<{
           count: number
         }>('SELECT COUNT(*) as count FROM tasks WHERE parent_id IS ?',
           [parentId]);
-        sortOrder = result?.count || 0;
+        position = result?.count || 0;
       }
 
       const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
       await dbInstance.runAsync(
         `INSERT INTO tasks
-             (id, template_id, parent_id, title, completed, sort_order)
+             (id, template_id, parent_id, title, completed, position)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [
           id,
@@ -122,7 +122,7 @@ export const database = {
           parentId || null,
           task.title,
           task.completed ? 1 : 0,
-          sortOrder,
+          position,
         ]
       );
 
@@ -201,8 +201,8 @@ export const database = {
       // If this template has a parent, create the relation
       if (parentTemplateId) {
         await dbInstance.runAsync(
-          'INSERT INTO template_relations (parent_template_id, child_template_id, sort_order) VALUES (?, ?, ?)',
-          [parentTemplateId, id, 0] // sort_order 0 for now
+          'INSERT INTO template_relations (parent_template_id, child_template_id, position) VALUES (?, ?, ?)',
+          [parentTemplateId, id, 0] // position 0 for now
         );
       }
 
@@ -225,7 +225,7 @@ export const database = {
       const relations = await dbInstance.getAllAsync<TaskTemplateRelation>(`
           SELECT *
           FROM template_relations
-          ORDER BY sort_order ASC
+          ORDER BY position ASC
       `);
 
       return {templates, relations};
@@ -262,7 +262,7 @@ export const database = {
           FROM templates t
                    INNER JOIN template_relations r ON t.id = r.child_template_id
           WHERE r.parent_template_id = ?
-          ORDER BY r.sort_order ASC
+          ORDER BY r.position ASC
       `, [templateId]);
 
       return result;
@@ -289,7 +289,7 @@ export const database = {
       const taskId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
       await dbInstance.runAsync(
-        `INSERT INTO tasks (id, template_id, parent_id, title, completed, sort_order)
+        `INSERT INTO tasks (id, template_id, parent_id, title, completed, position)
          VALUES (?, ?, ?, ?, ?, ?)`,
         [taskId, templateId, parentInstanceId, template.title, 0, 0] // completed=0 = bound to template
       );
@@ -300,7 +300,7 @@ export const database = {
           FROM templates t
                    INNER JOIN template_relations r ON t.id = r.child_template_id
           WHERE r.parent_template_id = ?
-          ORDER BY r.sort_order ASC
+          ORDER BY r.position ASC
       `, [templateId]);
 
       for (const childTemplate of childTemplates) {
@@ -344,7 +344,7 @@ export const database = {
       const childrenToAdd = newChildren.filter(id => !currentChildIds.includes(id));
       for (let i = 0; i < childrenToAdd.length; i++) {
         await dbInstance.runAsync(
-          'INSERT INTO template_relations (parent_template_id, child_template_id, sort_order) VALUES (?, ?, ?, ?)',
+          'INSERT INTO template_relations (parent_template_id, child_template_id, position) VALUES (?, ?, ?, ?)',
           [templateId, childrenToAdd[i], i]
         );
       }
@@ -353,7 +353,7 @@ export const database = {
       for (let idx = 0; idx < newChildren.length; idx++) {
         if (currentChildIds.includes(newChildren[idx])) {
           await dbInstance.runAsync(
-            'UPDATE template_relations SET sort_order = ? WHERE parent_template_id = ? AND child_template_id = ?',
+            'UPDATE template_relations SET position = ? WHERE parent_template_id = ? AND child_template_id = ?',
             [idx, templateId, newChildren[idx]]
           );
         }
@@ -453,12 +453,12 @@ export const database = {
   },
 
 // Add template relation (for building hierarchies)
-  addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, sortOrder: number = 0): Promise<void> => {
+  addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, position: number = 0): Promise<void> => {
     try {
       const dbInstance = await db;
       await dbInstance.runAsync(
-        'INSERT INTO template_relations (parent_template_id, child_template_id, sort_order) VALUES (?, ?, ?, ?)',
-        [parentTemplateId, childTemplateId, sortOrder]
+        'INSERT INTO template_relations (parent_template_id, child_template_id, position) VALUES (?, ?, ?, ?)',
+        [parentTemplateId, childTemplateId, position]
       );
     } catch (error) {
       console.error('Error adding template relation:', error);

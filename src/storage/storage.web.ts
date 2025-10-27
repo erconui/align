@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {AddTaskParams, AddTemplateParams, TaskInstance, TaskTemplate, TaskTemplateRelation} from '../types';
+import { AddTaskParams, AddTemplateParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
 
 const TASK_KEY = '@tasks_data';
 const TEMPLATE_KEY = '@template_data';
@@ -13,7 +13,7 @@ export const webStorage = {
     try {
       const data = await AsyncStorage.getItem(TASK_KEY);
       const tasks = data ? JSON.parse(data) : [];
-      return tasks.sort((a: TaskInstance, b: TaskInstance) => a.sort_order - b.sort_order);
+      return tasks.sort((a: TaskInstance, b: TaskInstance) => a.position - b.position);
     } catch (error) {
       console.error('Error getting tasks from storage:', error);
       return [];
@@ -47,7 +47,7 @@ export const webStorage = {
     try {
       const data = await AsyncStorage.getItem(TEMPLATE_RELATION_KEY);
       const templates = data ? JSON.parse(data) : [];
-      return templates.sort((a: TaskTemplateRelation, b: TaskTemplateRelation) => a.sort_order - b.sort_order);
+      return templates.sort((a: TaskTemplateRelation, b: TaskTemplateRelation) => a.position - b.position);
     } catch (error) {
       console.error('Error getting tasks from storage:', error);
       return [];
@@ -64,9 +64,9 @@ export const webStorage = {
     try {
       const tasks = await webStorage.getTasks();
       const id = webStorage.generateId();
-      console.log(`web basic add task ${task.title} under ${task.parent_id} after ${task.after_id} at ${task.sort_order}`);
+      console.log(`web basic add task ${task.title} under ${task.parent_id} after ${task.after_id} at ${task.position}`);
 
-      let sortOrder = task.sort_order;
+      let position = task.position;
       let parentId = task.parent_id;
       if (task.after_id) {
         const prevTask = tasks.find(t => t.id === task.after_id);
@@ -75,17 +75,17 @@ export const webStorage = {
         }
         parentId = task.parent_id || prevTask.parent_id;
         tasks.forEach(t => {
-          if (t.parent_id === parentId && t.sort_order > prevTask.sort_order) {
-            t.sort_order += 1;
+          if (t.parent_id === parentId && t.position > prevTask.position) {
+            t.position += 1;
           }
         });
-        sortOrder = prevTask.sort_order + 1;
-        console.log(`web add task ${task.title} under ${prevTask.parent_id} after ${prevTask.title} at ${sortOrder}`);
-      } else if (sortOrder === undefined) {
+        position = prevTask.position + 1;
+        console.log(`web add task ${task.title} under ${prevTask.parent_id} after ${prevTask.title} at ${position}`);
+      } else if (position === undefined) {
         const siblings = tasks.filter(t => t.parent_id === parentId);
-        sortOrder = siblings.length;
+        position = siblings.length;
       }
-      console.log(`web create task ${id}, ${task.title}, ${parentId}, ${sortOrder}`);
+      console.log(`web create task ${id}, ${task.title}, ${parentId}, ${position}`);
 
       const newTask: TaskInstance = {
         id: id, //@ts-ignore
@@ -93,7 +93,7 @@ export const webStorage = {
         template_id: task.template_id,
         title: task.title,//@ts-ignore
         completed: task.completed ? 1 : 0,//@ts-ignore
-        sort_order: sortOrder,
+        position: position,
       };
 
       tasks.push(newTask);
@@ -171,36 +171,36 @@ export const webStorage = {
       };
       templates.push(newTemplate);
       await webStorage.saveTemplates(templates);
-      let sortOrder = template.sort_order;
+      let position = template.position;
       let parentId = template.parent_id;
       if (template.after_id) {
-        const rel = relations.find(r => r.id === template.after_id);
+        const rel = relations.find(r => r.child_id === template.after_id);
         if (!rel) {
           throw new Error('Relation not found');
         }
         parentId = template.parent_id || rel.parent_id;
         relations.forEach((relation) => {
-          if (relation.parent_id === rel.parent_id && relation.sort_order > rel.sort_order) {
-            relation.sort_order += 1;
+          if (relation.parent_id === rel.parent_id && relation.position > rel.position) {
+            relation.position += 1;
           }
         });
-        sortOrder = rel.sort_order + 1;
-      } else if (sortOrder === undefined) {
+        position = rel.position + 1;
+      } else if (position === undefined || position === null) {
         const siblings = relations.filter(rel =>
           rel.parent_id === template.parent_id
         );
-        sortOrder = siblings.length;
+        position = siblings.length;
       }
 
       if (parentId) {
         const relId = webStorage.generateId();
-        const newRelation: TaskTemplate = {
+        const newRelation: TaskTemplateRelation = {
           id: relId,
           parent_id: parentId,
           child_id: id,
-          sort_order: sortOrder
+          position: position
         };
-        console.log(`web create relationship parent ${template.parent_id} with child ${id} at position ${newRelation.sort_order}`);
+        console.log(`web create relationship parent ${template.parent_id} with child ${id} at position ${newRelation.position}`);
         relations.push(newRelation);
         await webStorage.saveTemplateRelations(relations);
       }
@@ -210,7 +210,7 @@ export const webStorage = {
       throw error;
     }
   },
-  updateTemplate: async (id: string, title: string): promise<void> => {
+  updateTemplate: async (id: string, title: string): Promise<void> => {
     try {
       const templates = await webStorage.getTemplates();
       const index = templates.findIndex(t => t.id === id);
@@ -254,7 +254,7 @@ export const webStorage = {
   getTemplateChildren: async (id: string): Promise<TaskTemplate[]> => {
     try {
       const {templates, relations} = await webStorage.getTemplateHierarchy();
-      const childRelations = relations.filter(rel => rel.parent_id === id).sort((a, b) => a.sort_order - b.sort_order);
+      const childRelations = relations.filter(rel => rel.parent_id === id).sort((a, b) => a.position - b.position);
       const subtasks = childRelations.map(rel => templates.find(t => t.id === rel.child_id)).filter(Boolean) as TaskTemplate[];
       return subtasks;
     } catch (error) {
@@ -262,20 +262,20 @@ export const webStorage = {
       throw error;
     }
   },
-  addTemplateRelation: async (parentId: string, childId: string, sortOrder: number | null): Promise<void> => {
+  addTemplateRelation: async (parentId: string, childId: string, position: number | null): Promise<void> => {
     try {
       const relations = await webStorage.getTemplateRelations();
-      if (relations.find(rel => rel.parent_id === parentId && rel.child_id === childId && rel.sort_order === sortOrder)) {
-        console.log(`Template relationship parent ${parentId} with child ${childId} at position ${sortOrder} already exists`);
+      if (relations.find(rel => rel.parent_id === parentId && rel.child_id === childId && rel.position === position)) {
+        console.log(`Template relationship parent ${parentId} with child ${childId} at position ${position} already exists`);
         return;
       }
       const siblings = relations.filter(rel =>
         rel.parent_id === parentId
       );
-      if (sortOrder) {
+      if (position) {
         relations.forEach(rel => {
-          if (rel.parent_id === parentId && rel.sort_order > sortOrder) {
-            rel.sort_order += 1;
+          if (rel.parent_id === parentId && rel.position > position) {
+            rel.position += 1;
           }
         });
       }
@@ -284,7 +284,7 @@ export const webStorage = {
         id: id,
         parent_id: parentId,
         child_id: childId,
-        sort_order: sortOrder ? sortOrder : siblings.length
+        position: position ? position : siblings.length
       }
       relations.push(newRelation);
       await webStorage.saveTemplateRelations(relations);

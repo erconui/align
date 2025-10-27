@@ -9,7 +9,7 @@ export interface TaskInstance {
   parent_id: string | null;
   title: string;
   completed: boolean;
-  sort_order: number;
+  position: number;
 }
 
 export interface AddTaskParams {
@@ -17,7 +17,7 @@ export interface AddTaskParams {
   parent_id?: string | null;
   title: string;
   completed: boolean;
-  sort_order?: number | null;
+  position?: number | null;
   after_id?: string | null;
 }
 export interface AddTemplateParams {
@@ -25,7 +25,7 @@ export interface AddTemplateParams {
   parent_id?: string | null;
   title: string;
   completed: boolean;
-  sort_order?: number | null;
+  position?: number | null;
   after_id?: string | null;
 }
 
@@ -33,5 +33,5 @@ export interface TaskTemplateRelation {
   id: string;
   parent_id: string;
   child_id: string;
-  sort_order: number;
+  position: number;
 }

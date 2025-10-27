@@ -40,7 +40,7 @@ interface TaskStore {
   createTaskFromTemplate: (templateId: string, parentInstanceId?: string | null) => Promise<void>;
   updateTemplate: (templateId: string, newTitle: string) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
-  addTemplateRelation: (parentId: string, childTemplateId: string, sortOrder?: number) => Promise<void>;
+  addTemplateRelation: (parentId: string, childTemplateId: string, position?: number) => Promise<void>;
   loadTemplates: () => Promise<void>;
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]) => TemplateNode[];
 }
@@ -262,14 +262,24 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   addTemplateAfter: async (title: string, afterId: string | null) : Promise<string> => {
     try {
-      let id = storage.createTemplate({title: title.trim(), after_id: afterId});
+      // Find the template that we're inserting after to get its parent
+      const {templateHierarchy} = get();
+      const afterRelation = templateHierarchy.relations.find(rel => rel.child_id === afterId);
+      const parentId = afterRelation?.parent_id || null;
+      
+      // Create the template with the same parent and after_id for positioning
+      let id = await storage.createTemplate({
+        title: title.trim(), 
+        parent_id: parentId,
+        completed: false,
+        after_id: afterId
+      });
       await get().loadTemplates();
       return id;
     } catch (error) {
       set({error: (error as Error).message});
       throw error;
     }
-
   },
   getTemplateHierarchy: async () => {
     try {
@@ -312,9 +322,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({error: (error as Error).message});
     }
   },
-  addTemplateRelation: async (parentId: string, childTemplateId: string, sortOrder: number = 0) => {
+  addTemplateRelation: async (parentId: string, childTemplateId: string, position: number = 0) => {
     try {
-      await storage.addTemplateRelation(parentId, childTemplateId, sortOrder);
+      await storage.addTemplateRelation(parentId, childTemplateId, position);
       await get().loadTemplates();
     } catch (error) {
       set({error: (error as Error).message});
@@ -324,7 +334,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     const buildHierarchy = (parentId: string): TemplateNode[] => {
       return relations
         .filter(rel => rel.parent_id === parentId)
-        .sort((a, b) => a.sort_order - b.sort_order)
+        .sort((a, b) => a.position - b.position)
         .map(rel => {
           const template = templates.find(t => t.id === rel.child_id);
           if (!template) return null;
