@@ -35,7 +35,7 @@ export const initDatabase = async (): Promise<void> => {
             template_id TEXT,
             parent_id   TEXT,
             title       TEXT    NOT NULL,
-            completed   BOOLEAN NOT NULL DEFAULT 0,
+            completed   BOOLEAN NOT NULL DEFAULT false,
 --         due_date DATETIME,
 --         recurrence_rule TEXT,
 --         completed_at DATETIME,
@@ -60,12 +60,13 @@ export const database = {
   getRootTasks: async (): Promise<TaskInstance[]> => {
     try {
       const dbInstance = await db;
-      return await dbInstance.getAllAsync<TaskInstance>(
+      const tasks =  await dbInstance.getAllAsync<TaskInstance>(
         `SELECT *
          FROM tasks
          WHERE parent_id IS NULL
          ORDER BY position ASC`
       );
+      return tasks.map(task=>({...task,completed:task.completed===1}));
     } catch (error) {
       console.error('Error getting root tasks:', error);
       throw error;
@@ -74,11 +75,12 @@ export const database = {
   getAllTasks: async (): Promise<TaskInstance[]> => {
     try {
       const dbInstance = await db;
-      return await dbInstance.getAllAsync<TaskInstance>(
+      const tasks =  await dbInstance.getAllAsync<TaskInstance>(
         `SELECT *
          FROM tasks
          ORDER BY position ASC`
       );
+      return tasks.map(task=>({...task,completed:task.completed===1}));
     } catch (error) {
       console.error('Error getting all tasks:', error);
       throw error;
@@ -121,7 +123,7 @@ export const database = {
           task.template_id || null,
           parentId || null,
           task.title,
-          task.completed ? 1 : 0,
+          task.completed,
           position,
         ]
       );
@@ -142,7 +144,7 @@ export const database = {
          SET completed = ? --
          WHERE id = ?`,
         [
-          isCompleted ? 1 : 0,
+          isCompleted,
           id
         ]
       );
@@ -291,7 +293,7 @@ export const database = {
       await dbInstance.runAsync(
         `INSERT INTO tasks (id, template_id, parent_id, title, completed, position)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [taskId, templateId, parentInstanceId, template.title, 0, 0] // completed=0 = bound to template
+        [taskId, templateId, parentInstanceId, template.title, false, 0] // completed=0 = bound to template
       );
 
       // Recursively create tasks from template children
@@ -380,7 +382,7 @@ export const database = {
 
       // Get all bound task instances of this template (completed = 0)
       const boundInstances = await dbInstance.getAllAsync<TaskInstance>(
-        'SELECT * FROM tasks WHERE template_id = ? AND completed = 0',
+        'SELECT * FROM tasks WHERE template_id = ? AND completed = false',
         [templateId]
       );
 

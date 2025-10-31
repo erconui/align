@@ -1,16 +1,16 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  StyleSheet, Pressable
+  View
 } from 'react-native';
-import {useTaskStore} from '../src/stores/taskStore';
-import {TaskItem} from '../src/components/TaskItem';
-import {Link} from 'expo-router';
+import { TaskItem } from '../src/components/TaskItem';
+import { useTaskStore } from '../src/stores/taskStore';
 
 export default function HomeScreen() {
   const {
@@ -47,6 +47,9 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-gray-50">
+      <View className="bg-white px-6 py-4 border-b border-gray-200"><Text className="text-gray-600 mt-1"> </Text></View>
+      <View className="bg-white px-6 py-4 border-b border-gray-200"><Text className="text-gray-600 mt-1"> </Text></View>
+
       {/* Header */}
       <View className="bg-white px-6 py-4 border-b border-gray-200">
         <Text className="text-gray-600 mt-1">

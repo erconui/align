@@ -22,6 +22,7 @@ const nativeStorage = {
     return await database.addTask(task);
   },
   toggleTask: async (id: string, isCompleted: boolean): Promise<void> => {
+    console.log(`toggle task ${id} to ${isCompleted}`);
     await database.toggleTask(id, isCompleted);
   },
   deleteTask: async (id: string): Promise<void> => {

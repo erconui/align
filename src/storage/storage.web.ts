@@ -92,7 +92,7 @@ export const webStorage = {
         parent_id: parentId, //@ts-ignore
         template_id: task.template_id,
         title: task.title,//@ts-ignore
-        completed: task.completed ? 1 : 0,//@ts-ignore
+        completed: task.completed,//@ts-ignore
         position: position,
       };
 

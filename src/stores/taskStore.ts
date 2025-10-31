@@ -103,6 +103,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const flatTasks = await storage.getTasks();
       const tree = get().getTree(flatTasks);
+      console.log(flatTasks);
       set({
         tasks: tree,
         flatTasks: flatTasks,
@@ -208,12 +209,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   toggleTask: async (id: string) => {
     try {
       const task = get().flatTasks.find(t => t.id === id);
+      if(!task) return;
+      task.completed = !task?.completed;
       if (!task) return;
 
-      await storage.toggleTask(id, !task.completed);
-      await get().recursiveUpdateChildren(id, !task.completed);
-      await get().recursiveUpdateParents(id, !task.completed);
+      await storage.toggleTask(id, task.completed);
+      await get().recursiveUpdateChildren(id,task.completed);
+      await get().recursiveUpdateParents(id, task.completed);
       await get().loadTasks();
+
     } catch (error) {
       set({error: (error as Error).message});
     }
