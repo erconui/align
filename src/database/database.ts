@@ -201,21 +201,23 @@ export const database = {
       // If this template has a parent, create the relation
       let position = 0;
       const existingRelation = await dbInstance.getFirstAsync<TaskTemplateRelation>(
-        'SELECT * FROM template_relations WHERE child_id = ? AND parent_id = ?',
-        [template.after_id, template.parent_id]);
+        'SELECT * FROM template_relations WHERE child_id IS ? AND parent_id IS ?',
+        [template.after_id ?? null, template.parent_id ?? null]);
       if (existingRelation) {
         position = existingRelation.position + 1;
         await dbInstance.runAsync('UPDATE template_relations SET position = position + 1 WHERE parent_id IS ? AND position > ?',
-          [template.parent_id, existingRelation.position]);
+          [template.parent_id ?? null, existingRelation.position]);
       } else {
-        position = await dbInstance.getFirstAsync<Number>(
-          'SELECT COALESCE(MAX(position), 0) + 1 as maxPos FROM template_relations WHERE parent_id = ?',
-          [parentId]);
+        const result = await dbInstance.getFirstAsync<{ position: number }>(
+          'SELECT COALESCE(MAX(position) + 1, 0) as position FROM template_relations WHERE parent_id = ?',
+          [template.parent_id ?? null]);
+        position = result?.position ?? 0;
       }
       if (template.parent_id) {
+        const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         await dbInstance.runAsync(
-          'INSERT INTO template_relations (parent_id, child_id, position) VALUES (?, ?, ?)',
-          [template.parent_id, id, position] // position 0 for now
+          'INSERT INTO template_relations (id, parent_id, child_id, position) VALUES (?, ?, ?, ?)',
+          [relId, template.parent_id, id, position] // position 0 for now
         );
       }
 
@@ -471,9 +473,10 @@ export const database = {
   addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, position: number = 0): Promise<void> => {
     try {
       const dbInstance = await db;
+      const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
       await dbInstance.runAsync(
-        'INSERT INTO template_relations (parent_id, child_id, position) VALUES (?, ?, ?, ?)',
-        [parentTemplateId, childTemplateId, position]
+        'INSERT INTO template_relations (id, parent_id, child_id, position) VALUES (?, ?, ?, ?)',
+        [id, parentTemplateId, childTemplateId, position]
       );
     } catch (error) {
       console.error('Error adding template relation:', error);
