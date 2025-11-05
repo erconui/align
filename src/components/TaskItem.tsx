@@ -10,6 +10,7 @@ interface TaskItemProps {
   addTaskAfter: (title: string, afterId: string | null) => void;
   updateTaskTitle: (id: string, title: string) => void;
   focusedId: string | null;
+  suggestions: TaskTemplate;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -19,7 +20,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                     addSubTask,
                                                     addTaskAfter,
                                                     updateTaskTitle,
-                                                    focusedId
+                                                    focusedId,
+  suggestions
                                                   }) => {
   return (
     <BaseItem
@@ -31,6 +33,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       onAddItemAfter={addTaskAfter}
       onUpdateTitle={updateTaskTitle}
       focusedId={focusedId}
+      suggestions={suggestions}
     />
   );
 };

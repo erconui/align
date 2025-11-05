@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -39,6 +39,14 @@ export default function TemplateScreen() {
       setNewTemplateTitle('');
     }
   };
+  const suggestions = useMemo(() => {
+    return tree.map(node => ({
+      id: node.id,
+      title: node.title,
+    }));
+  }, [tree]);
+  // console.log(tree);
+  // console.log(suggestions);
 
   const handleUseTemplate = (templateId: string) => {
     Alert.alert(
@@ -148,6 +156,8 @@ export default function TemplateScreen() {
                 addTemplateAfter={addTemplateAfter}
                 level={0}
                 focusedId={focusedId}
+                suggestions={suggestions}
+                parentId={null}
               />
             )}
           />

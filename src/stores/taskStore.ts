@@ -311,6 +311,27 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await get().loadTasks(); // Refresh tasks to show template changes
     } catch (error) {
       set({error: (error as Error).message});
+      throw error;
+    }
+  },
+  replaceTemplate: async (parentId: string, oldId: string, newId: string) => {
+    try {
+      await storage.replaceTemplate(parentId, oldId, newId);
+      await get().loadTemplates();
+      await get().loadTasks();
+    } catch (error) {
+      set({error: (error as Error).message});
+      throw error;
+    }
+  },
+  replaceTaskWithTemplate: async ( taskId: string, templateId: string) => {
+    try {
+      await storage.replaceTaskWithTemplate(taskId, templateId);
+      await get().loadTemplates();
+      await get().loadTasks();
+    } catch (error) {
+      set({error: (error as Error).message});
+      throw error;
     }
   },
   deleteTemplate: async (id: string) => {

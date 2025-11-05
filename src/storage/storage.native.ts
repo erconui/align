@@ -61,6 +61,22 @@ const nativeStorage = {
   addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, position: number = 0): Promise<void> => {
     await database.addTemplateRelation(parentTemplateId, childTemplateId, position);
   },
+  replaceTemplate: async (parentId: string, oldId: string, newId: string): Promise<void> => {
+    try {
+      await database.replaceTemplate(parentId, oldId, newId);
+    } catch (error) {
+      console.error('Error replacing template relation', error);
+      throw error;
+    }
+  },
+  replaceTaskWithTemplate: async (taskId: string, templateId: string): Promise<void> => {
+    try {
+      await database.replaceTaskWithTemplate(taskId, templateId);
+    } catch (error) {
+      console.error('Error replacing task with template', error);
+      throw error;
+    }
+  }
 };
 
 export const initStorage = async (): Promise<void> => {

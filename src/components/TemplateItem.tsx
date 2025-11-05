@@ -19,6 +19,8 @@ interface TemplateItemProps {
   updateTemplate: (id: string, title: string) => void;
   level: number;
   focusedId: string | null;
+  suggestions: TaskTemplate;
+  parentId: string | null;
 }
 
 export const TemplateItem: React.FC<TemplateItemProps> = ({
@@ -30,7 +32,9 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                             addTemplateAfter,
                                                             updateTemplate,
                                                             level,
-                                                            focusedId
+                                                            focusedId,
+  suggestions,
+  parentId
                                                           }) => {
   const {createTemplate} = useTaskStore();
 
@@ -52,6 +56,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       onUpdateTitle={updateTemplate}
       focusedId={focusedId}
       level={level}
+      suggestions={suggestions}
+      parentId={parentId}
     />
   );
 };

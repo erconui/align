@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {Link} from 'expo-router';
 
 export default function HomeScreen() {
   const {
+    tree,
     focusedId,
     tasks,
     flatTasks,
@@ -27,6 +28,13 @@ export default function HomeScreen() {
     initDB
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  const suggestions = useMemo(() => {
+    return tree.map(node => ({
+      id: node.id,
+      title: node.title,
+    }));
+  }, [tree]);
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -42,6 +50,7 @@ export default function HomeScreen() {
       </View>
     );
   }
+
 
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
@@ -96,6 +105,7 @@ export default function HomeScreen() {
               addTaskAfter={addTaskAfter}
               updateTaskTitle={updateTaskTitle}
               focusedId={focusedId}
+              suggestions={suggestions}
             />
           )}/>
       </View>

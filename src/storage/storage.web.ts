@@ -294,6 +294,109 @@ export const webStorage = {
       throw error;
     }
   },
+  replaceTemplate: async (parentId: string, oldId: string, newId: string): Promise<void> => {
+    try {
+      const relations = await webStorage.getTemplateRelations();
+      const relIdx = relations.findIndex(rel => rel.parent_id === parentId && rel.child_id === oldId);
+      if (relIdx !== -1) {
+        relations[relIdx].child_id = newId;
+        if (!relations.find(rel => rel.parent_id === oldId || rel.child_id === oldId)) {
+          await webStorage.deleteTemplate(oldId);
+        }
+      }
+      await webStorage.saveTemplateRelations(relations);
+    } catch (error) {
+      console.error('Error replacing template relation', error);
+      throw error;
+    }
+  },
+  replaceTaskWithTemplate: async (taskId: string, templateId: string): Promise<void> => {
+    try {
+      const tasks = await webStorage.getTasks();
+      const templates = await webStorage.getTemplates();
+      const relations = await webStorage.getTemplateRelations();
+      
+      // Find the task to replace
+      const taskToReplace = tasks.find(t => t.id === taskId);
+      if (!taskToReplace) {
+        throw new Error(`Task with id ${taskId} not found`);
+      }
+
+      // Find the template to use
+      const template = templates.find(t => t.id === templateId);
+      if (!template) {
+        throw new Error(`Template with id ${templateId} not found`);
+      }
+
+      // Delete all existing children of the task recursively
+      const findAllSubtasks = (parentId: string): string[] => {
+        const subtasks = tasks.filter(t => t.parent_id === parentId);
+        const allIds: string[] = [];
+        subtasks.forEach((subtask) => {
+          allIds.push(subtask.id);
+          allIds.push(...findAllSubtasks(subtask.id));
+        });
+        return allIds;
+      };
+      
+      const childrenIds = findAllSubtasks(taskId);
+      const remainingTasks = tasks.filter(task => !childrenIds.includes(task.id));
+
+      // Update the task with new title and template_id
+      const taskIndex = remainingTasks.findIndex(t => t.id === taskId);
+      if (taskIndex !== -1) {
+        remainingTasks[taskIndex] = {
+          ...remainingTasks[taskIndex],
+          title: template.title,
+          template_id: template.id,
+        };
+      }
+
+      // Helper function to recursively create tasks from template children
+      const createTasksFromTemplateChildren = async (
+        parentTemplateId: string,
+        parentTaskId: string,
+        tasksArray: TaskInstance[]
+      ): Promise<void> => {
+        // Get children of the template
+        const childRelations = relations.filter(rel => rel.parent_id === parentTemplateId)
+          .sort((a, b) => a.position - b.position);
+        
+        for (const relation of childRelations) {
+          const childTemplate = templates.find(t => t.id === relation.child_id);
+          if (!childTemplate) continue;
+
+          // Create task for this child template
+          const childTaskId = webStorage.generateId();
+          const siblingTasks = tasksArray.filter(t => t.parent_id === parentTaskId);
+          const position = siblingTasks.length;
+
+          const newTask: TaskInstance = {
+            id: childTaskId,
+            parent_id: parentTaskId,
+            template_id: childTemplate.id,
+            title: childTemplate.title,
+            completed: false,
+            position: position,
+          };
+
+          tasksArray.push(newTask);
+
+          // Recursively create tasks for grandchildren
+          await createTasksFromTemplateChildren(childTemplate.id, childTaskId, tasksArray);
+        }
+      };
+
+      // Create tasks from template children recursively
+      await createTasksFromTemplateChildren(templateId, taskId, remainingTasks);
+
+      // Save the updated tasks
+      await webStorage.saveTasks(remainingTasks);
+    } catch (error) {
+      console.error('Error replacing task with template', error);
+      throw error;
+    }
+  },
   deleteTemplate: async (id: string): Promise<void> => {
     try {
       let {templates, relations} = await webStorage.getTemplateHierarchy();
