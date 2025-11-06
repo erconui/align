@@ -11,6 +11,11 @@ interface TaskNode extends BaseNode {
   completed: boolean;
 }
 
+interface TaskTemplate {
+  id: string;
+  title: string;
+}
+
 interface BaseItemProps<T extends BaseNode> {
   node: T;
   showCompletionToggle?: boolean;
@@ -27,26 +32,29 @@ interface BaseItemProps<T extends BaseNode> {
 }
 
 export const BaseItem = <T extends BaseNode>({
-  node,
-  showCompletionToggle = false,
-  onToggleCompletion,
-  onDelete,
-  onAddSubItem,
-  onAddItemAfter,
-  onUpdateTitle,
-  focusedId,
-  level = 0,
-  suggestions,
-  parentId
-}: BaseItemProps<T>) => {
+                                               node,
+                                               showCompletionToggle = false,
+                                               onToggleCompletion,
+                                               onDelete,
+                                               onAddSubItem,
+                                               onAddItemAfter,
+                                               onUpdateTitle,
+                                               replaceTemplate,
+                                               focusedId,
+                                               level = 0,
+                                               suggestions,
+                                               parentId
+                                             }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const textInputRef = useRef<TextInput>(null);
-const [showSuggestions, setShowSuggestions] = useState(false);
 
-const filteredSuggestions = suggestions.filter(template =>
-  template.title.toLowerCase().startsWith(editTitle.toLowerCase())
-);
+  // Filter suggestions based on current editTitle
+  const filteredSuggestions = suggestions.filter(template =>
+    template.title.toLowerCase().startsWith(editTitle.toLowerCase())
+  );
+
   useEffect(() => {
     setEditTitle(node.title);
   }, [node.title]);
@@ -59,23 +67,28 @@ const filteredSuggestions = suggestions.filter(template =>
 
   const handleTextChange = (text: string) => {
     setEditTitle(text);
-    // console.log('test', suggestions);
-    setShowSuggestions(filteredSuggestions.length > 0); // Show suggestions only when there's text
+    // Update showSuggestions based on filtered results
+    const newFilteredSuggestions = suggestions.filter(template =>
+      template.title.toLowerCase().startsWith(text.toLowerCase())
+    );
+    setShowSuggestions(newFilteredSuggestions.length > 0 && text.length > 0);
   };
-const handleSuggestionSelect = (suggestion: TaskTemplate) => {
-  console.log('suggestion:', suggestion);
-  setEditTitle(suggestion.title);
-  setShowSuggestions(false);
-};
+
+  const handleSuggestionSelect = async (suggestion: TaskTemplate) => {
+    console.log('suggestion:', suggestion);
+    if (parentId) {
+      await replaceTemplate(parentId, node.id, suggestion.id);
+    }
+    setShowSuggestions(false);
+  };
 
   const handleSubmit = async () => {
     await onUpdateTitle(node.id, editTitle);
     await onAddItemAfter("", node.id);
     setShowSuggestions(false);
   };
-  const handleBlur = () => {
 
-    // setTimeout(() => setShowSuggestions(false), 500);
+  const handleBlur = () => {
     onUpdateTitle(node.id, editTitle);
   };
 
@@ -90,7 +103,7 @@ const handleSuggestionSelect = (suggestion: TaskTemplate) => {
 
         {showCompletionToggle && onToggleCompletion && (
           <Switch
-            value={'completed' in node ? (node as TaskNode).completed===1 : false}
+            value={'completed' in node ? (node as TaskNode).completed === 1 : false}
             onValueChange={async () => await onToggleCompletion(node.id)}
           />
         )}
@@ -106,7 +119,7 @@ const handleSuggestionSelect = (suggestion: TaskTemplate) => {
           returnKeyType="done"
         />
 
-        {showSuggestions && filteredSuggestions.length > 0 && parentId &&(
+        {showSuggestions && filteredSuggestions.length > 0 && parentId && (
           <View style={styles.suggestionsContainer}>
             <FlatList
               data={filteredSuggestions}
@@ -123,6 +136,7 @@ const handleSuggestionSelect = (suggestion: TaskTemplate) => {
             />
           </View>
         )}
+
         <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.iconButton}>
           <Text style={styles.icon}>+</Text>
         </Pressable>
@@ -144,6 +158,7 @@ const handleSuggestionSelect = (suggestion: TaskTemplate) => {
               onAddSubItem={onAddSubItem}
               onAddItemAfter={onAddItemAfter}
               onUpdateTitle={onUpdateTitle}
+              replaceTemplate={replaceTemplate}
               focusedId={focusedId}
               level={level + 1}
               suggestions={suggestions}

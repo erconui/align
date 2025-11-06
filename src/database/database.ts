@@ -489,12 +489,15 @@ export const database = {
       const dbInstance = await db;
       await dbInstance.runAsync('UPDATE template_relations SET child_id = ? WHERE parent_id IS ? AND child_id IS ?',
         [newId, parentId, oldId]);
-      const exists = await dbInstance.getFirstAsync<{ exists: number }>(
-        'SELECT 1 as exists FROM template_relations WHERE child_id = ? OR parent_id = ? LIMIT 1',
+
+      console.log("Test check if exists");
+      const result = await dbInstance.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM template_relations WHERE child_id = ? OR parent_id = ?',
         [oldId, oldId]
       );
-      if (!exists) {
-        await deleteTemplate(oldId);
+
+      if (!result?.count) {
+        await database.deleteTemplate(oldId);
       }
     } catch (error) {
       console.error('Error replacing template:', error);

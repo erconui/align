@@ -24,7 +24,8 @@ export default function TemplateScreen() {
     updateTemplate,
     deleteTemplate,
     loadTemplates,
-    createTaskFromTemplate
+    createTaskFromTemplate,
+    replaceTemplate
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -158,6 +159,7 @@ export default function TemplateScreen() {
                 focusedId={focusedId}
                 suggestions={suggestions}
                 parentId={null}
+                replaceTemplate={replaceTemplate}
               />
             )}
           />
