@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { GlobalSuggestions } from '../src/components/GlobalSuggestions';
 import { TaskItem } from '../src/components/TaskItem';
 import { useTaskStore } from '../src/stores/taskStore';
 
@@ -29,6 +30,11 @@ export default function HomeScreen() {
     initDB
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
+    const [suggestionsVisible, setSuggestionsVisible] = useState(false);
+    const [suggestionsPosition, setSuggestionsPosition] = useState<{ x: number; y: number; width: number } | null>(null);
+    const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
+    const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
+    const [currentSearchText, setCurrentSearchText] = useState('');
 
   const suggestions = useMemo(() => {
     return tree.map(node => ({
@@ -43,6 +49,27 @@ export default function HomeScreen() {
       setNewTaskTitle('');
     }
   };
+
+  const handleInputMeasure = (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => {
+    setSuggestionsPosition(position);
+    setSuggestionsItemId(itemId);
+    setSuggestionsParentId(parentId || null);
+    setSuggestionsVisible(true);
+  };
+
+  const handleTextChange = (text: string) => {
+    setCurrentSearchText(text);
+    setSuggestionsVisible(text.length > 0);
+  };
+
+  const handleSuggestionSelect = async (suggestion: { id: string; title: string }, itemId: string, parentId: string | null) => {
+    await replaceTaskWithTemplate(itemId, suggestion.id);
+    setSuggestionsVisible(false);
+    setCurrentSearchText('');
+    setSuggestionsItemId(null);
+    setSuggestionsParentId(null);
+  };
+  
   if (isLoading) {
     return (
       <View className="flex-1 items-center justify-center bg-gray-50">
@@ -51,7 +78,6 @@ export default function HomeScreen() {
       </View>
     );
   }
-
 
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
@@ -66,6 +92,19 @@ export default function HomeScreen() {
           <Text className={"text-blue-500 font-medium"}>Init Database</Text>
         </Pressable>
       </View>
+
+      {/* Global Suggestions */}
+      <GlobalSuggestions
+        suggestions={suggestions}
+        position={suggestionsPosition}
+        visible={suggestionsVisible}
+        searchText={currentSearchText}
+        onSuggestionSelect={(suggestion) => {
+          if (suggestionsItemId) {
+            handleSuggestionSelect(suggestion, suggestionsItemId, suggestionsParentId);
+          }
+        }}
+      />
 
       {/* Add Task Form */}
       <View className="p-4 bg-white border-b border-gray-200">
@@ -108,9 +147,10 @@ export default function HomeScreen() {
               focusedId={focusedId}
               suggestions={suggestions}
               replaceTemplate={async (parentId, oldId, newId) => {
-                console.log('Replacing task with template:', {parentId, oldId, newId});
                 replaceTaskWithTemplate(oldId, newId);
               }}
+              onInputMeasure={handleInputMeasure}
+              onTextChange={handleTextChange}
             />
           )}/>
       </View>

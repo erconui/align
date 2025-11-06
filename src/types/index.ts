@@ -31,7 +31,7 @@ export interface AddTemplateParams {
 
 export interface TaskTemplateRelation {
   id: string;
-  parent_id: string;
+  parent_id: string|null;
   child_id: string;
   position: number;
 }

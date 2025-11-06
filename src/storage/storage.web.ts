@@ -29,7 +29,6 @@ export const webStorage = {
   getTemplates: async (): Promise<TaskTemplate[]> => {
     try {
       const data = await AsyncStorage.getItem(TEMPLATE_KEY);
-      console.log(data);
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Error getting tasks from storage:', error);
@@ -192,18 +191,18 @@ export const webStorage = {
         position = siblings.length;
       }
 
-      if (parentId) {
+      // if (parentId) {
         const relId = webStorage.generateId();
         const newRelation: TaskTemplateRelation = {
           id: relId,
-          parent_id: parentId,
+          parent_id: parentId||null,
           child_id: id,
           position: position
         };
         console.log(`web create relationship parent ${template.parent_id} with child ${id} at position ${newRelation.position}`);
         relations.push(newRelation);
         await webStorage.saveTemplateRelations(relations);
-      }
+      // }
       return id;
     } catch (error) {
       console.error('Error creating task template', error);
@@ -241,8 +240,6 @@ export const webStorage = {
         const hasParent = relations.some(rel => rel.child_id === template.id);
         return !hasParent;
       });
-      console.log("TESTA templates", templates);
-      console.log("TESTA root templates", rootTemplates);
       return rootTemplates; //TODO need sort order for roots, maybe by name, maybe by created date, maybe we create a value called root order?
     } catch (error) {
       console.error('Error getting root templates', error);
@@ -312,6 +309,7 @@ export const webStorage = {
   },
   replaceTaskWithTemplate: async (taskId: string, templateId: string): Promise<void> => {
     try {
+      console.log('Replacing task', taskId, 'with template', templateId);
       const tasks = await webStorage.getTasks();
       const templates = await webStorage.getTemplates();
       const relations = await webStorage.getTemplateRelations();
@@ -410,6 +408,17 @@ export const webStorage = {
       console.log('deleted template relation');
     } catch (error) {
       console.error('Error deleting template', error);
+      throw error;
+    }
+  },
+  clearDatabase: async (): Promise<void> => {
+    try {
+      await AsyncStorage.removeItem(TASK_KEY);
+      await AsyncStorage.removeItem(TEMPLATE_KEY);
+      await AsyncStorage.removeItem(TEMPLATE_RELATION_KEY);
+      console.log('Cleared database');
+    } catch (error) {
+      console.error('Error clearing database:', error);
       throw error;
     }
   }

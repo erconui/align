@@ -74,8 +74,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       set({isLoading: true, error: null});
 
-      // Clear all existing tasks
-      await get().deleteAllTasks();
+      // Clear database
+      await storage.clearDatabase();
 
       // Create all tasks first, then load once at the end
       const task1id = await get().addTaskWithoutLoad('Task 1', null);
@@ -89,7 +89,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         await get().addTaskWithoutLoad('Sub 5', sub4);
       }
       await get().addTaskWithoutLoad('Task 4', null);
-      for (let idx = 5; idx < 15; idx++) {
+      for (let idx = 5; idx < 7; idx++) {
         await get().addTaskWithoutLoad(`Task ${idx}`, null);
       }
       // Single load at the end
@@ -207,6 +207,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       console.error('Error clearing tasks:', error);
       set({error: (error as Error).message});
       throw error;
+    }
+  },
+  emptyDatabase: async () => {
+    try {
+      await storage.clearDatabase();
+    } catch (error) {
+      set({error: (error as Error).message});
     }
   },
   toggleTask: async (id: string) => {

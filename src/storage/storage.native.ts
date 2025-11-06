@@ -79,6 +79,14 @@ const nativeStorage = {
       console.error('Error replacing task with template', error);
       throw error;
     }
+  },
+  clearDatabase: async (): Promise<void> => {
+    try {
+      await database.clearAllData();
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      throw error;
+    }
   }
 };
 

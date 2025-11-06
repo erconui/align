@@ -52,6 +52,7 @@ export const GlobalSuggestions = ({
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.suggestionItem}
+            onPress={() => onSuggestionSelect(item)}
             onPressIn={() => onSuggestionSelect(item)}
           >
             <Text style={styles.suggestionText}>{item.title}</Text>

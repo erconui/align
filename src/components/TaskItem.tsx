@@ -12,6 +12,8 @@ interface TaskItemProps {
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   focusedId: string | null;
   suggestions: TaskTemplate[];
+  onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
+  onTextChange?: (text: string) => void;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -23,7 +25,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                     updateTaskTitle,
   replaceTemplate,
                                                     focusedId,
-  suggestions
+  suggestions,
+  onInputMeasure,
+  onTextChange
                                                   }) => {
   return (
     <BaseItem
@@ -40,6 +44,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       suggestions={suggestions}
       replaceTemplate={replaceTemplate}
       isTask={true}
+      onInputMeasure={onInputMeasure}
+      onTextChange={onTextChange}
     />
   );
 };

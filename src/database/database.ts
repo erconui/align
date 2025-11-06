@@ -513,7 +513,6 @@ export const database = {
       await dbInstance.runAsync('UPDATE template_relations SET child_id = ? WHERE parent_id IS ? AND child_id IS ?',
         [newId, parentId, oldId]);
 
-      console.log("Test check if exists");
       const result = await dbInstance.getFirstAsync<{ count: number }>(
         'SELECT COUNT(*) as count FROM template_relations WHERE child_id = ? OR parent_id = ?',
         [oldId, oldId]
@@ -592,5 +591,17 @@ export const database = {
       throw error;
     }
   // },
+  },
+  clearDatabase: async (): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      await dbInstance.execAsync('DELETE FROM tasks;');
+      await dbInstance.execAsync('DELETE FROM templates;');
+      await dbInstance.execAsync('DELETE FROM template_relations;');
+      console.log('Database cleared successfully');
+    } catch (error) {
+      console.error('Error clearing database:', error);
+      throw error;
+    }
   }
 };

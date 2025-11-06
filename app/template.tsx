@@ -56,14 +56,11 @@ export default function TemplateScreen() {
   };
 
   const handleTextChange = (text: string) => {
-    console.log('TemplateScreen handleTextChange:', text);
     setCurrentSearchText(text);
-    console.log('Current search text:', currentSearchText);
     setSuggestionsVisible(text.length > 0);
   };
 
   const handleSuggestionSelect = async (suggestion: { id: string; title: string }, itemId: string, parentId: string | null) => {
-    console.log('Suggestion selected:', suggestion, itemId, parentId);
     await replaceTemplate(parentId, itemId, suggestion.id);
     setSuggestionsVisible(false);
     setCurrentSearchText('');
