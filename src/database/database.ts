@@ -20,7 +20,7 @@ export const initDatabase = async (): Promise<void> => {
         CREATE TABLE IF NOT EXISTS template_relations
         (
             id                 TEXT PRIMARY KEY,
-            parent_id TEXT    NOT NULL,
+            parent_id TEXT,
             child_id  TEXT    NOT NULL,
             position           INTEGER NOT NULL,
             FOREIGN KEY (parent_id) REFERENCES templates (id),
@@ -213,13 +213,13 @@ export const database = {
           [template.parent_id ?? null]);
         position = result?.position ?? 0;
       }
-      if (template.parent_id) {
+      // if (template.parent_id) {
         const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         await dbInstance.runAsync(
           'INSERT INTO template_relations (id, parent_id, child_id, position) VALUES (?, ?, ?, ?)',
-          [relId, template.parent_id, id, position] // position 0 for now
+          [relId, template.parent_id || null, id, position] // position 0 for now
         );
-      }
+      // }
 
       return id;
     } catch (error) {
@@ -250,17 +250,15 @@ export const database = {
     }
   },
 
-  // Get templates that are roots (no parents OR have children)
+  // Get root templates (templates with null parent_id)
   getRootTemplates: async (): Promise<TaskTemplate[]> => {
     try {
       const dbInstance = await db;
       return await dbInstance.getAllAsync<TaskTemplate>(`
           SELECT t.*
           FROM templates t
-          WHERE t.id NOT IN (SELECT child_id
-                             FROM template_relations)
-             OR t.id IN (SELECT parent_id
-                         FROM template_relations)
+          LEFT JOIN template_relations tr ON t.id = tr.child_id
+          WHERE tr.parent_id IS NULL OR tr.id IS NULL
       `);
     } catch (error) {
       console.error('Error getting root templates:', error);

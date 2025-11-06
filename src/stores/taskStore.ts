@@ -363,7 +363,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         }).filter(Boolean) as TemplateNode[];
     }
     const rootTemplates = templates.filter(template =>
-      !relations.some(rel => rel.child_id === template.id) ||
+      relations.some(rel => rel.child_id === template.id && rel.parent_id === null) ||
       relations.some(rel => rel.parent_id === template.id)
     );
     return rootTemplates.map(template => ({
@@ -374,6 +374,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const hierarchy = await storage.getTemplateHierarchy();
       const newTree = get().buildTemplateTree(hierarchy.templates, hierarchy.relations);
+      console.log(hierarchy)
+      console.log("tree", newTree);
       set({
         tree: newTree,
         templateHierarchy: hierarchy,
