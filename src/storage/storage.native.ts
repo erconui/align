@@ -57,6 +57,9 @@ const nativeStorage = {
   deleteTemplate: async (id: string): Promise<void> => {
     await database.deleteTemplate(id);
   },
+  removeTemplate: async (parentId: string | null, id: string): Promise<void> => {
+      await database.removeTemplate(parentId, id);
+  },
 
   addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, position: number = 0): Promise<void> => {
     await database.addTemplateRelation(parentTemplateId, childTemplateId, position);

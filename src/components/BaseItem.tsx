@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, FlatList, TouchableOpacity, View } from "react-native";
+import { FlatList, Pressable, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 interface BaseNode {
   id: string;
@@ -20,7 +20,7 @@ interface BaseItemProps<T extends BaseNode> {
   node: T;
   showCompletionToggle?: boolean;
   onToggleCompletion?: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete: (parentId: string | null, id: string) => void;
   onAddSubItem: (title: string, parentId: string | null) => void;
   onAddItemAfter: (title: string, afterId: string | null) => void;
   onUpdateTitle: (id: string, title: string) => void;
@@ -28,7 +28,7 @@ interface BaseItemProps<T extends BaseNode> {
   level?: number;
   suggestions: TaskTemplate[];
   replaceTemplate: (parentId: string, oldId: string, newId: string) => void;
-  parentId: string | null;
+  parentId?: string | null;
 }
 
 export const BaseItem = <T extends BaseNode>({
@@ -103,7 +103,7 @@ export const BaseItem = <T extends BaseNode>({
 
         {showCompletionToggle && onToggleCompletion && (
           <Switch
-            value={'completed' in node ? (node as TaskNode).completed === 1 : false}
+            value={'completed' in node ? (node as TaskNode).completed : false}
             onValueChange={async () => await onToggleCompletion(node.id)}
           />
         )}
@@ -141,7 +141,7 @@ export const BaseItem = <T extends BaseNode>({
           <Text style={styles.icon}>+</Text>
         </Pressable>
 
-        <Pressable onPress={() => onDelete(node.id)} style={styles.iconButton}>
+        <Pressable onPress={() => onDelete(parentId, node.id)} style={styles.iconButton}>
           <Text style={styles.icon}>x</Text>
         </Pressable>
       </View>

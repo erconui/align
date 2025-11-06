@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTaskStore } from '../stores/taskStore';
-import { BaseItem } from './BaseItem';
+import { BaseItem, TaskTemplate } from './BaseItem';
 
 interface TemplateNode {
   id: string;
@@ -18,9 +18,10 @@ interface TemplateItemProps {
   addTemplateAfter: (title: string, afterId: string) => void;
   updateTemplate: (id: string, title: string) => void;
   replaceTemplate: (parentId: string, oldId: string, newId: string) => void;
+  removeTemplate: (parentId: string | null, id: string) => void;
   level: number;
   focusedId: string | null;
-  suggestions: TaskTemplate;
+  suggestions: TaskTemplate[];
   parentId: string | null;
 }
 
@@ -36,7 +37,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                             level,
                                                             focusedId,
   suggestions,
-  parentId
+  parentId,
+  removeTemplate
                                                           }) => {
   const {createTemplate} = useTaskStore();
 
@@ -44,7 +46,9 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
     <BaseItem
       node={templateNode}
       showCompletionToggle={false}
-      onDelete={deleteTemplate}
+      onDelete={async (parentId, id) => {
+        removeTemplate(parentId, id);
+      }}
       onAddSubItem={async (title, parentId) => {
         if (parentId) {
           await createTemplate(title, parentId);

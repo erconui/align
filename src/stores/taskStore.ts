@@ -43,6 +43,9 @@ interface TaskStore {
   addTemplateRelation: (parentId: string, childTemplateId: string, position?: number) => Promise<void>;
   loadTemplates: () => Promise<void>;
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]) => TemplateNode[];
+  removeTemplate: (parentId: string | null, id: string) => Promise<void>;
+  replaceTemplate: (parentId: string, oldId: string, newId: string) => Promise<void>;
+  replaceTaskWithTemplate: ( taskId: string, templateId: string) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -385,4 +388,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({error: (error as Error).message});
     }
   },
+  removeTemplate: async (parentId: string | null, id: string) => {
+      try {
+        await storage.removeTemplate(parentId, id);
+        await get().loadTemplates();
+      } catch (error) {
+        set({error: (error as Error).message});
+      }
+  }
 }));

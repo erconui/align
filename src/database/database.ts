@@ -447,6 +447,31 @@ export const database = {
     }
   },
 
+  // Remove template from parent, delete template if it is now an orphan
+  removeTemplate: async (parentId: string | null, id: string): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      await dbInstance.runAsync(
+        'DELETE FROM template_relations WHERE parent_id IS ? AND child_id IS ?',
+        [parentId, id]
+      );
+      // Check if template is now an orphan
+      const result = await dbInstance.getFirstAsync<{ count: number }>(
+        'SELECT COUNT(*) as count FROM template_relations WHERE child_id = ?',
+        [id]
+      );
+      if (!result?.count) {
+        const children = await database.getTemplateChildren(id);
+        for (const child of children) {
+          await database.removeTemplate(id, child.id);
+        }
+        await database.deleteTemplate(id);
+      }
+    } catch (error) {
+      console.error('Error removing template from parent:', error);
+      throw error;
+    }
+  },
 // Delete template and its relations
   deleteTemplate: async (id: string): Promise<void> => {
     try {

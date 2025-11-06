@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -25,7 +25,8 @@ export default function TemplateScreen() {
     deleteTemplate,
     loadTemplates,
     createTaskFromTemplate,
-    replaceTemplate
+    replaceTemplate,
+    removeTemplate
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -63,20 +64,20 @@ export default function TemplateScreen() {
     );
   };
 
-  const handleDeleteTemplate = (templateId: string, title: string) => {
-    Alert.alert(
-      'Delete Template',
-      `Are you sure you want to delete "${title}"?`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => deleteTemplate(templateId)
-        }
-      ]
-    );
-  };
+  // const handleDeleteTemplate = (templateId: string, title: string) => {
+  //   Alert.alert(
+  //     'Delete Template',
+  //     `Are you sure you want to delete "${title}"?`,
+  //     [
+  //       {text: 'Cancel', style: 'cancel'},
+  //       {
+  //         text: 'Delete',
+  //         style: 'destructive',
+  //         onPress: () => deleteTemplate(templateId)
+  //       }
+  //     ]
+  //   );
+  // };
 
   const toggleExpand = (templateId: string) => {
     const newExpanded = new Set(expandedTemplates);
@@ -160,6 +161,7 @@ export default function TemplateScreen() {
                 suggestions={suggestions}
                 parentId={null}
                 replaceTemplate={replaceTemplate}
+                removeTemplate={removeTemplate}
               />
             )}
           />

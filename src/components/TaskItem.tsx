@@ -1,6 +1,6 @@
 import React from 'react';
 import { TaskNode } from '../stores/taskStore';
-import { BaseItem } from './BaseItem';
+import { BaseItem, TaskTemplate } from './BaseItem';
 
 interface TaskItemProps {
   taskNode: TaskNode;
@@ -9,6 +9,7 @@ interface TaskItemProps {
   addSubTask: (title: string, parentId: string | null) => void;
   addTaskAfter: (title: string, afterId: string | null) => void;
   updateTaskTitle: (id: string, title: string) => void;
+  replaceTemplate: (parentId: string, oldId: string, newId: string) => void;
   focusedId: string | null;
   suggestions: TaskTemplate;
 }
@@ -20,6 +21,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                     addSubTask,
                                                     addTaskAfter,
                                                     updateTaskTitle,
+  replaceTemplate,
                                                     focusedId,
   suggestions
                                                   }) => {
@@ -28,12 +30,15 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       node={taskNode}
       showCompletionToggle={true}
       onToggleCompletion={toggleTask}
-      onDelete={deleteTask}
+      onDelete={async (parentId, id) => {
+        deleteTask(id);
+      }}
       onAddSubItem={addSubTask}
       onAddItemAfter={addTaskAfter}
       onUpdateTitle={updateTaskTitle}
       focusedId={focusedId}
       suggestions={suggestions}
+      replaceTemplate={replaceTemplate}
     />
   );
 };
