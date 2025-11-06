@@ -9,9 +9,9 @@ interface TaskItemProps {
   addSubTask: (title: string, parentId: string | null) => void;
   addTaskAfter: (title: string, afterId: string | null) => void;
   updateTaskTitle: (id: string, title: string) => void;
-  replaceTemplate: (parentId: string, oldId: string, newId: string) => void;
+  replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   focusedId: string | null;
-  suggestions: TaskTemplate;
+  suggestions: TaskTemplate[];
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -39,6 +39,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       focusedId={focusedId}
       suggestions={suggestions}
       replaceTemplate={replaceTemplate}
+      isTask={true}
     />
   );
 };

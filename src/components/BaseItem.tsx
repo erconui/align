@@ -11,7 +11,7 @@ interface TaskNode extends BaseNode {
   completed: boolean;
 }
 
-interface TaskTemplate {
+export interface TaskTemplate {
   id: string;
   title: string;
 }
@@ -27,8 +27,9 @@ interface BaseItemProps<T extends BaseNode> {
   focusedId: string | null;
   level?: number;
   suggestions: TaskTemplate[];
-  replaceTemplate: (parentId: string, oldId: string, newId: string) => void;
+  replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   parentId?: string | null;
+  isTask: boolean;
 }
 
 export const BaseItem = <T extends BaseNode>({
@@ -43,7 +44,8 @@ export const BaseItem = <T extends BaseNode>({
                                                focusedId,
                                                level = 0,
                                                suggestions,
-                                               parentId
+                                               parentId,
+                                               isTask
                                              }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
@@ -71,14 +73,17 @@ export const BaseItem = <T extends BaseNode>({
     const newFilteredSuggestions = suggestions.filter(template =>
       template.title.toLowerCase().startsWith(text.toLowerCase())
     );
+    console.log('handleTextChange:', text);
+    console.log(newFilteredSuggestions);
+    console.log(filteredSuggestions);
     setShowSuggestions(newFilteredSuggestions.length > 0 && text.length > 0);
   };
 
   const handleSuggestionSelect = async (suggestion: TaskTemplate) => {
     console.log('suggestion:', suggestion);
-    if (parentId) {
-      await replaceTemplate(parentId, node.id, suggestion.id);
-    }
+    // if (parentId) {
+      await replaceTemplate(parentId || null, node.id, suggestion.id);
+    // }
     setShowSuggestions(false);
   };
 
@@ -119,7 +124,7 @@ export const BaseItem = <T extends BaseNode>({
           returnKeyType="done"
         />
 
-        {showSuggestions && filteredSuggestions.length > 0 && parentId && (
+        {showSuggestions && filteredSuggestions.length > 0 && (parentId || isTask) && (
           <View style={styles.suggestionsContainer}>
             <FlatList
               data={filteredSuggestions}
@@ -163,6 +168,7 @@ export const BaseItem = <T extends BaseNode>({
               level={level + 1}
               suggestions={suggestions}
               parentId={node.id}
+              isTask={isTask}
             />
           ))}
         </View>

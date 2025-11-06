@@ -17,7 +17,7 @@ interface TemplateItemProps {
   deleteTemplate: (id: string) => void;
   addTemplateAfter: (title: string, afterId: string) => void;
   updateTemplate: (id: string, title: string) => void;
-  replaceTemplate: (parentId: string, oldId: string, newId: string) => void;
+  replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   removeTemplate: (parentId: string | null, id: string) => void;
   level: number;
   focusedId: string | null;
@@ -65,6 +65,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       level={level}
       suggestions={suggestions}
       parentId={parentId}
+      isTask={false}
     />
   );
 };

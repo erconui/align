@@ -106,6 +106,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const flatTasks = await storage.getTasks();
       const tree = get().getTree(flatTasks);
+      console.log(flatTasks)
       set({
         tasks: tree,
         flatTasks: flatTasks,
@@ -317,8 +318,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       throw error;
     }
   },
-  replaceTemplate: async (parentId: string, oldId: string, newId: string) => {
+  replaceTemplate: async (parentId: string | null, oldId: string, newId: string) => {
     try {
+      if (!parentId) {
+        throw new Error('Parent ID is required to replace template relation');
+      }
       await storage.replaceTemplate(parentId, oldId, newId);
       await get().loadTemplates();
       await get().loadTasks();

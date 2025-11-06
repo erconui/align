@@ -1,16 +1,16 @@
-import React, {useMemo, useState} from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  StyleSheet, Pressable
+  View
 } from 'react-native';
-import {useTaskStore} from '../src/stores/taskStore';
-import {TaskItem} from '../src/components/TaskItem';
-import {Link} from 'expo-router';
+import { TaskItem } from '../src/components/TaskItem';
+import { useTaskStore } from '../src/stores/taskStore';
 
 export default function HomeScreen() {
   const {
@@ -25,6 +25,7 @@ export default function HomeScreen() {
     toggleTask,
     deleteTask,
     updateTaskTitle,
+    replaceTaskWithTemplate,
     initDB
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -106,6 +107,10 @@ export default function HomeScreen() {
               updateTaskTitle={updateTaskTitle}
               focusedId={focusedId}
               suggestions={suggestions}
+              replaceTemplate={async (parentId, oldId, newId) => {
+                console.log('Replacing task with template:', {parentId, oldId, newId});
+                replaceTaskWithTemplate(oldId, newId);
+              }}
             />
           )}/>
       </View>

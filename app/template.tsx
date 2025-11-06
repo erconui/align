@@ -47,8 +47,6 @@ export default function TemplateScreen() {
       title: node.title,
     }));
   }, [tree]);
-  // console.log(tree);
-  // console.log(suggestions);
 
   const handleUseTemplate = (templateId: string) => {
     Alert.alert(
@@ -63,21 +61,6 @@ export default function TemplateScreen() {
       ]
     );
   };
-
-  // const handleDeleteTemplate = (templateId: string, title: string) => {
-  //   Alert.alert(
-  //     'Delete Template',
-  //     `Are you sure you want to delete "${title}"?`,
-  //     [
-  //       {text: 'Cancel', style: 'cancel'},
-  //       {
-  //         text: 'Delete',
-  //         style: 'destructive',
-  //         onPress: () => deleteTemplate(templateId)
-  //       }
-  //     ]
-  //   );
-  // };
 
   const toggleExpand = (templateId: string) => {
     const newExpanded = new Set(expandedTemplates);
