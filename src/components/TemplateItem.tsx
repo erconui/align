@@ -23,6 +23,8 @@ interface TemplateItemProps {
   focusedId: string | null;
   suggestions: TaskTemplate[];
   parentId: string | null;
+  onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
+  onTextChange?: (text: string) => void;
 }
 
 export const TemplateItem: React.FC<TemplateItemProps> = ({
@@ -38,7 +40,9 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                             focusedId,
   suggestions,
   parentId,
-  removeTemplate
+  removeTemplate,
+  onInputMeasure,
+  onTextChange
                                                           }) => {
   const {createTemplate} = useTaskStore();
 
@@ -66,6 +70,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       suggestions={suggestions}
       parentId={parentId}
       isTask={false}
+      onInputMeasure={onInputMeasure}
+      onTextChange={onTextChange}
     />
   );
 };

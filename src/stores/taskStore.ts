@@ -44,7 +44,7 @@ interface TaskStore {
   loadTemplates: () => Promise<void>;
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]) => TemplateNode[];
   removeTemplate: (parentId: string | null, id: string) => Promise<void>;
-  replaceTemplate: (parentId: string, oldId: string, newId: string) => Promise<void>;
+  replaceTemplate: (parentId: string | null, oldId: string, newId: string) => Promise<void>;
   replaceTaskWithTemplate: ( taskId: string, templateId: string) => Promise<void>;
 }
 

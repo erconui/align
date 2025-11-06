@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { GlobalSuggestions } from '../src/components/GlobalSuggestions';
 import { TemplateItem } from '../src/components/TemplateItem';
 import { useTaskStore } from '../src/stores/taskStore';
 
@@ -30,6 +31,11 @@ export default function TemplateScreen() {
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
+  const [suggestionsVisible, setSuggestionsVisible] = useState(false);
+  const [suggestionsPosition, setSuggestionsPosition] = useState<{ x: number; y: number; width: number } | null>(null);
+  const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
+  const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
+  const [currentSearchText, setCurrentSearchText] = useState('');
 
   useEffect(() => {
     loadTemplates();
@@ -40,6 +46,29 @@ export default function TemplateScreen() {
       createTemplate(newTemplateTitle.trim(), null);
       setNewTemplateTitle('');
     }
+  };
+
+  const handleInputMeasure = (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => {
+    setSuggestionsPosition(position);
+    setSuggestionsItemId(itemId);
+    setSuggestionsParentId(parentId || null);
+    setSuggestionsVisible(true);
+  };
+
+  const handleTextChange = (text: string) => {
+    console.log('TemplateScreen handleTextChange:', text);
+    setCurrentSearchText(text);
+    console.log('Current search text:', currentSearchText);
+    setSuggestionsVisible(text.length > 0);
+  };
+
+  const handleSuggestionSelect = async (suggestion: { id: string; title: string }, itemId: string, parentId: string | null) => {
+    console.log('Suggestion selected:', suggestion, itemId, parentId);
+    await replaceTemplate(parentId, itemId, suggestion.id);
+    setSuggestionsVisible(false);
+    setCurrentSearchText('');
+    setSuggestionsItemId(null);
+    setSuggestionsParentId(null);
   };
   const suggestions = useMemo(() => {
     return tree.map(node => ({
@@ -118,6 +147,19 @@ export default function TemplateScreen() {
         )}
       </View>
 
+      {/* Global Suggestions */}
+      <GlobalSuggestions
+        suggestions={suggestions}
+        position={suggestionsPosition}
+        visible={suggestionsVisible}
+        searchText={currentSearchText}
+        onSuggestionSelect={(suggestion) => {
+          if (suggestionsItemId) {
+            handleSuggestionSelect(suggestion, suggestionsItemId, suggestionsParentId);
+          }
+        }}
+      />
+
       {/* Templates List */}
       <View className="flex-1">
         {tree.length === 0 ? (
@@ -145,6 +187,8 @@ export default function TemplateScreen() {
                 parentId={null}
                 replaceTemplate={replaceTemplate}
                 removeTemplate={removeTemplate}
+                onInputMeasure={handleInputMeasure}
+                onTextChange={handleTextChange}
               />
             )}
           />

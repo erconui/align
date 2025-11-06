@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { DraggableContext } from './DraggableContext';
 
 interface BaseNode {
@@ -31,6 +31,8 @@ interface BaseItemProps<T extends BaseNode> {
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   parentId?: string | null;
   isTask: boolean;
+  onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
+  onTextChange?: (text: string) => void;
 }
 
 export const BaseItem = <T extends BaseNode>({
@@ -46,11 +48,12 @@ export const BaseItem = <T extends BaseNode>({
                                                level = 0,
                                                suggestions,
                                                parentId,
-                                               isTask
+                                               isTask,
+                                               onInputMeasure,
+                                               onTextChange
                                              }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const textInputRef = useRef<TextInput>(null);
 
   // Filter suggestions based on current editTitle
@@ -70,28 +73,21 @@ export const BaseItem = <T extends BaseNode>({
 
   const handleTextChange = (text: string) => {
     setEditTitle(text);
-    // Update showSuggestions based on filtered results
-    const newFilteredSuggestions = suggestions.filter(template =>
-      template.title.toLowerCase().startsWith(text.toLowerCase())
-    );
-    console.log('handleTextChange:', text);
-    console.log(newFilteredSuggestions);
-    console.log(filteredSuggestions);
-    setShowSuggestions(newFilteredSuggestions.length > 0 && text.length > 0);
-  };
-
-  const handleSuggestionSelect = async (suggestion: TaskTemplate) => {
-    console.log('suggestion:', suggestion);
-    // if (parentId) {
-      await replaceTemplate(parentId || null, node.id, suggestion.id);
-    // }
-    setShowSuggestions(false);
+    console.log('BaseItem textChange:', text);
+    if (onTextChange) {
+      console.log('BaseItem handleTextChange:', text);
+      onTextChange(text);
+    }
+    if (text.length > 0 && onInputMeasure && textInputRef.current) {
+      textInputRef.current.measure((x, y, width, height, pageX, pageY) => {
+        onInputMeasure({ x: pageX, y: pageY + height, width }, node.id, parentId || null);
+      });
+    }
   };
 
   const handleSubmit = async () => {
     await onUpdateTitle(node.id, editTitle);
     await onAddItemAfter("", node.id);
-    setShowSuggestions(false);
   };
 
   const handleBlur = () => {
@@ -135,24 +131,6 @@ export const BaseItem = <T extends BaseNode>({
             returnKeyType="done"
           />
 
-          {showSuggestions && filteredSuggestions.length > 0 && (parentId || isTask) && (
-            <View style={styles.suggestionsContainer}>
-              <FlatList
-                data={filteredSuggestions}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.suggestionItem}
-                    onPress={() => handleSuggestionSelect(item)}
-                  >
-                    <Text style={styles.suggestionText}>{item.title}</Text>
-                  </TouchableOpacity>
-                )}
-                style={styles.suggestionsList}
-              />
-            </View>
-          )}
-
           <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.iconButton}>
             <Text style={styles.icon}>+</Text>
           </Pressable>
@@ -180,6 +158,8 @@ export const BaseItem = <T extends BaseNode>({
               suggestions={suggestions}
               parentId={node.id}
               isTask={isTask}
+              onInputMeasure={onInputMeasure}
+              onTextChange={onTextChange}
             />
           ))}
         </View>
@@ -196,32 +176,5 @@ const styles = StyleSheet.create({
   iconButton: {padding: 6, marginLeft: 6, backgroundColor: "#eee", borderRadius: 6},
   icon: {fontSize: 18, fontWeight: "600"},
   children: {marginTop: 6},
-  suggestionsContainer: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    maxHeight: 150,
-    zIndex: 1000,
-    elevation: 5, // for Android shadow
-    shadowColor: '#000', // for iOS shadow
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  suggestionsList: {
-    flex: 1,
-  },
-  suggestionItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  suggestionText: {
-    fontSize: 16,
-  },
+
 });
