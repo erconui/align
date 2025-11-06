@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -84,7 +85,7 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header */}
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
+      <View style={Platform.OS === 'android' ? { paddingTop: 40 } : undefined} className="bg-white px-6 py-4 border-b border-gray-200">
         <Text className="text-gray-600 mt-1">
           {remainingTasks} {remainingTasks === 1 ? 'task' : 'tasks'} remaining
         </Text>
