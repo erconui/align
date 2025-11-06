@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { DraggableContext } from './DraggableContext';
 
 interface BaseNode {
   id: string;
@@ -101,56 +102,66 @@ export const BaseItem = <T extends BaseNode>({
 
   return (
     <View style={styles.container}>
-      <View style={styles.row}>
-        <Pressable onPress={() => setExpanded(!expanded)} style={styles.expand}>
-          <Text>{hasChildren ? (expanded ? "▼" : "▶") : " "}</Text>
-        </Pressable>
+      <DraggableContext
+        itemId={node.id}
+        onDragStart={() => {
+          // Handle drag start - you might want to highlight or show drop zones
+          console.log('Drag started for:', node.id);
+        }}
+        onDragEnd={() => {
+          // Handle drag end - check if dropped on valid target
+          console.log('Drag ended for:', node.id);
+        }}>
+        <View style={styles.row}>
+          <Pressable onPress={() => setExpanded(!expanded)} style={styles.expand}>
+            <Text>{hasChildren ? (expanded ? "▼" : "▶") : " "}</Text>
+          </Pressable>
 
-        {showCompletionToggle && onToggleCompletion && (
-          <Switch
-            value={'completed' in node ? (node as TaskNode).completed : false}
-            onValueChange={async () => await onToggleCompletion(node.id)}
-          />
-        )}
-
-        <TextInput
-          ref={textInputRef}
-          style={styles.input}
-          autoFocus={focusedId === node.id}
-          value={editTitle}
-          onChangeText={handleTextChange}
-          onSubmitEditing={handleSubmit}
-          onBlur={handleBlur}
-          returnKeyType="done"
-        />
-
-        {showSuggestions && filteredSuggestions.length > 0 && (parentId || isTask) && (
-          <View style={styles.suggestionsContainer}>
-            <FlatList
-              data={filteredSuggestions}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.suggestionItem}
-                  onPress={() => handleSuggestionSelect(item)}
-                >
-                  <Text style={styles.suggestionText}>{item.title}</Text>
-                </TouchableOpacity>
-              )}
-              style={styles.suggestionsList}
+          {showCompletionToggle && onToggleCompletion && (
+            <Switch
+              value={'completed' in node ? (node as TaskNode).completed : false}
+              onValueChange={async () => await onToggleCompletion(node.id)}
             />
-          </View>
-        )}
+          )}
 
-        <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.iconButton}>
-          <Text style={styles.icon}>+</Text>
-        </Pressable>
+          <TextInput
+            ref={textInputRef}
+            style={styles.input}
+            autoFocus={focusedId === node.id}
+            value={editTitle}
+            onChangeText={handleTextChange}
+            onSubmitEditing={handleSubmit}
+            onBlur={handleBlur}
+            returnKeyType="done"
+          />
 
-        <Pressable onPress={() => onDelete(parentId, node.id)} style={styles.iconButton}>
-          <Text style={styles.icon}>x</Text>
-        </Pressable>
-      </View>
+          {showSuggestions && filteredSuggestions.length > 0 && (parentId || isTask) && (
+            <View style={styles.suggestionsContainer}>
+              <FlatList
+                data={filteredSuggestions}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.suggestionItem}
+                    onPress={() => handleSuggestionSelect(item)}
+                  >
+                    <Text style={styles.suggestionText}>{item.title}</Text>
+                  </TouchableOpacity>
+                )}
+                style={styles.suggestionsList}
+              />
+            </View>
+          )}
 
+          <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.iconButton}>
+            <Text style={styles.icon}>+</Text>
+          </Pressable>
+
+          <Pressable onPress={() => onDelete(parentId || null, node.id)} style={styles.iconButton}>
+            <Text style={styles.icon}>x</Text>
+          </Pressable>
+        </View>
+      </DraggableContext>
       {expanded && hasChildren && (
         <View style={[styles.children, {paddingLeft: 20 + (level * 20)}]}>
           {node.children?.map(child => (
