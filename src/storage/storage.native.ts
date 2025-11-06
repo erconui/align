@@ -1,5 +1,5 @@
 import { database, initDatabase } from '../database/database';
-import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, AddTemplateParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
 
 const nativeStorage = {
   getRootTasks: async (): Promise<TaskInstance[]> => {
@@ -30,8 +30,8 @@ const nativeStorage = {
   updateTaskTitle: async (id: string, title: string): Promise<void> => {
     await database.updateTaskTitle(id, title);
   },// Add to both storage files
-  createTemplate: async (title: string, parentTemplateId: string | null = null): Promise<string> => {
-    return await database.createTemplate(title, parentTemplateId);
+  createTemplate: async (template: AddTemplateParams): Promise<string> => {
+    return await database.createTemplate(template);
   },
 
   getTemplateHierarchy: async (): Promise<{ templates: TaskTemplate[], relations: TaskTemplateRelation[] }> => {
