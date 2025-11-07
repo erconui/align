@@ -82,7 +82,7 @@ const nativeStorage = {
   },
   clearDatabase: async (): Promise<void> => {
     try {
-      await database.clearAllData();
+      await database.clearDatabase();
     } catch (error) {
       console.error('Error clearing database:', error);
       throw error;
