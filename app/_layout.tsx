@@ -2,22 +2,29 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { ThemeProvider, useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
-export default function TabLayout() {
+function InnerLayout() {
   const {init} = useTaskStore();
+  const {colors} = useTheme();
 
   useEffect(() => {
     init();
   }, []);
 
+  // For web we can set a full-screen background via View wrapper
   return (
-    <GestureHandlerRootView style={{flex: 1}}>
+    <GestureHandlerRootView style={{flex: 1, backgroundColor: colors.background}}>
       <Tabs
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#3B82F6',
-          tabBarInactiveTintColor: '#6B7280',
+          tabBarActiveTintColor: colors.tabIconSelected,
+          tabBarInactiveTintColor: colors.tabIconDefault,
+          tabBarStyle: {
+            borderTopColor: colors.border,
+            backgroundColor: colors.background,
+          },
         }}
       >
         <Tabs.Screen
@@ -46,5 +53,14 @@ export default function TabLayout() {
         />
       </Tabs>
     </GestureHandlerRootView>
+  );
+}
+
+export default function TabLayout() {
+  // Wrap the whole app with ThemeProvider to provide colors
+  return (
+    <ThemeProvider>
+      <InnerLayout />
+    </ThemeProvider>
   );
 }

@@ -1,19 +1,21 @@
-import {View, Text} from 'react-native';
-import {Link} from 'expo-router';
+import { Link } from 'expo-router';
 import React from 'react';
+import { Text, View } from 'react-native';
+import { useTheme } from '../src/hooks/useTheme';
 
 export default function CalendarScreen() {
+  const { colors } = useTheme();
   return (
-    <View className="flex-1 bg-white p-4">
-      <Text className="text-2xl font-bold text-gray-900 mb-4">
+    <View style={{flex: 1, padding: 16, backgroundColor: colors.background}}>
+      <Text style={{fontSize: 24, fontWeight: '700', marginBottom: 16, color: colors.text}}>
         Calendar View
       </Text>
-      <Text className="text-gray-600 mb-4">
+      <Text style={{color: colors.muted, marginBottom: 16}}>
         NativeWind v4 is working!
       </Text>
 
-      <Link href="/" className="text-blue-500 font-medium">
-        ← Back to Tasks
+      <Link href="/" asChild>
+        <Text style={{color: colors.tint, fontWeight: '500'}}>← Back to Tasks</Text>
       </Link>
     </View>
   );

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { GlobalSuggestions } from '../src/components/GlobalSuggestions';
 import { TaskItem } from '../src/components/TaskItem';
+import { useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
 export default function HomeScreen() {
@@ -73,24 +74,26 @@ export default function HomeScreen() {
   
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
+      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
         <ActivityIndicator size="large" color="#3B82F6"/>
-        <Text className="text-lg text-gray-600 mt-4">Loading tasks...</Text>
+        <Text style={{fontSize: 18, color: '#6B7280', marginTop: 16}}>Loading tasks...</Text>
       </View>
     );
   }
 
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
+  const { colors } = useTheme();
+
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{flex: 1, backgroundColor: colors.background}}>
       {/* Header */}
-      <View style={Platform.OS === 'android' ? { paddingTop: 40 } : undefined} className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-gray-600 mt-1">
+      <View style={[Platform.OS === 'android' ? { paddingTop: 40 } : undefined, {paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface}] }>
+        <Text style={{color: colors.muted, marginTop: 4}}>
           {remainingTasks} {remainingTasks === 1 ? 'task' : 'tasks'} remaining
         </Text>
-        <Pressable onPress={initDB} className='mt-2'>
-          <Text className={"text-blue-500 font-medium"}>Init Database</Text>
+        <Pressable onPress={initDB} style={{marginTop: 8}}>
+          <Text style={{color: colors.tint, fontWeight: '500'}}>Init Database</Text>
         </Pressable>
       </View>
 
@@ -108,28 +111,26 @@ export default function HomeScreen() {
       />
 
       {/* Add Task Form */}
-      <View className="p-4 bg-white border-b border-gray-200">
-        <View className="flex-row">
+      <View style={{padding: 16, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border}}>
+        <View style={{flexDirection: 'row'}}>
           <TextInput
             value={newTaskTitle}
             onChangeText={setNewTaskTitle}
             placeholder="Add a new task..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.muted}
             onSubmitEditing={handleAddTask}
-            className="flex-1 border border-gray-300 rounded-l-lg px-4 py-3 text-gray-900 bg-white"
+            style={{flex: 1, borderWidth: 1, borderColor: colors.border, borderTopLeftRadius: 8, borderBottomLeftRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.text, backgroundColor: colors.surface}}
           />
           <TouchableOpacity
             onPress={handleAddTask}
             disabled={!newTaskTitle.trim()}
-            className={`px-6 py-3 rounded-r-lg justify-center ${
-              newTaskTitle.trim() ? 'bg-blue-500' : 'bg-blue-300'
-            }`}
+            style={{paddingHorizontal: 16, paddingVertical: 12, borderTopRightRadius: 8, borderBottomRightRadius: 8, justifyContent: 'center', backgroundColor: newTaskTitle.trim() ? colors.tint : '#93c5fd'}}
           >
           </TouchableOpacity>
         </View>
 
         {error && (
-          <Text className="text-red-500 mt-2 text-sm">{error}</Text>
+          <Text style={{color: '#ef4444', marginTop: 8, fontSize: 12}}>{error}</Text>
         )}
       </View>
       <View className="flex-1">

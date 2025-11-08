@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
+import { useTheme } from '../hooks/useTheme';
 import { DraggableContext } from './DraggableContext';
 
 interface BaseNode {
@@ -96,9 +97,10 @@ export const BaseItem = <T extends BaseNode>({
   };
 
   const hasChildren = node.children && node.children.length > 0;
+  const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, {backgroundColor: colors.surface}]}> 
       <DraggableContext
         itemId={node.id}
         onDragStart={() => {
@@ -111,7 +113,7 @@ export const BaseItem = <T extends BaseNode>({
         }}>
         <View style={styles.row}>
           <Pressable onPress={() => setExpanded(!expanded)} style={styles.expand}>
-            <Text>{hasChildren ? (expanded ? "▼" : "▶") : " "}</Text>
+            <Text style={[{color: colors.text}]}>{hasChildren ? (expanded ? "▼" : "▶") : " "}</Text>
           </Pressable>
 
           {showCompletionToggle && onToggleCompletion && (
@@ -130,7 +132,7 @@ export const BaseItem = <T extends BaseNode>({
 
           <TextInput
             ref={textInputRef}
-            style={styles.input}
+            style={[styles.input, {borderColor: colors.border, color: colors.text, backgroundColor: colors.surface}]}
             autoFocus={focusedId === node.id}
             value={editTitle}
             onChangeText={handleTextChange}
@@ -139,12 +141,12 @@ export const BaseItem = <T extends BaseNode>({
             returnKeyType="done"
           />
 
-          <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.iconButton}>
-            <Text style={styles.icon}>+</Text>
+          <Pressable onPress={() => onAddSubItem("", node.id)} style={[styles.iconButton, {backgroundColor: colors.background}] }>
+            <Text style={[styles.icon, {color: colors.tint}]}>+</Text>
           </Pressable>
 
-          <Pressable onPress={() => onDelete(parentId || null, node.id)} style={styles.iconButton}>
-            <Text style={styles.icon}>x</Text>
+          <Pressable onPress={() => onDelete(parentId || null, node.id)} style={[styles.iconButton, {backgroundColor: colors.background}] }>
+            <Text style={[styles.icon, {color: colors.muted}]}>x</Text>
           </Pressable>
         </View>
       </DraggableContext>

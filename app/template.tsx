@@ -1,4 +1,3 @@
-import { Link } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -6,11 +5,11 @@ import {
   FlatList,
   Text,
   TextInput,
-  TouchableOpacity,
   View
 } from 'react-native';
 import { GlobalSuggestions } from '../src/components/GlobalSuggestions';
 import { TemplateItem } from '../src/components/TemplateItem';
+import { useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
 export default function TemplateScreen() {
@@ -100,47 +99,39 @@ export default function TemplateScreen() {
 
   if (isLoading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
+      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
         <ActivityIndicator size="large" color="#3B82F6"/>
-        <Text className="text-lg text-gray-600 mt-4">Loading templates...</Text>
+        <Text style={{fontSize: 18, color: '#6B7280', marginTop: 16}}>Loading templates...</Text>
       </View>
     );
   }
+  const { colors } = useTheme();
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{flex: 1, backgroundColor: colors.background}}>
       {/* Header */}
-      <View className="bg-white px-6 py-4 border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900">Templates</Text>
-        <Text className="text-gray-600 mt-1">
+      <View style={{paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface}}>
+        <Text style={{fontSize: 24, fontWeight: '700', color: colors.text}}>Templates</Text>
+        <Text style={{color: colors.muted, marginTop: 4}}>
           {tree.length} {tree.length === 1 ? 'template' : 'templates'}
         </Text>
-
-        {/* Navigation */}
-        <Link href="/" asChild>
-          <TouchableOpacity className="bg-blue-500 px-4 py-2 rounded-lg mt-2">
-            <Text className="text-white font-semibold text-center">
-              Back to Tasks
-            </Text>
-          </TouchableOpacity>
-        </Link>
       </View>
 
       {/* Add Template Form */}
-      <View className="p-4 bg-white border-b border-gray-200">
-        <View className="flex-row">
+      <View style={{padding: 16, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border}}>
+        <View style={{flexDirection: 'row'}}>
           <TextInput
             value={newTemplateTitle}
             onChangeText={setNewTemplateTitle}
             placeholder="Create a new template..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={colors.muted}
             onSubmitEditing={handleAddTemplate}
-            className="flex-1 border border-gray-300 rounded-l-lg px-4 py-3 text-gray-900 bg-white"
+            style={{flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.text, backgroundColor: colors.surface}}
           />
         </View>
 
         {error && (
-          <Text className="text-red-500 mt-2 text-sm">{error}</Text>
+          <Text style={{color: '#ef4444', marginTop: 8, fontSize: 12}}>{error}</Text>
         )}
       </View>
 
