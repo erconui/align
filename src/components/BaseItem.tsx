@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { DraggableContext } from './DraggableContext';
 
 interface BaseNode {
@@ -114,10 +115,17 @@ export const BaseItem = <T extends BaseNode>({
           </Pressable>
 
           {showCompletionToggle && onToggleCompletion && (
-            <Switch
-              value={'completed' in node ? (node as TaskNode).completed : false}
-              onValueChange={async () => await onToggleCompletion(node.id)}
-            />
+            <View style={styles.checkboxContainer}>
+              <BouncyCheckbox
+                isChecked={'completed' in node ? (node as TaskNode).completed : false}
+                // Use a controlled callback (some versions of the lib use `useBuiltInState`)
+                useBuiltInState={false}
+                onPress={async () => await onToggleCompletion(node.id)}
+                // Keep the checkbox icon centered and small; the title is the TextInput
+                fillColor="#34D399"
+                iconStyle={{ borderColor: '#ccc' }}
+              />
+            </View>
           )}
 
           <TextInput
@@ -176,5 +184,5 @@ const styles = StyleSheet.create({
   iconButton: {padding: 6, marginLeft: 6, backgroundColor: "#eee", borderRadius: 6},
   icon: {fontSize: 18, fontWeight: "600"},
   children: {marginTop: 6},
-
+  checkboxContainer: { width: 36, marginRight: 8, alignItems: 'center', justifyContent: 'center' },
 });
