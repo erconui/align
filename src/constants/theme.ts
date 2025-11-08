@@ -17,17 +17,35 @@ export const Colors = {
     muted: '#6B7280',
     tabIconDefault: '#687076',
     tabIconSelected: tintColorLight,
+    button: '#07ce00ff',
+    buttonBorder: '#036300ff',
+    highlight: '#09ff00ff',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#0f1112',
+    text: '#eceeecff',
+    background: '#0f120fff',
     tint: tintColorDark,
-    icon: '#9BA1A6',
+    icon: '#9ba69dff',
     border: '#222425',
-    surface: '#151718',
-    muted: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
+    surface: '#222b24ff',
+    muted: '#9ba69dff',
+    tabIconDefault: '#9ba69bff',
     tabIconSelected: tintColorDark,
+    button: '#00550bff',
+    buttonBorder: '#008f0cff',
+    highlight: '#00c030ff',
+  },
+};
+
+export const styles = {
+  header: {
+    ...Platform.select({
+      android: {paddingTop: 40}
+    }),
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+
   },
 };
 

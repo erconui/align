@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -5,6 +6,7 @@ import {
   FlatList,
   Text,
   TextInput,
+  TouchableOpacity,
   View
 } from 'react-native';
 import { GlobalSuggestions } from '../src/components/GlobalSuggestions';
@@ -101,33 +103,40 @@ export default function TemplateScreen() {
     return (
       <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
         <ActivityIndicator size="large" color="#3B82F6"/>
-        <Text style={{fontSize: 18, color: '#6B7280', marginTop: 16}}>Loading templates...</Text>
+        <Text style={{fontSize: 18, color: '#6B7280', marginTop: 16}}>Loading lists...</Text>
       </View>
     );
   }
-  const { colors } = useTheme();
+  const { colors, styles } = useTheme();
 
   return (
     <View style={{flex: 1, backgroundColor: colors.background}}>
       {/* Header */}
-      <View style={{paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface}}>
-        <Text style={{fontSize: 24, fontWeight: '700', color: colors.text}}>Templates</Text>
+      <View style={styles.header}>
+        <Text style={{fontSize: 24, fontWeight: '700', color: colors.text}}>Lists</Text>
         <Text style={{color: colors.muted, marginTop: 4}}>
-          {tree.length} {tree.length === 1 ? 'template' : 'templates'}
+          {tree.length} {tree.length === 1 ? 'list' : 'lists'}
         </Text>
       </View>
 
       {/* Add Template Form */}
-      <View style={{padding: 16, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border}}>
+      <View style={{padding: 16, backgroundColor: colors.background,  borderBottomColor: colors.border}}>
         <View style={{flexDirection: 'row'}}>
           <TextInput
             value={newTemplateTitle}
             onChangeText={setNewTemplateTitle}
-            placeholder="Create a new template..."
+            placeholder="Add a new task..."
             placeholderTextColor={colors.muted}
             onSubmitEditing={handleAddTemplate}
-            style={{flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.text, backgroundColor: colors.surface}}
+            style={{...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding:16, marginHorizontal:0}}
           />
+          <TouchableOpacity
+            onPress={handleAddTemplate}
+            disabled={!newTemplateTitle.trim()}
+            style={{borderTopRightRadius: 8, borderBottomRightRadius: 8, ...styles.pressableButton}}
+          >
+            <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
+          </TouchableOpacity>
         </View>
 
         {error && (
@@ -169,7 +178,6 @@ export default function TemplateScreen() {
                 deleteTemplate={deleteTemplate}
                 updateTemplate={updateTemplate}
                 addTemplateAfter={addTemplateAfter}
-                level={0}
                 focusedId={focusedId}
                 suggestions={suggestions}
                 parentId={null}

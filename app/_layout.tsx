@@ -39,15 +39,19 @@ function InnerLayout() {
         <Tabs.Screen
           name="template"
           options={{
-            title: 'Templates',
+            title: 'Lists',
+            tabBarIcon: ({color, size}) => (
+              <Ionicons name="list-outline" size={size} color={color}/>
+            ),
           }}
         />
         <Tabs.Screen
-          name="calendar"
+          name="settings"
           options={{
-            title: 'Calendar',
+            title: 'Settings',
             tabBarIcon: ({color, size}) => (
-              <Ionicons name="calendar-outline" size={size} color={color}/>
+              // <Ionicons name="calendar-outline" size={size} color={color}/>
+              <Ionicons name="settings-outline" size={size} color={color}/>
             ),
           }}
         />

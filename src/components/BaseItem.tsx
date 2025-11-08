@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, TextInput, View } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useTheme } from '../hooks/useTheme';
 import { DraggableContext } from './DraggableContext';
@@ -97,10 +98,10 @@ export const BaseItem = <T extends BaseNode>({
   };
 
   const hasChildren = node.children && node.children.length > 0;
-  const { colors } = useTheme();
+  const { colors, styles } = useTheme();
 
   return (
-    <View style={[styles.container, {backgroundColor: colors.surface}]}> 
+    <View style={[styles.container, {backgroundColor: colors.background}]}> 
       <DraggableContext
         itemId={node.id}
         onDragStart={() => {
@@ -112,9 +113,10 @@ export const BaseItem = <T extends BaseNode>({
           console.log('Drag ended for:', node.id);
         }}>
         <View style={styles.row}>
-          <Pressable onPress={() => setExpanded(!expanded)} style={styles.expand}>
-            <Text style={[{color: colors.text}]}>{hasChildren ? (expanded ? "▼" : "▶") : " "}</Text>
-          </Pressable>
+          {hasChildren?<Pressable onPress={() => setExpanded(!expanded)} style={styles.expand}>
+            {expanded ? <Ionicons name="caret-down-outline" size={18} color={colors.icon} style={styles.icon} /> :
+                        <Ionicons name="caret-forward-outline" size={18} color={colors.icon} style={styles.icon} />}
+          </Pressable>:<View style={styles.expand} />}
 
           {showCompletionToggle && onToggleCompletion && (
             <View style={styles.checkboxContainer}>
@@ -124,15 +126,14 @@ export const BaseItem = <T extends BaseNode>({
                 useBuiltInState={false}
                 onPress={async () => await onToggleCompletion(node.id)}
                 // Keep the checkbox icon centered and small; the title is the TextInput
-                fillColor="#34D399"
-                iconStyle={{ borderColor: '#ccc' }}
+                fillColor={colors.highlight}
               />
             </View>
           )}
 
           <TextInput
             ref={textInputRef}
-            style={[styles.input, {borderColor: colors.border, color: colors.text, backgroundColor: colors.surface}]}
+            style={styles.input}
             autoFocus={focusedId === node.id}
             value={editTitle}
             onChangeText={handleTextChange}
@@ -141,12 +142,14 @@ export const BaseItem = <T extends BaseNode>({
             returnKeyType="done"
           />
 
-          <Pressable onPress={() => onAddSubItem("", node.id)} style={[styles.iconButton, {backgroundColor: colors.background}] }>
-            <Text style={[styles.icon, {color: colors.tint}]}>+</Text>
+          <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.iconButton }>
+            {/* <Text style={styles.icon}>+</Text> */}
+            <Ionicons name="add-outline" size={18} color={colors.icon} />
           </Pressable>
 
-          <Pressable onPress={() => onDelete(parentId || null, node.id)} style={[styles.iconButton, {backgroundColor: colors.background}] }>
-            <Text style={[styles.icon, {color: colors.muted}]}>x</Text>
+          <Pressable onPress={() => onDelete(parentId || null, node.id)} style={styles.iconButton}>
+            {/* <Text style={styles.icon}>x</Text> */}
+            <Ionicons name="trash-outline" size={18} color={colors.icon} />
           </Pressable>
         </View>
       </DraggableContext>
@@ -177,14 +180,3 @@ export const BaseItem = <T extends BaseNode>({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {marginBottom: 6},
-  row: {flexDirection: "row", alignItems: "center"},
-  expand: {width: 24, alignItems: "center"},
-  input: {flex: 1, padding: 8, borderWidth: 1, borderColor: "#ddd", borderRadius: 6, marginHorizontal: 8},
-  iconButton: {padding: 6, marginLeft: 6, backgroundColor: "#eee", borderRadius: 6},
-  icon: {fontSize: 18, fontWeight: "600"},
-  children: {marginTop: 6},
-  checkboxContainer: { width: 36, marginRight: 8, alignItems: 'center', justifyContent: 'center' },
-});

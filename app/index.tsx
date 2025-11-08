@@ -1,15 +1,14 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Platform,
-  Pressable,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
+import { ProgressBar } from 'rn-inkpad';
 import { GlobalSuggestions } from '../src/components/GlobalSuggestions';
 import { TaskItem } from '../src/components/TaskItem';
 import { useTheme } from '../src/hooks/useTheme';
@@ -83,18 +82,22 @@ export default function HomeScreen() {
 
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
-  const { colors } = useTheme();
+  const { colors, styles } = useTheme();
+  const progress = 100-100*remainingTasks/flatTasks.length;
 
   return (
     <View style={{flex: 1, backgroundColor: colors.background}}>
       {/* Header */}
-      <View style={[Platform.OS === 'android' ? { paddingTop: 40 } : undefined, {paddingHorizontal: 24, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.surface}] }>
+      <View style={styles.header}>
         <Text style={{color: colors.muted, marginTop: 4}}>
           {remainingTasks} {remainingTasks === 1 ? 'task' : 'tasks'} remaining
         </Text>
-        <Pressable onPress={initDB} style={{marginTop: 8}}>
-          <Text style={{color: colors.tint, fontWeight: '500'}}>Init Database</Text>
-        </Pressable>
+        <ProgressBar value={progress}
+          progressColor={colors.highlight}
+          backgroundColor={colors.button}
+          textColor={progress>45? colors.text: colors.muted}
+          rounded
+          showPercent />
       </View>
 
       {/* Global Suggestions */}
@@ -111,7 +114,7 @@ export default function HomeScreen() {
       />
 
       {/* Add Task Form */}
-      <View style={{padding: 16, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border}}>
+      <View style={{padding: 16, backgroundColor: colors.background,  borderBottomColor: colors.border}}>
         <View style={{flexDirection: 'row'}}>
           <TextInput
             value={newTaskTitle}
@@ -119,13 +122,14 @@ export default function HomeScreen() {
             placeholder="Add a new task..."
             placeholderTextColor={colors.muted}
             onSubmitEditing={handleAddTask}
-            style={{flex: 1, borderWidth: 1, borderColor: colors.border, borderTopLeftRadius: 8, borderBottomLeftRadius: 8, paddingHorizontal: 16, paddingVertical: 12, color: colors.text, backgroundColor: colors.surface}}
+            style={{...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding:16, marginHorizontal:0 }}
           />
           <TouchableOpacity
             onPress={handleAddTask}
             disabled={!newTaskTitle.trim()}
-            style={{paddingHorizontal: 16, paddingVertical: 12, borderTopRightRadius: 8, borderBottomRightRadius: 8, justifyContent: 'center', backgroundColor: newTaskTitle.trim() ? colors.tint : '#93c5fd'}}
+            style={{...styles.pressableButton, borderTopRightRadius: 8, borderBottomRightRadius: 8}}
           >
+            <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
           </TouchableOpacity>
         </View>
 
@@ -159,22 +163,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  header: {fontSize: 20, fontWeight: "700", marginBottom: 12},
-  card: {
-    backgroundColor: "white",
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 8,
-    borderRadius: 6,
-    marginVertical: 8,
-  },
-  button: {backgroundColor: "#222", padding: 10, borderRadius: 6},
-  buttonText: {color: "white", textAlign: "center"},
-});

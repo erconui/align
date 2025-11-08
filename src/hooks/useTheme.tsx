@@ -1,15 +1,84 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { Appearance } from 'react-native';
+import { Appearance, Platform, StyleSheet } from 'react-native';
 import { Colors, ThemeName } from '../constants/theme';
 
 interface ThemeContextValue {
   theme: ThemeName;
   colors: typeof Colors.light;
+  styles: ReturnType<typeof createStyles>;
   setTheme: (t: ThemeName) => void;
   toggleTheme: () => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
+
+const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
+  header: {
+    ...Platform.select({
+      android: { paddingTop: 40 },
+      ios: { paddingTop: 20 } // optional iOS specific padding
+    }),
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface
+  },
+  headerText: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 16,
+    color: colors.text
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+    borderBottomColor: colors.border,
+    borderBottomWidth: 1,
+    paddingBottom: 12,
+  },
+  container: {marginBottom: 6},
+  row: {flexDirection: "row", alignItems: "center"},
+  expand: {width: 24, alignItems: "center"},
+  input: {
+    flex: 1,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor:colors.surface,
+    color:colors.text,
+    borderRadius: 6,
+    marginHorizontal: 8
+  },
+  iconButton: {padding: 6, marginLeft: 6, backgroundColor: colors.background, borderRadius: 6},
+  icon: {fontSize: 18, fontWeight: "600", padding:4, color: colors.icon},
+  children: {marginTop: 6},
+  checkboxContainer: { width: 26, paddingLeft:26, alignItems: 'center', justifyContent: 'center' },
+  buttons: {color: colors.text, fontSize: 20},
+  button: {
+    backgroundColor: colors.tint, 
+    padding: 10, 
+    borderRadius: 6
+  },
+  buttonText: {
+    color: colors.background, 
+    textAlign: "center",
+    fontWeight: '500'
+  },
+  pressableButton: {
+    backgroundColor: colors.button,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.buttonBorder,
+    color: colors.tint
+  },
+  pressableButtonPressed: {
+    backgroundColor: colors.tint + '20', // 20% opacity
+  }
+});
 
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
   const system = Appearance.getColorScheme();
@@ -26,12 +95,16 @@ export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({children})
 
   const setTheme = (t: ThemeName) => setThemeState(t);
 
-  const toggleTheme = () => setThemeState(prev => (prev === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = () => {
+    console.log('Toggling theme from', theme);
+    setThemeState(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
-  const colors = useMemo(() => (theme === 'dark' ? Colors.dark : Colors.dark), [theme]);
+  const colors = useMemo(() => (theme === 'dark' ? Colors.dark : Colors.light), [theme]);
+  const styles = useMemo(() => createStyles(colors), [colors]);
 
   return (
-    <ThemeContext.Provider value={{theme, colors, setTheme, toggleTheme}}>
+    <ThemeContext.Provider value={{theme, colors, styles, setTheme, toggleTheme}}>
       {children}
     </ThemeContext.Provider>
   );
