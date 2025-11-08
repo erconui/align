@@ -4,7 +4,12 @@ import { AddTaskParams, AddTemplateParams, TaskInstance, TaskTemplate, TaskTempl
 const nativeStorage = {
   getRootTasks: async (): Promise<TaskInstance[]> => {
     try {
-      return await database.getRootTasks();
+      let tasks = await database.getRootTasks();
+      tasks = tasks.map(task => ({
+        ...task,
+        completed: Boolean(task.completed) // or task.completed === 1
+      }));
+      return tasks;
     } catch (error) {
       console.error('Error getting tasks from SQLite:', error);
       return [];
@@ -12,7 +17,12 @@ const nativeStorage = {
   },
   getTasks: async (): Promise<TaskInstance[]> => {
     try {
-      return await database.getAllTasks();
+      let tasks = await database.getAllTasks();
+      tasks = tasks.map(task => ({
+        ...task,
+        completed: Boolean(task.completed) // or task.completed === 1
+      }));
+      return tasks;
     } catch (error) {
       console.error('Error getting tasks from SQLite:', error);
       return [];

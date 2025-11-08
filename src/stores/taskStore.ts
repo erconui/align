@@ -247,7 +247,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     let updateParent = true;
     if (completed) { // to check off parent, all siblings must be checked off as well
-      const siblings = await get().flatTasks.filter((t) => t.parent_id === task.parent_id);
+      const siblings = await get().flatTasks.filter((t) => t.parent_id === task.parent_id && t.id !== task.id);
 
       siblings.forEach((sibling) => {
         // If there are any siblings that do not match the updated completed state then don't change the parent
