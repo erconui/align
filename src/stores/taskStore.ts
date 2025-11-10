@@ -14,6 +14,7 @@ interface TaskStore {
   isLoading: boolean;
   focusedId: string | null;
   error: string | null;
+  percentage: number;
 
   // Actions
   init: () => Promise<void>;
@@ -49,6 +50,7 @@ interface TaskStore {
   replaceTaskWithTemplate: ( taskId: string, templateId: string) => Promise<void>;
   toggleTaskExpand: (id: string) => Promise<void>;
   toggleTemplateExpand: (parentId: string | null, id: string) => Promise<void>;
+  calculatePercentage: (tree: TaskNode[]) => number;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -60,6 +62,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   isLoading: false,
   focusedId: null,
   error: null,
+  percentage: 0,
 
   init: async () => {
     try {
@@ -140,8 +143,21 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         roots.push(node);
       }
     });
+    set({percentage:get().calculatePercentage(roots)*100});
 
     return roots;
+  },
+  calculatePercentage: (tree: TaskNode[]): number => {
+    let completion = 0.0;
+    for (const task of tree) {
+      if (!task.completed && task.children.length > 0) {
+        let temp = get().calculatePercentage(task.children) / tree.length;
+        completion += temp;
+      } else {
+        completion += task.completed?1/tree.length:0;
+      }
+    }
+    return completion;
   },
   addTask: async (task: AddTaskParams): Promise<string> => {
     try {

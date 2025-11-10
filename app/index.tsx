@@ -30,7 +30,7 @@ export default function HomeScreen() {
     updateTaskTitle,
     replaceTaskWithTemplate,
     createTemplateFromTask,
-    initDB
+    percentage
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
     const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -89,7 +89,6 @@ export default function HomeScreen() {
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
   const { colors, styles } = useTheme();
-  const progress = flatTasks.length?100-100*remainingTasks/flatTasks.length:0;
 
   return (
     <View style={{flex: 1, backgroundColor: colors.background}}>
@@ -98,10 +97,10 @@ export default function HomeScreen() {
         <Text style={{color: colors.muted, marginTop: 4}}>
           {remainingTasks} {remainingTasks === 1 ? 'task' : 'tasks'} remaining
         </Text>
-        <ProgressBar value={progress}
+        <ProgressBar value={percentage}
           progressColor={colors.highlight}
           backgroundColor={colors.button}
-          textColor={progress>45? colors.text: colors.muted}
+          textColor={percentage>45? colors.text: colors.muted}
           rounded
           showPercent />
       </View>
