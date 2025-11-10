@@ -10,14 +10,14 @@ interface DraggableContextProps {
   onDragEnd?: (itemId: string) => void;
   dragOpacity?: number;
 }
-export const DraggableContext: React.FC<DraggableContextProps> = ({ 
-  children, 
+export const DraggableContext: React.FC<DraggableContextProps> = ({
+  children,
   itemId,
-  onDragStart, 
+  onDragStart,
   onDragEnd,
   onDrop,
-//   isDragging,
-  dragOpacity = 0.8 
+  //   isDragging,
+  dragOpacity = 0.8
 }) => {
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -31,7 +31,7 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
       isActive.value = true;
       opacity.value = dragOpacity;
       startPos.value = { x: translateX.value, y: translateY.value };
-      
+
       if (onDragStart) {
         runOnJS(onDragStart)(itemId);
       }
@@ -39,23 +39,23 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
     .onUpdate((event) => {
       translateX.value = startPos.value.x + event.translationX;
       translateY.value = startPos.value.y + event.translationY;
-      
+
       // You can add logic here to detect drop targets
       // and call onHover or similar callbacks
     })
     .onEnd(() => {
       const finalPosition = { x: translateX.value, y: translateY.value };
-      
+
       if (onDrop) {
         runOnJS(onDrop)(itemId, finalPosition);
       }
-      
+
       // Reset position
       translateX.value = withSpring(0);
       translateY.value = withSpring(0);
       opacity.value = withSpring(1);
       isActive.value = false;
-      
+
       if (onDragEnd) {
         runOnJS(onDragEnd)(itemId);
       }
@@ -66,7 +66,7 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
         translateY.value = withSpring(0);
         opacity.value = withSpring(1);
         isActive.value = false;
-        
+
         if (onDragEnd) {
           runOnJS(onDragEnd)(itemId);
         }

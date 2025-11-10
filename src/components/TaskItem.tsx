@@ -18,18 +18,18 @@ interface TaskItemProps {
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
-                                                    taskNode,
-                                                    toggleTask,
-                                                    deleteTask,
-                                                    addSubTask,
-                                                    addTaskAfter,
-                                                    updateTaskTitle,
-                                                    focusedId,
-  onInputMeasure,
-  onTextChange,
-  generateList,
-  toggleExpand,
-  closeSuggestions
+                                                   taskNode,
+                                                   toggleTask,
+                                                   deleteTask,
+                                                   addSubTask,
+                                                   addTaskAfter,
+                                                   updateTaskTitle,
+                                                   focusedId,
+                                                   onInputMeasure,
+                                                   onTextChange,
+                                                   generateList,
+                                                   toggleExpand,
+                                                   closeSuggestions
                                                   }) => {
   return (
     <BaseItem

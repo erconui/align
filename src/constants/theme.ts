@@ -40,7 +40,7 @@ export const Colors = {
 export const styles = {
   header: {
     ...Platform.select({
-      android: {paddingTop: 40}
+      android: { paddingTop: 40 }
     }),
     paddingHorizontal: 24,
     paddingVertical: 16,

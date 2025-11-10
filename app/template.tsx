@@ -85,13 +85,14 @@ export default function TemplateScreen() {
       title: node.title,
     }));
   }, [tree]);
+  const { colors, styles } = useTheme();
 
   const handleUseTemplate = (templateId: string) => {
     Alert.alert(
       'Use Template',
       'Add this template to your task list?',
       [
-        {text: 'Cancel', style: 'cancel'},
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'Add to Tasks',
           onPress: () => createTaskFromTemplate(templateId)
@@ -112,46 +113,45 @@ export default function TemplateScreen() {
 
   if (isLoading) {
     return (
-      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-        <ActivityIndicator size="large" color="#3B82F6"/>
-        <Text style={{fontSize: 18, color: '#6B7280', marginTop: 16}}>Loading lists...</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={{ fontSize: 18, color: '#6B7280', marginTop: 16 }}>Loading lists...</Text>
       </View>
     );
   }
-  const { colors, styles } = useTheme();
 
   return (
-    <View style={{flex: 1, backgroundColor: colors.background}}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={{fontSize: 24, fontWeight: '700', color: colors.text}}>Lists</Text>
-        <Text style={{color: colors.muted, marginTop: 4}}>
+        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text }}>Lists</Text>
+        <Text style={{ color: colors.muted, marginTop: 4 }}>
           {tree.length} {tree.length === 1 ? 'list' : 'lists'}
         </Text>
       </View>
 
       {/* Add Template Form */}
-      <View style={{padding: 16, backgroundColor: colors.background,  borderBottomColor: colors.border}}>
-        <View style={{flexDirection: 'row'}}>
+      <View style={{ padding: 16, backgroundColor: colors.background, borderBottomColor: colors.border }}>
+        <View style={{ flexDirection: 'row' }}>
           <TextInput
             value={newTemplateTitle}
             onChangeText={setNewTemplateTitle}
             placeholder="Add a new list..."
             placeholderTextColor={colors.muted}
             onSubmitEditing={handleAddTemplate}
-            style={{...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding:16, marginHorizontal:0}}
+            style={{ ...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding: 16, marginHorizontal: 0 }}
           />
           <TouchableOpacity
             onPress={handleAddTemplate}
             disabled={!newTemplateTitle.trim()}
-            style={{borderTopRightRadius: 8, borderBottomRightRadius: 8, ...styles.pressableButton}}
+            style={{ borderTopRightRadius: 8, borderBottomRightRadius: 8, ...styles.pressableButton }}
           >
             <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
           </TouchableOpacity>
         </View>
 
         {error && (
-          <Text style={{color: '#ef4444', marginTop: 8, fontSize: 12}}>{error}</Text>
+          <Text style={{ color: '#ef4444', marginTop: 8, fontSize: 12 }}>{error}</Text>
         )}
       </View>
 
@@ -180,7 +180,7 @@ export default function TemplateScreen() {
           <FlatList
             data={tree}
             keyExtractor={item => item.id}
-            renderItem={({item}) => (
+            renderItem={({ item }) => (
               <TemplateItem
                 templateNode={item}
                 expandedTemplates={expandedTemplates}
@@ -195,7 +195,7 @@ export default function TemplateScreen() {
                 onInputMeasure={handleInputMeasure}
                 onTextChange={handleTextChange}
                 generateList={createTaskFromTemplate}
-                toggleExpand={async (parentId, id) => {toggleTemplateExpand(parentId, id);}}
+                toggleExpand={async (parentId, id) => { toggleTemplateExpand(parentId, id); }}
                 closeSuggestions={closeSuggestions}
               />
             )}

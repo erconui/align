@@ -48,7 +48,7 @@ interface TaskStore {
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]) => TemplateNode[];
   removeTemplate: (parentId: string | null, id: string) => Promise<void>;
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => Promise<void>;
-  replaceTaskWithTemplate: ( taskId: string, templateId: string) => Promise<void>;
+  replaceTaskWithTemplate: (taskId: string, templateId: string) => Promise<void>;
   toggleTaskExpand: (id: string) => Promise<void>;
   toggleTemplateExpand: (parentId: string | null, id: string) => Promise<void>;
   calculatePercentage: (tree: TaskNode[]) => number;
@@ -59,7 +59,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   flatTasks: [],
   tree: [],
   flatTemplates: [],
-  templateHierarchy: {templates: [], relations: []},
+  templateHierarchy: { templates: [], relations: [] },
   isLoading: false,
   focusedId: null,
   error: null,
@@ -67,19 +67,19 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
   init: async () => {
     try {
-      set({isLoading: true, error: null});
+      set({ isLoading: true, error: null });
       await initStorage();
       await get().loadTasks();
       await get().loadTemplates();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     } finally {
-      set({isLoading: false});
+      set({ isLoading: false });
     }
   },
   initDB: async () => {
     try {
-      set({isLoading: true, error: null});
+      set({ isLoading: true, error: null });
 
       // Clear database
       await storage.clearDatabase();
@@ -135,9 +135,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     } catch (error) {
       console.error('Error initializing database:', error);
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     } finally {
-      set({isLoading: false});
+      set({ isLoading: false });
     }
   },
   loadTasks: async () => {
@@ -150,7 +150,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         error: null
       });
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   getTree: (tasks: TaskInstance[]) => {
@@ -159,7 +159,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     // Clone and clear children
     tasks?.forEach(task => {
-      map.set(task.id, {...task, children: []});
+      map.set(task.id, { ...task, children: [] });
     });
 
     // Build hierarchy
@@ -174,7 +174,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         roots.push(node);
       }
     });
-    set({percentage:get().calculatePercentage(roots)*100});
+    set({ percentage: get().calculatePercentage(roots) * 100 });
 
     return roots;
   },
@@ -185,7 +185,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         let temp = get().calculatePercentage(task.children) / tree.length;
         completion += temp;
       } else {
-        completion += task.completed?1/tree.length:0;
+        completion += task.completed ? 1 / tree.length : 0;
       }
     }
     return completion;
@@ -196,28 +196,28 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await get().loadTasks();
       return id;
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       throw error;
     }
   },
   addSubTask: async (title: string, parentId: string | null): Promise<string> => {
-    let id = await get().addTask({title: title.trim(), parent_id: parentId, completed: false})
-    set({focusedId: id});
+    let id = await get().addTask({ title: title.trim(), parent_id: parentId, completed: false })
+    set({ focusedId: id });
     return id;
   },
-  addTaskAfter: async (title: string, afterId: string | null) : Promise<string> => {
-    let id = await get().addTask({title: title.trim(), after_id: afterId, completed: false});
-    set({focusedId: id});
+  addTaskAfter: async (title: string, afterId: string | null): Promise<string> => {
+    let id = await get().addTask({ title: title.trim(), after_id: afterId, completed: false });
+    set({ focusedId: id });
     return id;
   },
   addTaskWithoutLoad: async (title: string, parentId: string | null = null): Promise<string> => {
     if (!title.trim()) return '';
 
     try {
-      return await storage.addTask({title: title.trim(), parent_id: parentId, completed: false});
+      return await storage.addTask({ title: title.trim(), parent_id: parentId, completed: false });
       // Don't call loadTasks here
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       return '';
     }
   },
@@ -228,7 +228,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await storage.updateTaskTitle(id, title.trim());
       await get().loadTasks();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   deleteTask: async (id: string) => {
@@ -236,12 +236,12 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await storage.deleteTask(id);
       await get().loadTasks();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   deleteAllTasks: async () => {
     try {
-      const {flatTasks} = get();
+      const { flatTasks } = get();
 
       // Delete all tasks one by one
       for (const task of flatTasks) {
@@ -249,11 +249,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
 
       // Clear local state
-      set({flatTasks: [], tasks: []});
+      set({ flatTasks: [], tasks: [] });
 
     } catch (error) {
       console.error('Error clearing tasks:', error);
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       throw error;
     }
   },
@@ -261,7 +261,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       await storage.clearDatabase();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   toggleTask: async (id: string) => {
@@ -274,7 +274,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await get().recursiveUpdateParents(id, !task.completed);
       await get().loadTasks();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   recursiveUpdateChildren: async (id: string, completed: boolean) => {
@@ -313,56 +313,56 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   // Template actions
   createTemplate: async (title: string, parentId: string | null, expanded?: boolean): Promise<string> => {
     try {
-      let newId = await storage.createTemplate({title: title, parent_id: parentId, expanded: expanded});
+      let newId = await storage.createTemplate({ title: title, parent_id: parentId, expanded: expanded });
       if (parentId === null) {
-        await storage.createTemplate({title:"", parent_id: newId});
+        await storage.createTemplate({ title: "", parent_id: newId });
       }
       await get().loadTemplates();
       return newId;
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       return '';
     }
   },
   createTemplateWithoutLoad: async (title: string, parentId: string | null, expanded?: boolean): Promise<string> => {
     try {
-      return await storage.createTemplate({title: title, parent_id: parentId, expanded: expanded});
+      return await storage.createTemplate({ title: title, parent_id: parentId, expanded: expanded });
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       return '';
     }
   },
-  addTemplateAfter: async (title: string, afterId: string | null) : Promise<string> => {
+  addTemplateAfter: async (title: string, afterId: string | null): Promise<string> => {
     try {
       // Find the template that we're inserting after to get its parent
-      const {templateHierarchy} = get();
+      const { templateHierarchy } = get();
       const afterRelation = templateHierarchy.relations.find(rel => rel.child_id === afterId);
       const parentId = afterRelation?.parent_id || null;
-      
+
       // Create the template with the same parent and after_id for positioning
       let id = await storage.createTemplate({
-        title: title.trim(), 
+        title: title.trim(),
         parent_id: parentId,
         completed: false,
         after_id: afterId
       });
       if (parentId === null) {
-        await storage.createTemplate({title:"", parent_id: id});
+        await storage.createTemplate({ title: "", parent_id: id });
       }
       await get().loadTemplates();
-      set({focusedId:id});
+      set({ focusedId: id });
       return id;
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       throw error;
     }
   },
   getTemplateHierarchy: async () => {
     try {
       const hierarchy = await storage.getTemplateHierarchy();
-      set({templateHierarchy: hierarchy, error: null});
+      set({ templateHierarchy: hierarchy, error: null });
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   getRootTemplates: async (): Promise<TaskTemplate[]> => {
@@ -376,7 +376,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await storage.createTaskFromTemplate(templateId, parentInstanceId);
       await get().loadTasks();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   createTemplateFromTask: async (taskId: string, parentInstanceId: string | null = null) => {
@@ -384,7 +384,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await storage.createTemplateFromTask(taskId, parentInstanceId);
       await get().loadTemplates();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   updateTemplate: async (templateId: string, newTitle: string) => {
@@ -393,7 +393,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await get().loadTemplates();
       await get().loadTasks(); // Refresh tasks to show template changes
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       throw error;
     }
   },
@@ -406,17 +406,17 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await get().loadTemplates();
       await get().loadTasks();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       throw error;
     }
   },
-  replaceTaskWithTemplate: async ( taskId: string, templateId: string) => {
+  replaceTaskWithTemplate: async (taskId: string, templateId: string) => {
     try {
       await storage.replaceTaskWithTemplate(taskId, templateId);
       await get().loadTemplates();
       await get().loadTasks();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
       throw error;
     }
   },
@@ -425,7 +425,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await storage.deleteTemplate(id);
       await get().loadTemplates();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   addTemplateRelation: async (parentId: string, childTemplateId: string, position: number = 0) => {
@@ -433,7 +433,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await storage.addTemplateRelation(parentId, childTemplateId, position);
       await get().loadTemplates();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]): TemplateNode[] => {
@@ -444,7 +444,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         .map(rel => {
           const template = templates.find(t => t.id === rel.child_id);
           if (!template) return null;
-          return {...template, children: buildHierarchy(template.id), expanded: rel.expanded};
+          return { ...template, children: buildHierarchy(template.id), expanded: rel.expanded };
         }).filter(Boolean) as TemplateNode[];
     }
     const rootTemplates = templates.filter(template =>
@@ -452,8 +452,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     );
 
     return rootTemplates.map(template => {
-      const rel = relations.find(rel=>rel.child_id === template.id && rel.parent_id === null);
-      return {...template, children: buildHierarchy(template.id), expanded: rel!.expanded};
+      const rel = relations.find(rel => rel.child_id === template.id && rel.parent_id === null);
+      return { ...template, children: buildHierarchy(template.id), expanded: rel!.expanded };
     });
   },
   loadTemplates: async () => {
@@ -466,23 +466,23 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         error: null
       });
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   removeTemplate: async (parentId: string | null, id: string) => {
-      try {
-        await storage.removeTemplate(parentId, id);
-        await get().loadTemplates();
-      } catch (error) {
-        set({error: (error as Error).message});
-      }
+    try {
+      await storage.removeTemplate(parentId, id);
+      await get().loadTemplates();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
   },
   toggleTaskExpand: async (id: string) => {
     try {
       await storage.toggleTaskExpand(id);
       await get().loadTasks();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   },
   toggleTemplateExpand: async (parentId: string | null, id: string) => {
@@ -490,7 +490,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await storage.toggleTemplateExpand(parentId, id);
       await await get().loadTemplates();
     } catch (error) {
-      set({error: (error as Error).message});
+      set({ error: (error as Error).message });
     }
   }
 }));

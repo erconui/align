@@ -33,15 +33,15 @@ export default function HomeScreen() {
     percentage
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
-    const [suggestionsVisible, setSuggestionsVisible] = useState(false);
-    const [suggestionsPosition, setSuggestionsPosition] = useState<{ x: number; y: number; width: number } | null>(null);
-    const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
-    const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
-    const [currentSearchText, setCurrentSearchText] = useState('');
+  const [suggestionsVisible, setSuggestionsVisible] = useState(false);
+  const [suggestionsPosition, setSuggestionsPosition] = useState<{ x: number; y: number; width: number } | null>(null);
+  const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
+  const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
+  const [currentSearchText, setCurrentSearchText] = useState('');
 
-    useEffect(() => {
-      setSuggestionsVisible(false);
-    }, [focusedId]);
+  useEffect(() => {
+    setSuggestionsVisible(false);
+  }, [focusedId]);
 
   const suggestions = useMemo(() => {
     return tree.map(node => ({
@@ -49,6 +49,7 @@ export default function HomeScreen() {
       title: node.title,
     }));
   }, [tree]);
+  const { colors, styles } = useTheme();
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -82,31 +83,30 @@ export default function HomeScreen() {
     setSuggestionsItemId(null);
     setSuggestionsParentId(null);
   };
-  
+
   if (isLoading) {
     return (
-      <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
-        <ActivityIndicator size="large" color="#3B82F6"/>
-        <Text style={{fontSize: 18, color: '#6B7280', marginTop: 16}}>Loading tasks...</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text style={{ fontSize: 18, color: '#6B7280', marginTop: 16 }}>Loading tasks...</Text>
       </View>
     );
   }
 
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
-  const { colors, styles } = useTheme();
 
   return (
-    <View style={{flex: 1, backgroundColor: colors.background}}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={{color: colors.muted, marginTop: 4}}>
+        <Text style={{ color: colors.muted, marginTop: 4 }}>
           {remainingTasks} {remainingTasks === 1 ? 'task' : 'tasks'} remaining
         </Text>
         <ProgressBar value={percentage}
           progressColor={colors.highlight}
           backgroundColor={colors.button}
-          textColor={percentage>45? colors.text: colors.muted}
+          textColor={percentage > 45 ? colors.text : colors.muted}
           rounded
           showPercent />
       </View>
@@ -125,34 +125,34 @@ export default function HomeScreen() {
       />
 
       {/* Add Task Form */}
-      <View style={{padding: 16, backgroundColor: colors.background,  borderBottomColor: colors.border}}>
-        <View style={{flexDirection: 'row'}}>
+      <View style={{ padding: 16, backgroundColor: colors.background, borderBottomColor: colors.border }}>
+        <View style={{ flexDirection: 'row' }}>
           <TextInput
             value={newTaskTitle}
             onChangeText={setNewTaskTitle}
             placeholder="Add a new task..."
             placeholderTextColor={colors.muted}
             onSubmitEditing={handleAddTask}
-            style={{...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding:16, marginHorizontal:0 }}
+            style={{ ...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding: 16, marginHorizontal: 0 }}
           />
           <TouchableOpacity
             onPress={handleAddTask}
             disabled={!newTaskTitle.trim()}
-            style={{...styles.pressableButton, borderTopRightRadius: 8, borderBottomRightRadius: 8}}
+            style={{ ...styles.pressableButton, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
           >
             <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
           </TouchableOpacity>
         </View>
 
         {error && (
-          <Text style={{color: '#ef4444', marginTop: 8, fontSize: 12}}>{error}</Text>
+          <Text style={{ color: '#ef4444', marginTop: 8, fontSize: 12 }}>{error}</Text>
         )}
       </View>
       <View className="flex-1">
         <FlatList
           data={tasks}
           keyExtractor={item => item.id}
-          renderItem={({item}) => (
+          renderItem={({ item }) => (
             <TaskItem
               key={item.id}
               taskNode={item}
@@ -163,13 +163,14 @@ export default function HomeScreen() {
               updateTaskTitle={updateTaskTitle}
               focusedId={focusedId}
               toggleExpand={async (parentId, id) => {
-                toggleTaskExpand(id);}}
+                toggleTaskExpand(id);
+              }}
               onInputMeasure={handleInputMeasure}
               onTextChange={handleTextChange}
               generateList={createTemplateFromTask}
               closeSuggestions={closeSuggestions}
             />
-          )}/>
+          )} />
       </View>
     </View>
   );

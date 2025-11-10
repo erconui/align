@@ -6,8 +6,8 @@ import { ThemeProvider, useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
 function InnerLayout() {
-  const {init} = useTaskStore();
-  const {colors} = useTheme();
+  const { init } = useTaskStore();
+  const { colors } = useTheme();
 
   useEffect(() => {
     init();
@@ -15,7 +15,7 @@ function InnerLayout() {
 
   // For web we can set a full-screen background via View wrapper
   return (
-    <GestureHandlerRootView style={{flex: 1, backgroundColor: colors.background}}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -31,8 +31,8 @@ function InnerLayout() {
           name="index"
           options={{
             title: 'Tasks',
-            tabBarIcon: ({color, size}) => (
-              <Ionicons name="checkbox-outline" size={size} color={color}/>
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="checkbox-outline" size={size} color={color} />
             ),
           }}
         />
@@ -40,8 +40,8 @@ function InnerLayout() {
           name="template"
           options={{
             title: 'Lists',
-            tabBarIcon: ({color, size}) => (
-              <Ionicons name="list-outline" size={size} color={color}/>
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="list-outline" size={size} color={color} />
             ),
           }}
         />
@@ -49,9 +49,9 @@ function InnerLayout() {
           name="settings"
           options={{
             title: 'Settings',
-            tabBarIcon: ({color, size}) => (
+            tabBarIcon: ({ color, size }) => (
               // <Ionicons name="calendar-outline" size={size} color={color}/>
-              <Ionicons name="settings-outline" size={size} color={color}/>
+              <Ionicons name="settings-outline" size={size} color={color} />
             ),
           }}
         />

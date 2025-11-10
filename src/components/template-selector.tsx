@@ -1,18 +1,17 @@
-import React, {useState, useEffect} from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  Alert,
   FlatList,
   Pressable,
-  Alert
+  Text,
+  TextInput,
+  View
 } from 'react-native';
-import {useTaskStore} from '../stores/taskStore';
-import {useLocalSearchParams, useRouter} from 'expo-router';
+import { useTaskStore } from '../stores/taskStore';
 
 export default function TemplateSelectorScreen() {
-  const {flatTemplates, addTemplateRelation} = useTaskStore();
+  const { flatTemplates, addTemplateRelation } = useTaskStore();
   const params = useLocalSearchParams();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,7 +71,7 @@ export default function TemplateSelectorScreen() {
       <FlatList
         data={filteredTemplates}
         keyExtractor={item => item.id}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <Pressable
             onPress={() => handleSelectTemplate(item.id)}
             className="bg-white border-b border-gray-100 px-6 py-4"

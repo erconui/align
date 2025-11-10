@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { TaskTemplate } from './BaseItem';
+import { TaskTemplate } from '../types';
 
 interface GlobalSuggestionsProps {
   suggestions: TaskTemplate[];
@@ -10,7 +10,7 @@ interface GlobalSuggestionsProps {
   searchText: string; // Add searchText prop
 }
 
-export const GlobalSuggestions = ({ 
+export const GlobalSuggestions = ({
   suggestions,
   onSuggestionSelect,
   position,
@@ -18,7 +18,7 @@ export const GlobalSuggestions = ({
   searchText
 }: GlobalSuggestionsProps) => {
   // Filter suggestions based on search text
-  const filteredSuggestions = useMemo(() => 
+  const filteredSuggestions = useMemo(() =>
     suggestions.filter(template =>
       template.title.toLowerCase().startsWith(searchText.toLowerCase())
     ),
@@ -28,7 +28,7 @@ export const GlobalSuggestions = ({
   if (!visible || !filteredSuggestions.length || !position) return null;
 
   const screenHeight = Dimensions.get('window').height;
-  
+
   // Determine if we should show above or below based on screen space
   const spaceBelow = screenHeight - position.y;
   const showAbove = spaceBelow < 200 && position.y > 200;
@@ -38,8 +38,8 @@ export const GlobalSuggestions = ({
     position: 'absolute' as const,
     left: position.x,
     width: position.width,
-    [showAbove ? 'bottom' : 'top']: showAbove ? 
-      (screenHeight - position.y) : 
+    [showAbove ? 'bottom' : 'top']: showAbove ?
+      (screenHeight - position.y) :
       position.y,
   };
 

@@ -36,23 +36,23 @@ interface BaseItemProps<T extends BaseNode> {
 }
 
 export const BaseItem = <T extends BaseNode>({
-                                               node,
-                                               showCompletionToggle = false,
-                                               onToggleCompletion,
-                                               onDelete,
-                                               onAddSubItem,
-                                               onAddItemAfter,
-                                               onUpdateTitle,
-                                               focusedId,
-                                               level = 0,
-                                               parentId,
-                                               isTask,
-                                               onInputMeasure,
-                                               onTextChange,
-                                               generateList,
-                                               toggleExpand,
-                                               closeSuggestions
-                                             }: BaseItemProps<T>) => {
+  node,
+  showCompletionToggle = false,
+  onToggleCompletion,
+  onDelete,
+  onAddSubItem,
+  onAddItemAfter,
+  onUpdateTitle,
+  focusedId,
+  level = 0,
+  parentId,
+  isTask,
+  onInputMeasure,
+  onTextChange,
+  generateList,
+  toggleExpand,
+  closeSuggestions
+}: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
@@ -94,7 +94,7 @@ export const BaseItem = <T extends BaseNode>({
   const { colors, styles } = useTheme();
 
   return (
-    <View style={[{backgroundColor: colors.background}]}> 
+    <View style={[{ backgroundColor: colors.background }]}>
       <DraggableContext
         itemId={node.id}
         onDragStart={() => {
@@ -106,10 +106,10 @@ export const BaseItem = <T extends BaseNode>({
           console.log('Drag ended for:', node.id);
         }}>
         <View style={styles.row}>
-          {hasChildren?<Pressable onPress={() => toggleExpand(parentId||null,node.id)} style={styles.expand}>
+          {hasChildren ? <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.expand}>
             {node.expanded ? <Ionicons name="caret-down-outline" size={18} color={colors.icon} style={styles.icon} /> :
-                        <Ionicons name="caret-forward-outline" size={18} color={colors.icon} style={styles.icon} />}
-          </Pressable>:<View style={styles.expand} />}
+              <Ionicons name="caret-forward-outline" size={18} color={colors.icon} style={styles.icon} />}
+          </Pressable> : <View style={styles.expand} />}
 
           {showCompletionToggle && onToggleCompletion && (
             <View style={styles.checkboxContainer}>
@@ -133,17 +133,17 @@ export const BaseItem = <T extends BaseNode>({
             returnKeyType="done"
           />
 
-          <Pressable onPress={() => hasChildren?generateList(node.id):onAddSubItem("", node.id)} >
-            <Ionicons name={hasChildren?isTask?"list-outline":"checkbox-outline":"add-outline"} size={18} style={{...styles.iconButton}}/>
+          <Pressable onPress={() => hasChildren ? generateList(node.id) : onAddSubItem("", node.id)} >
+            <Ionicons name={hasChildren ? isTask ? "list-outline" : "checkbox-outline" : "add-outline"} size={18} style={{ ...styles.iconButton }} />
           </Pressable>
 
           <Pressable onPress={() => onDelete(parentId || null, node.id)} >
-            <Ionicons name="trash-outline" size={18} color={colors.icon} style={{...styles.iconButton}}/>
+            <Ionicons name="trash-outline" size={18} color={colors.icon} style={{ ...styles.iconButton }} />
           </Pressable>
         </View>
       </DraggableContext>
       {node.expanded && hasChildren && (
-        <View style={[{paddingLeft: 20 + (level * 20)}]}>
+        <View style={[{ paddingLeft: 20 + (level * 20) }]}>
           {node.children?.map(child => (
             <BaseItem
               key={child.id}

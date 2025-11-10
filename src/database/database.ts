@@ -76,7 +76,7 @@ export const initDatabase = async (): Promise<void> => {
           UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
         END;`
     );
-    
+
     await dbInstance.execAsync(`
       CREATE TRIGGER IF NOT EXISTS update_tasks_completed_at
         AFTER UPDATE OF completed ON tasks
@@ -260,11 +260,11 @@ export const database = {
         position = result?.position ?? 0;
       }
       // if (template.parent_id) {
-        const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
-        await dbInstance.runAsync(
-          'INSERT INTO template_relations (id, parent_id, child_id, position) VALUES (?, ?, ?, ?)',
-          [relId, template.parent_id || null, id, position] // position 0 for now
-        );
+      const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      await dbInstance.runAsync(
+        'INSERT INTO template_relations (id, parent_id, child_id, position) VALUES (?, ?, ?, ?)',
+        [relId, template.parent_id || null, id, position] // position 0 for now
+      );
       // }
 
       return id;
@@ -289,7 +289,7 @@ export const database = {
           ORDER BY position ASC
       `);
 
-      return {templates, relations};
+      return { templates, relations };
     } catch (error) {
       console.error('Error getting template hierarchy:', error);
       throw error;
@@ -381,7 +381,7 @@ export const database = {
         throw new Error('Task not found');
       }
       // Create the template from task
-      const templateId = await database.createTemplate({title: task.title, parent_id: parentInstanceId, completed: false});
+      const templateId = await database.createTemplate({ title: task.title, parent_id: parentInstanceId, completed: false });
       // Recursively create templates from task children
       const childTasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE parent_id = ?', [taskId]);
       for (const childTask of childTasks) {
@@ -394,7 +394,7 @@ export const database = {
     }
   },
 
-// Update template title and structure
+  // Update template title and structure
   updateTemplate: async (templateId: string, newTitle: string, newChildren: string[]): Promise<void> => {
     try {
       // Update template title
@@ -449,7 +449,7 @@ export const database = {
     }
   },
 
-// Sync template changes to all bound task instances
+  // Sync template changes to all bound task instances
   syncTemplateChanges: async (templateId: string): Promise<void> => {
     try {
       const dbInstance = await db;
@@ -539,7 +539,7 @@ export const database = {
       throw error;
     }
   },
-// Delete template and its relations
+  // Delete template and its relations
   deleteTemplate: async (id: string): Promise<void> => {
     try {
       // First delete any relations involving this template
@@ -559,7 +559,7 @@ export const database = {
     }
   },
 
-// Add template relation (for building hierarchies)
+  // Add template relation (for building hierarchies)
   addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, position: number = 0): Promise<void> => {
     try {
       const dbInstance = await db;
@@ -657,7 +657,7 @@ export const database = {
       console.error('Error replacing task with template', error);
       throw error;
     }
-  // },
+    // },
   },
 
   toggleTaskExpand: async (id: string): Promise<void> => {

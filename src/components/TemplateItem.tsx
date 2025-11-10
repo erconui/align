@@ -21,23 +21,23 @@ interface TemplateItemProps {
 }
 
 export const TemplateItem: React.FC<TemplateItemProps> = ({
-                                                            templateNode,
-                                                            expandedTemplates,
-                                                            onToggleExpand,
-                                                            onUseTemplate,
-                                                            deleteTemplate,
-                                                            addTemplateAfter,
-                                                            updateTemplate,
-                                                            focusedId,
-  parentId,
-  removeTemplate,
-  onInputMeasure,
-  onTextChange,
-  generateList,
-  toggleExpand,
-  closeSuggestions
+                                                           templateNode,
+                                                           expandedTemplates,
+                                                           onToggleExpand,
+                                                           onUseTemplate,
+                                                           deleteTemplate,
+                                                           addTemplateAfter,
+                                                           updateTemplate,
+                                                           focusedId,
+                                                           parentId,
+                                                           removeTemplate,
+                                                           onInputMeasure,
+                                                           onTextChange,
+                                                           generateList,
+                                                           toggleExpand,
+                                                           closeSuggestions
                                                           }) => {
-  const {createTemplate} = useTaskStore();
+  const { createTemplate } = useTaskStore();
 
   return (
     <BaseItem

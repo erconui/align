@@ -45,10 +45,10 @@ const nativeStorage = {
   },
 
   getTemplateHierarchy: async (): Promise<{ templates: TaskTemplate[], relations: TaskTemplateRelation[] }> => {
-    const hierarchy =  await database.getTemplateHierarchy();
+    const hierarchy = await database.getTemplateHierarchy();
     return {
       templates: hierarchy.templates,
-      relations: hierarchy.relations.map(rel => ({...rel, expanded: Boolean(rel.expanded)}))
+      relations: hierarchy.relations.map(rel => ({ ...rel, expanded: Boolean(rel.expanded) }))
     };
   },
 
@@ -76,7 +76,7 @@ const nativeStorage = {
     await database.deleteTemplate(id);
   },
   removeTemplate: async (parentId: string | null, id: string): Promise<void> => {
-      await database.removeTemplate(parentId, id);
+    await database.removeTemplate(parentId, id);
   },
 
   addTemplateRelation: async (parentTemplateId: string, childTemplateId: string, position: number = 0): Promise<void> => {
