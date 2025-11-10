@@ -33,6 +33,7 @@ interface BaseItemProps<T extends BaseNode> {
   isTask: boolean;
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
+  closeSuggestions: () => void;
 }
 
 export const BaseItem = <T extends BaseNode>({
@@ -51,7 +52,8 @@ export const BaseItem = <T extends BaseNode>({
                                                onInputMeasure,
                                                onTextChange,
                                                generateList,
-                                               toggleExpand
+                                               toggleExpand,
+                                               closeSuggestions
                                              }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
@@ -82,10 +84,12 @@ export const BaseItem = <T extends BaseNode>({
   const handleSubmit = async () => {
     await onUpdateTitle(node.id, editTitle);
     await onAddItemAfter("", node.id);
+    closeSuggestions
   };
 
   const handleBlur = () => {
     onUpdateTitle(node.id, editTitle);
+    closeSuggestions();
   };
 
   const hasChildren = node.children && node.children.length > 0;
@@ -163,6 +167,7 @@ export const BaseItem = <T extends BaseNode>({
               onTextChange={onTextChange}
               generateList={generateList}
               toggleExpand={toggleExpand}
+              closeSuggestions={closeSuggestions}
             />
           ))}
         </View>

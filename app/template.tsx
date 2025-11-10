@@ -72,6 +72,13 @@ export default function TemplateScreen() {
     setSuggestionsItemId(null);
     setSuggestionsParentId(null);
   };
+
+  const closeSuggestions = () => {
+    setTimeout(() => {
+      setSuggestionsVisible(false);
+    }, 200);
+  };
+
   const suggestions = useMemo(() => {
     return tree.map(node => ({
       id: node.id,
@@ -190,6 +197,7 @@ export default function TemplateScreen() {
                 onTextChange={handleTextChange}
                 generateList={createTaskFromTemplate}
                 toggleExpand={async (parentId, id) => {toggleTemplateExpand(parentId, id);}}
+                closeSuggestions={closeSuggestions}
               />
             )}
           />

@@ -15,6 +15,7 @@ interface TaskItemProps {
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
   toggleExpand: (parentId: string | null, id: string) => void;
+  closeSuggestions: () => void;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -29,7 +30,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
   onInputMeasure,
   onTextChange,
   generateList,
-  toggleExpand
+  toggleExpand,
+  closeSuggestions
                                                   }) => {
   return (
     <BaseItem
@@ -49,6 +51,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       onTextChange={onTextChange}
       generateList={generateList}
       toggleExpand={toggleExpand}
+      closeSuggestions={closeSuggestions}
     />
   );
 };

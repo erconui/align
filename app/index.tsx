@@ -40,6 +40,7 @@ export default function HomeScreen() {
     const [currentSearchText, setCurrentSearchText] = useState('');
 
     useEffect(() => {
+      console.log("Focused ID changed, hiding suggestions");
       setSuggestionsVisible(false);
     }, [focusedId]);
 
@@ -67,6 +68,12 @@ export default function HomeScreen() {
   const handleTextChange = (text: string) => {
     setCurrentSearchText(text);
     setSuggestionsVisible(text.length > 0);
+  };
+
+  const closeSuggestions = () => {
+    setTimeout(() => {
+      setSuggestionsVisible(false);
+    }, 200);
   };
 
   const handleSuggestionSelect = async (suggestion: { id: string; title: string }, itemId: string, parentId: string | null) => {
@@ -164,6 +171,7 @@ export default function HomeScreen() {
               onInputMeasure={handleInputMeasure}
               onTextChange={handleTextChange}
               generateList={createTemplateFromTask}
+              closeSuggestions={closeSuggestions}
             />
           )}/>
       </View>

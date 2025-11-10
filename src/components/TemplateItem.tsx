@@ -18,6 +18,7 @@ interface TemplateItemProps {
   parentId: string | null;
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
+  closeSuggestions: () => void;
 }
 
 export const TemplateItem: React.FC<TemplateItemProps> = ({
@@ -35,7 +36,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
   onInputMeasure,
   onTextChange,
   generateList,
-  toggleExpand
+  toggleExpand,
+  closeSuggestions
                                                           }) => {
   const {createTemplate} = useTaskStore();
 
@@ -65,6 +67,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       onTextChange={onTextChange}
       generateList={generateList}
       toggleExpand={toggleExpand}
+      closeSuggestions={closeSuggestions}
     />
   );
 };
