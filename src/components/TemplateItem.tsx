@@ -18,6 +18,8 @@ interface TemplateItemProps {
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
   closeSuggestions: () => void;
+  handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
+  registerItemLayout: (itemId: string, layout: { x: number; y: number; width: number; height: number }) => void;
 }
 
 export const TemplateItem: React.FC<TemplateItemProps> = ({
@@ -35,7 +37,9 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                            onTextChange,
                                                            generateList,
                                                            toggleExpand,
-                                                           closeSuggestions
+                                                           closeSuggestions,
+                                                           registerItemLayout,
+                                                           handleDrop
                                                           }) => {
   const { createTemplate } = useTaskStore();
 
@@ -65,6 +69,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       generateList={generateList}
       toggleExpand={toggleExpand}
       closeSuggestions={closeSuggestions}
+      handleDrop={handleDrop}
+      registerItemLayout={registerItemLayout}
     />
   );
 };

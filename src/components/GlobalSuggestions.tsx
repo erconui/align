@@ -1,10 +1,14 @@
 import React, { useMemo } from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { TaskTemplate } from '../types';
+
+interface Suggestion {
+  id: string;
+  title: string;
+}
 
 interface GlobalSuggestionsProps {
-  suggestions: TaskTemplate[];
-  onSuggestionSelect: (suggestion: TaskTemplate) => void;
+  suggestions: Suggestion[];
+  onSuggestionSelect: (suggestion: Suggestion) => void;
   position: { x: number; y: number; width: number } | null;
   visible: boolean;
   searchText: string; // Add searchText prop

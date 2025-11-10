@@ -33,6 +33,8 @@ interface BaseItemProps<T extends BaseNode> {
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
   closeSuggestions: () => void;
+  registerItemLayout: (itemId: string, layout: { x: number; y: number; width: number; height: number }) => void;
+  handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
 }
 
 export const BaseItem = <T extends BaseNode>({
@@ -51,11 +53,14 @@ export const BaseItem = <T extends BaseNode>({
                                               onTextChange,
                                               generateList,
                                               toggleExpand,
-                                              closeSuggestions
+                                              closeSuggestions,
+                                              registerItemLayout,
+                                              handleDrop
                                              }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
+  const itemRef = useRef<View>(null);
 
   useEffect(() => {
     setEditTitle(node.title);
@@ -66,6 +71,19 @@ export const BaseItem = <T extends BaseNode>({
       textInputRef.current.focus();
     }
   }, [focusedId, node.id]);
+
+  useEffect(() => {
+    const measureItem = () => {
+      itemRef.current?.measure((x, y, width, height, pageX, pageY) => {
+        // pageX/pageY are absolute coordinates on the screen
+        registerItemLayout?.(node.id, { x: pageX, y: pageY, width, height });
+      });
+    };
+
+    // measure after layout settles
+    const timeout = setTimeout(measureItem, 0);
+    return () => clearTimeout(timeout);
+  }, [node.id]);
 
   const handleTextChange = (text: string) => {
     setEditTitle(text);
@@ -94,17 +112,10 @@ export const BaseItem = <T extends BaseNode>({
   const { colors, styles } = useTheme();
 
   return (
-    <View style={[{ backgroundColor: colors.background }]}>
+    <View style={[{ backgroundColor: colors.background }]} ref={itemRef}>
       <DraggableContext
         itemId={node.id}
-        onDragStart={() => {
-          // Handle drag start - you might want to highlight or show drop zones
-          console.log('Drag started for:', node.id);
-        }}
-        onDragEnd={() => {
-          // Handle drag end - check if dropped on valid target
-          console.log('Drag ended for:', node.id);
-        }}>
+        onDrop={handleDrop}>
         <View style={styles.row}>
           {hasChildren ? <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.expand}>
             {node.expanded ? <Ionicons name="caret-down-outline" size={18} color={colors.icon} style={styles.icon} /> :
@@ -163,6 +174,8 @@ export const BaseItem = <T extends BaseNode>({
               generateList={generateList}
               toggleExpand={toggleExpand}
               closeSuggestions={closeSuggestions}
+              registerItemLayout={registerItemLayout}
+              handleDrop={handleDrop}
             />
           ))}
         </View>

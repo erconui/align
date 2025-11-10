@@ -15,6 +15,8 @@ interface TaskItemProps {
   onTextChange?: (text: string) => void;
   toggleExpand: (parentId: string | null, id: string) => void;
   closeSuggestions: () => void;
+  registerItemLayout: (itemId: string, layout: { x: number; y: number; width: number; height: number }) => void;
+  handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -29,7 +31,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                    onTextChange,
                                                    generateList,
                                                    toggleExpand,
-                                                   closeSuggestions
+                                                   closeSuggestions,
+                                                   registerItemLayout,
+                                                   handleDrop
                                                   }) => {
   return (
     <BaseItem
@@ -49,6 +53,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       generateList={generateList}
       toggleExpand={toggleExpand}
       closeSuggestions={closeSuggestions}
+      registerItemLayout={registerItemLayout}
+      handleDrop={handleDrop}
     />
   );
 };

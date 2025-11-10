@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -84,6 +84,11 @@ export default function HomeScreen() {
     setSuggestionsParentId(null);
   };
 
+  const itemLayouts = useRef<Record<string, {x:number; y:number; width:number; height:number}>>({});
+  const registerItemLayout = (itemId: string, layout: {x:number; y:number; width:number; height:number}) => {
+    itemLayouts.current[itemId] = layout;
+  }
+
   if (isLoading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -92,6 +97,40 @@ export default function HomeScreen() {
       </View>
     );
   }
+
+  const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
+    const layouts = itemLayouts.current;
+    const dragged = layouts[itemId];
+    if (!dragged) return;
+
+    // Compute final drop position
+    const dropCenterY = dragged.y + finalPosition.y + dragged.height / 2;
+    const dropX = dragged.x + finalPosition.x;
+
+    console.log('Dragged item ',itemId, ' from layout:', dragged, ' to position(x,y):', dropX,',', dropCenterY);
+    // Find potential drop target
+    const entries = Object.entries(layouts).filter(([id]) => id !== itemId);
+    const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
+
+    if (!targetEntry) return;
+    const [targetId, targetLayout] = targetEntry;
+
+    const horizontalShift = dropX - dragged.x;
+
+    if (horizontalShift > 25) {
+      // Dragged right → indent under target
+      // addSubTask('', targetId);
+      console.log(`Indented ${itemId} under ${targetId}`);
+    } else if (horizontalShift < -25) {
+      // Dragged left → outdent to parent's level
+      // For this, find parent ID from your data structure (depends on your store)
+      console.log(`Outdented ${itemId}`);
+    } else {
+      // No horizontal shift → reorder after target
+      // addTaskAfter('', targetId);
+      console.log(`Moved ${itemId} after ${targetId}`);
+    }
+  };
 
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
@@ -169,6 +208,8 @@ export default function HomeScreen() {
               onTextChange={handleTextChange}
               generateList={createTemplateFromTask}
               closeSuggestions={closeSuggestions}
+              registerItemLayout={registerItemLayout}
+              handleDrop={handleDrop}
             />
           )} />
       </View>

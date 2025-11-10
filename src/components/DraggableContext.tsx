@@ -31,6 +31,7 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
       isActive.value = true;
       opacity.value = dragOpacity;
       startPos.value = { x: translateX.value, y: translateY.value };
+      console.log('Drag started for:', itemId, ' at position:', startPos.value);
 
       if (onDragStart) {
         runOnJS(onDragStart)(itemId);
