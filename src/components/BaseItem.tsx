@@ -36,23 +36,23 @@ interface BaseItemProps<T extends BaseNode> {
 }
 
 export const BaseItem = <T extends BaseNode>({
-  node,
-  showCompletionToggle = false,
-  onToggleCompletion,
-  onDelete,
-  onAddSubItem,
-  onAddItemAfter,
-  onUpdateTitle,
-  focusedId,
-  level = 0,
-  parentId,
-  isTask,
-  onInputMeasure,
-  onTextChange,
-  generateList,
-  toggleExpand,
-  closeSuggestions
-}: BaseItemProps<T>) => {
+                                              node,
+                                              showCompletionToggle = false,
+                                              onToggleCompletion,
+                                              onDelete,
+                                              onAddSubItem,
+                                              onAddItemAfter,
+                                              onUpdateTitle,
+                                              focusedId,
+                                              level = 0,
+                                              parentId,
+                                              isTask,
+                                              onInputMeasure,
+                                              onTextChange,
+                                              generateList,
+                                              toggleExpand,
+                                              closeSuggestions
+                                             }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
