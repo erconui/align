@@ -10,7 +10,6 @@ interface TaskItemProps {
   addSubTask: (title: string, parentId: string | null) => void;
   addTaskAfter: (title: string, afterId: string | null) => void;
   updateTaskTitle: (id: string, title: string) => void;
-  replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   focusedId: string | null;
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
@@ -25,7 +24,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                     addSubTask,
                                                     addTaskAfter,
                                                     updateTaskTitle,
-  replaceTemplate,
                                                     focusedId,
   onInputMeasure,
   onTextChange,
@@ -45,7 +43,6 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       onAddItemAfter={addTaskAfter}
       onUpdateTitle={updateTaskTitle}
       focusedId={focusedId}
-      replaceTemplate={replaceTemplate}
       isTask={true}
       onInputMeasure={onInputMeasure}
       onTextChange={onTextChange}

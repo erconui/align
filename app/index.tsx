@@ -40,7 +40,6 @@ export default function HomeScreen() {
     const [currentSearchText, setCurrentSearchText] = useState('');
 
     useEffect(() => {
-      console.log("Focused ID changed, hiding suggestions");
       setSuggestionsVisible(false);
     }, [focusedId]);
 
@@ -163,9 +162,6 @@ export default function HomeScreen() {
               addTaskAfter={addTaskAfter}
               updateTaskTitle={updateTaskTitle}
               focusedId={focusedId}
-              replaceTemplate={async (parentId, oldId, newId) => {
-                replaceTaskWithTemplate(oldId, newId);
-              }}
               toggleExpand={async (parentId, id) => {
                 toggleTaskExpand(id);}}
               onInputMeasure={handleInputMeasure}

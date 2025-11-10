@@ -10,7 +10,6 @@ interface TemplateItemProps {
   deleteTemplate: (id: string) => void;
   addTemplateAfter: (title: string, afterId: string) => void;
   updateTemplate: (id: string, title: string) => void;
-  replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   removeTemplate: (parentId: string | null, id: string) => void;
   toggleExpand: (parentId: string | null, id: string) => void;
   generateList: (id: string) => void;
@@ -29,7 +28,6 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                             deleteTemplate,
                                                             addTemplateAfter,
                                                             updateTemplate,
-  replaceTemplate,
                                                             focusedId,
   parentId,
   removeTemplate,
@@ -58,7 +56,6 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
           addTemplateAfter(title, afterId);
         }
       }}
-      replaceTemplate={replaceTemplate}
       onUpdateTitle={updateTemplate}
       focusedId={focusedId}
       parentId={parentId}

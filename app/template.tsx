@@ -191,7 +191,6 @@ export default function TemplateScreen() {
                 addTemplateAfter={addTemplateAfter}
                 focusedId={focusedId}
                 parentId={null}
-                replaceTemplate={replaceTemplate}
                 removeTemplate={removeTemplate}
                 onInputMeasure={handleInputMeasure}
                 onTextChange={handleTextChange}

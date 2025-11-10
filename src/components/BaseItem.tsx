@@ -28,7 +28,6 @@ interface BaseItemProps<T extends BaseNode> {
   toggleExpand: (parentId: string | null, id: string) => void;
   focusedId: string | null;
   level?: number;
-  replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   parentId?: string | null;
   isTask: boolean;
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
@@ -44,7 +43,6 @@ export const BaseItem = <T extends BaseNode>({
                                                onAddSubItem,
                                                onAddItemAfter,
                                                onUpdateTitle,
-                                               replaceTemplate,
                                                focusedId,
                                                level = 0,
                                                parentId,
@@ -136,12 +134,10 @@ export const BaseItem = <T extends BaseNode>({
           />
 
           <Pressable onPress={() => hasChildren?generateList(node.id):onAddSubItem("", node.id)} >
-            {/* <Text style={styles.icon}>+</Text> */}
             <Ionicons name={hasChildren?isTask?"list-outline":"checkbox-outline":"add-outline"} size={18} style={{...styles.iconButton}}/>
           </Pressable>
 
           <Pressable onPress={() => onDelete(parentId || null, node.id)} >
-            {/* <Text style={styles.icon}>x</Text> */}
             <Ionicons name="trash-outline" size={18} color={colors.icon} style={{...styles.iconButton}}/>
           </Pressable>
         </View>
@@ -158,7 +154,6 @@ export const BaseItem = <T extends BaseNode>({
               onAddSubItem={onAddSubItem}
               onAddItemAfter={onAddItemAfter}
               onUpdateTitle={onUpdateTitle}
-              replaceTemplate={replaceTemplate}
               focusedId={focusedId}
               level={level + 1}
               parentId={node.id}
