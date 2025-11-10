@@ -8,16 +8,12 @@ import { DraggableContext } from './DraggableContext';
 interface BaseNode {
   id: string;
   title: string;
+  expanded?: boolean;
   children?: BaseNode[];
 }
 
 interface TaskNode extends BaseNode {
   completed: boolean;
-}
-
-export interface TaskTemplate {
-  id: string;
-  title: string;
 }
 
 interface BaseItemProps<T extends BaseNode> {
@@ -29,9 +25,9 @@ interface BaseItemProps<T extends BaseNode> {
   onAddItemAfter: (title: string, afterId: string | null) => void;
   generateList: (id: string) => void;
   onUpdateTitle: (id: string, title: string) => void;
+  toggleExpand: (parentId: string | null, id: string) => void;
   focusedId: string | null;
   level?: number;
-  suggestions: TaskTemplate[];
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   parentId?: string | null;
   isTask: boolean;
@@ -50,21 +46,16 @@ export const BaseItem = <T extends BaseNode>({
                                                replaceTemplate,
                                                focusedId,
                                                level = 0,
-                                               suggestions,
                                                parentId,
                                                isTask,
                                                onInputMeasure,
                                                onTextChange,
-                                               generateList
+                                               generateList,
+                                               toggleExpand
                                              }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
-
-  // Filter suggestions based on current editTitle
-  const filteredSuggestions = suggestions.filter(template =>
-    template.title.toLowerCase().startsWith(editTitle.toLowerCase())
-  );
 
   useEffect(() => {
     setEditTitle(node.title);
@@ -78,9 +69,7 @@ export const BaseItem = <T extends BaseNode>({
 
   const handleTextChange = (text: string) => {
     setEditTitle(text);
-    console.log('BaseItem textChange:', text);
     if (onTextChange) {
-      console.log('BaseItem handleTextChange:', text);
       onTextChange(text);
     }
     if (text.length > 0 && onInputMeasure && textInputRef.current) {
@@ -115,8 +104,8 @@ export const BaseItem = <T extends BaseNode>({
           console.log('Drag ended for:', node.id);
         }}>
         <View style={styles.row}>
-          {hasChildren?<Pressable onPress={() => setExpanded(!expanded)} style={styles.expand}>
-            {expanded ? <Ionicons name="caret-down-outline" size={18} color={colors.icon} style={styles.icon} /> :
+          {hasChildren?<Pressable onPress={() => toggleExpand(parentId||null,node.id)} style={styles.expand}>
+            {node.expanded ? <Ionicons name="caret-down-outline" size={18} color={colors.icon} style={styles.icon} /> :
                         <Ionicons name="caret-forward-outline" size={18} color={colors.icon} style={styles.icon} />}
           </Pressable>:<View style={styles.expand} />}
 
@@ -124,10 +113,8 @@ export const BaseItem = <T extends BaseNode>({
             <View style={styles.checkboxContainer}>
               <BouncyCheckbox
                 isChecked={'completed' in node ? (node as TaskNode).completed : false}
-                // Use a controlled callback (some versions of the lib use `useBuiltInState`)
                 useBuiltInState={false}
                 onPress={async () => await onToggleCompletion(node.id)}
-                // Keep the checkbox icon centered and small; the title is the TextInput
                 fillColor={colors.highlight}
               />
             </View>
@@ -155,7 +142,7 @@ export const BaseItem = <T extends BaseNode>({
           </Pressable>
         </View>
       </DraggableContext>
-      {expanded && hasChildren && (
+      {node.expanded && hasChildren && (
         <View style={[{paddingLeft: 20 + (level * 20)}]}>
           {node.children?.map(child => (
             <BaseItem
@@ -170,12 +157,12 @@ export const BaseItem = <T extends BaseNode>({
               replaceTemplate={replaceTemplate}
               focusedId={focusedId}
               level={level + 1}
-              suggestions={suggestions}
               parentId={node.id}
               isTask={isTask}
               onInputMeasure={onInputMeasure}
               onTextChange={onTextChange}
               generateList={generateList}
+              toggleExpand={toggleExpand}
             />
           ))}
         </View>

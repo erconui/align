@@ -45,4 +45,5 @@ export interface AddTemplateParams {
   completed: boolean;
   position?: number | null;
   after_id?: string | null;
+  expanded?: boolean;
 }

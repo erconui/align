@@ -1,14 +1,6 @@
 import React from 'react';
-import { useTaskStore } from '../stores/taskStore';
-import { BaseItem, TaskTemplate } from './BaseItem';
-
-interface TemplateNode {
-  id: string;
-  title: string;
-  created_at?: string;
-  updated_at?: string;
-  children?: TemplateNode[];
-}
+import { TemplateNode, useTaskStore } from '../stores/taskStore';
+import { BaseItem } from './BaseItem';
 
 interface TemplateItemProps {
   templateNode: TemplateNode;
@@ -20,9 +12,9 @@ interface TemplateItemProps {
   updateTemplate: (id: string, title: string) => void;
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   removeTemplate: (parentId: string | null, id: string) => void;
+  toggleExpand: (parentId: string | null, id: string) => void;
   generateList: (id: string) => void;
   focusedId: string | null;
-  suggestions: TaskTemplate[];
   parentId: string | null;
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
@@ -38,12 +30,12 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                             updateTemplate,
   replaceTemplate,
                                                             focusedId,
-  suggestions,
   parentId,
   removeTemplate,
   onInputMeasure,
   onTextChange,
-  generateList
+  generateList,
+  toggleExpand
                                                           }) => {
   const {createTemplate} = useTaskStore();
 
@@ -56,7 +48,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       }}
       onAddSubItem={async (title, parentId) => {
         if (parentId) {
-          await createTemplate(title, parentId);
+          await createTemplate(title, parentId, true);
         }
       }}
       onAddItemAfter={(title, afterId) => {
@@ -67,12 +59,12 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       replaceTemplate={replaceTemplate}
       onUpdateTitle={updateTemplate}
       focusedId={focusedId}
-      suggestions={suggestions}
       parentId={parentId}
       isTask={false}
       onInputMeasure={onInputMeasure}
       onTextChange={onTextChange}
       generateList={generateList}
+      toggleExpand={toggleExpand}
     />
   );
 };

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TaskNode } from '../stores/taskStore';
-import { BaseItem, TaskTemplate } from './BaseItem';
+import { BaseItem } from './BaseItem';
 
 interface TaskItemProps {
   taskNode: TaskNode;
@@ -12,9 +12,9 @@ interface TaskItemProps {
   updateTaskTitle: (id: string, title: string) => void;
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   focusedId: string | null;
-  suggestions: TaskTemplate[];
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
+  toggleExpand: (parentId: string | null, id: string) => void;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -26,10 +26,10 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                     updateTaskTitle,
   replaceTemplate,
                                                     focusedId,
-  suggestions,
   onInputMeasure,
   onTextChange,
-  generateList
+  generateList,
+  toggleExpand
                                                   }) => {
   return (
     <BaseItem
@@ -43,12 +43,12 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       onAddItemAfter={addTaskAfter}
       onUpdateTitle={updateTaskTitle}
       focusedId={focusedId}
-      suggestions={suggestions}
       replaceTemplate={replaceTemplate}
       isTask={true}
       onInputMeasure={onInputMeasure}
       onTextChange={onTextChange}
       generateList={generateList}
+      toggleExpand={toggleExpand}
     />
   );
 };

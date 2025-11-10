@@ -45,7 +45,11 @@ const nativeStorage = {
   },
 
   getTemplateHierarchy: async (): Promise<{ templates: TaskTemplate[], relations: TaskTemplateRelation[] }> => {
-    return await database.getTemplateHierarchy();
+    const hierarchy =  await database.getTemplateHierarchy();
+    return {
+      templates: hierarchy.templates,
+      relations: hierarchy.relations.map(rel => ({...rel, expanded: Boolean(rel.expanded)}))
+    };
   },
 
   getRootTemplates: async (): Promise<TaskTemplate[]> => {
@@ -99,6 +103,22 @@ const nativeStorage = {
       await database.clearDatabase();
     } catch (error) {
       console.error('Error clearing database:', error);
+      throw error;
+    }
+  },
+  toggleTaskExpand: async (id: string): Promise<void> => {
+    try {
+      await database.toggleTaskExpand(id);
+    } catch (error) {
+      console.error('Error toggling the task', error);
+      throw error;
+    }
+  },
+  toggleTemplateExpand: async (parentId: string | null, id: string): Promise<void> => {
+    try {
+      await database.toggleTemplateExpand(parentId, id);
+    } catch (error) {
+      console.error('Error toggling the task', error);
       throw error;
     }
   }

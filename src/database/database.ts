@@ -93,7 +93,6 @@ export const initDatabase = async (): Promise<void> => {
         END;
     `);
 
-    console.log('Database initialized successfully');
   } catch (error) {
     console.error('Database initialization error:', error);
     throw error;
@@ -376,7 +375,6 @@ export const database = {
 
   createTemplateFromTask: async (taskId: string, parentInstanceId: string | null = null): Promise<string> => {
     try {
-      console.log("Creating template from task:", taskId, "under parent template:", parentInstanceId);
       const dbInstance = await db;
       const task = await dbInstance.getFirstAsync<TaskInstance>('SELECT * FROM tasks WHERE id = ?', [taskId]);
       if (!task) {
@@ -661,13 +659,37 @@ export const database = {
     }
   // },
   },
+
+  toggleTaskExpand: async (id: string): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      await dbInstance.runAsync(
+        'UPDATE tasks SET expanded = NOT expanded WHERE id = ?',
+        [id]
+      );
+    } catch (error) {
+      console.error('Error updating task title:', error);
+      throw error;
+    }
+  },
+  toggleTemplateExpand: async (parentId: string | null, id: string): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      const test = await dbInstance.runAsync(
+        'UPDATE template_relations SET expanded = NOT expanded WHERE parent_id IS ? AND child_id = ?',
+        [parentId, id]
+      );
+    } catch (error) {
+      console.error('Error updating task title:', error);
+      throw error;
+    }
+  },
   clearDatabase: async (): Promise<void> => {
     try {
       const dbInstance = await db;
       await dbInstance.execAsync('DELETE FROM tasks;');
       await dbInstance.execAsync('DELETE FROM templates;');
       await dbInstance.execAsync('DELETE FROM template_relations;');
-      console.log('Database cleared successfully');
     } catch (error) {
       console.error('Error clearing database:', error);
       throw error;

@@ -25,6 +25,7 @@ export default function HomeScreen() {
     addSubTask,
     addTaskAfter,
     toggleTask,
+    toggleTaskExpand,
     deleteTask,
     updateTaskTitle,
     replaceTaskWithTemplate,
@@ -39,7 +40,6 @@ export default function HomeScreen() {
     const [currentSearchText, setCurrentSearchText] = useState('');
 
     useEffect(() => {
-      console.log("changed focus");
       setSuggestionsVisible(false);
     }, [focusedId]);
 
@@ -157,10 +157,11 @@ export default function HomeScreen() {
               addTaskAfter={addTaskAfter}
               updateTaskTitle={updateTaskTitle}
               focusedId={focusedId}
-              suggestions={suggestions}
               replaceTemplate={async (parentId, oldId, newId) => {
                 replaceTaskWithTemplate(oldId, newId);
               }}
+              toggleExpand={async (parentId, id) => {
+                toggleTaskExpand(id);}}
               onInputMeasure={handleInputMeasure}
               onTextChange={handleTextChange}
               generateList={createTemplateFromTask}

@@ -3,7 +3,7 @@ import { initStorage, storage } from '../storage/storage';
 import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
 
 export type TaskNode = TaskInstance & { children: TaskNode[] };
-export type TemplateNode = TaskTemplate & { children: TaskTemplate[] };
+export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean };
 
 interface TaskStore {
   tasks: TaskNode[];
@@ -32,7 +32,7 @@ interface TaskStore {
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
 
   // templates
-  createTemplate: (title: string, parentId: string | null) => Promise<void>;
+  createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<void>;
   addTemplateAfter: (title: string, afterId: string | null) => Promise<string>;
   getTemplateHierarchy: () => Promise<void>;
   getRootTemplates: () => Promise<TaskTemplate[]>;
@@ -47,6 +47,8 @@ interface TaskStore {
   removeTemplate: (parentId: string | null, id: string) => Promise<void>;
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => Promise<void>;
   replaceTaskWithTemplate: ( taskId: string, templateId: string) => Promise<void>;
+  toggleTaskExpand: (id: string) => Promise<void>;
+  toggleTemplateExpand: (parentId: string | null, id: string) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -95,6 +97,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
       // Single load at the end
       await get().loadTasks();
+      await get().loadTemplates();
 
     } catch (error) {
       console.error('Error initializing database:', error);
@@ -107,8 +110,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const flatTasks = await storage.getTasks();
       const tree = get().getTree(flatTasks);
-      console.log(flatTasks)
-      console.log('test',flatTasks[0]);
       set({
         tasks: tree,
         flatTasks: flatTasks,
@@ -144,7 +145,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   addTask: async (task: AddTaskParams): Promise<string> => {
     try {
-      console.log(`add task ${task.title} under ${task.parent_id} after ${task.after_id}`);
       let id = await storage.addTask(task);
       await get().loadTasks();
       return id;
@@ -154,7 +154,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   addSubTask: async (title: string, parentId: string | null): Promise<string> => {
-    console.log(`Add task ${title} as subtask to parent ${parentId}`);
     let id = await get().addTask({title: title.trim(), parent_id: parentId, completed: false})
     set({focusedId: id});
     return id;
@@ -265,9 +264,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   // Template actions
-  createTemplate: async (title: string, parentId: string | null) => {
+  createTemplate: async (title: string, parentId: string | null, expanded?: boolean) => {
     try {
-      const newId = await storage.createTemplate({title: title, parent_id: parentId});
+      const newId = await storage.createTemplate({title: title, parent_id: parentId, expanded: expanded});
       if (parentId === null) {
         await storage.createTemplate({title:"", parent_id: newId});
       }
@@ -304,7 +303,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   getTemplateHierarchy: async () => {
     try {
       const hierarchy = await storage.getTemplateHierarchy();
-      console.log('store hierarchy', hierarchy);
       set({templateHierarchy: hierarchy, error: null});
     } catch (error) {
       set({error: (error as Error).message});
@@ -367,7 +365,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   deleteTemplate: async (id: string) => {
     try {
-      console.log("store delete template", id);
       await storage.deleteTemplate(id);
       await get().loadTemplates();
     } catch (error) {
@@ -390,23 +387,22 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         .map(rel => {
           const template = templates.find(t => t.id === rel.child_id);
           if (!template) return null;
-          return {...template, children: buildHierarchy(template.id)};
+          return {...template, children: buildHierarchy(template.id), expanded: rel.expanded};
         }).filter(Boolean) as TemplateNode[];
     }
     const rootTemplates = templates.filter(template =>
-      relations.some(rel => rel.child_id === template.id && rel.parent_id === null) ||
-      relations.some(rel => rel.parent_id === template.id)
+      relations.some(rel => rel.child_id === template.id && rel.parent_id === null)
     );
-    return rootTemplates.map(template => ({
-      ...template, children: buildHierarchy(template.id)
-    }));
+
+    return rootTemplates.map(template => {
+      const rel = relations.find(rel=>rel.child_id === template.id && rel.parent_id === null);
+      return {...template, children: buildHierarchy(template.id), expanded: rel!.expanded};
+    });
   },
   loadTemplates: async () => {
     try {
       const hierarchy = await storage.getTemplateHierarchy();
       const newTree = get().buildTemplateTree(hierarchy.templates, hierarchy.relations);
-      console.log(hierarchy)
-      console.log("tree", newTree);
       set({
         tree: newTree,
         templateHierarchy: hierarchy,
@@ -423,5 +419,21 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       } catch (error) {
         set({error: (error as Error).message});
       }
+  },
+  toggleTaskExpand: async (id: string) => {
+    try {
+      await storage.toggleTaskExpand(id);
+      await get().loadTasks();
+    } catch (error) {
+      set({error: (error as Error).message});
+    }
+  },
+  toggleTemplateExpand: async (parentId: string | null, id: string) => {
+    try {
+      await storage.toggleTemplateExpand(parentId, id);
+      await await get().loadTemplates();
+    } catch (error) {
+      set({error: (error as Error).message});
+    }
   }
 }));

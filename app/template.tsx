@@ -28,7 +28,8 @@ export default function TemplateScreen() {
     loadTemplates,
     createTaskFromTemplate,
     replaceTemplate,
-    removeTemplate
+    removeTemplate,
+    toggleTemplateExpand
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -42,13 +43,12 @@ export default function TemplateScreen() {
     loadTemplates();
   }, []);
   useEffect(() => {
-    console.log("changed focus");
     setSuggestionsVisible(false);
   }, [focusedId]);
 
   const handleAddTemplate = () => {
     if (newTemplateTitle.trim()) {
-      createTemplate(newTemplateTitle.trim(), null);
+      createTemplate(newTemplateTitle.trim(), null, true);
       setNewTemplateTitle('');
     }
   };
@@ -183,13 +183,13 @@ export default function TemplateScreen() {
                 updateTemplate={updateTemplate}
                 addTemplateAfter={addTemplateAfter}
                 focusedId={focusedId}
-                suggestions={suggestions}
                 parentId={null}
                 replaceTemplate={replaceTemplate}
                 removeTemplate={removeTemplate}
                 onInputMeasure={handleInputMeasure}
                 onTextChange={handleTextChange}
                 generateList={createTaskFromTemplate}
+                toggleExpand={async (parentId, id) => {toggleTemplateExpand(parentId, id);}}
               />
             )}
           />
