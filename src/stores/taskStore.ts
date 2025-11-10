@@ -38,6 +38,7 @@ interface TaskStore {
   getRootTemplates: () => Promise<TaskTemplate[]>;
   getTemplateChildren: (templateId: string) => Promise<TaskTemplate[]>;
   createTaskFromTemplate: (templateId: string, parentInstanceId?: string | null) => Promise<void>;
+  createTemplateFromTask: (templateId: string, parentInstanceId?: string | null) => Promise<void>;
   updateTemplate: (templateId: string, newTitle: string) => Promise<void>;
   deleteTemplate: (id: string) => Promise<void>;
   addTemplateRelation: (parentId: string, childTemplateId: string, position?: number) => Promise<void>;
@@ -107,6 +108,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const flatTasks = await storage.getTasks();
       const tree = get().getTree(flatTasks);
       console.log(flatTasks)
+      console.log('test',flatTasks[0]);
       set({
         tasks: tree,
         flatTasks: flatTasks,
@@ -265,7 +267,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   // Template actions
   createTemplate: async (title: string, parentId: string | null) => {
     try {
-      await storage.createTemplate({title: title, parent_id: parentId});
+      const newId = await storage.createTemplate({title: title, parent_id: parentId});
+      if (parentId === null) {
+        await storage.createTemplate({title:"", parent_id: newId});
+      }
       await get().loadTemplates();
     } catch (error) {
       set({error: (error as Error).message});
@@ -285,7 +290,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         completed: false,
         after_id: afterId
       });
+      if (parentId === null) {
+        await storage.createTemplate({title:"", parent_id: id});
+      }
       await get().loadTemplates();
+      set({focusedId:id});
       return id;
     } catch (error) {
       set({error: (error as Error).message});
@@ -311,6 +320,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       await storage.createTaskFromTemplate(templateId, parentInstanceId);
       await get().loadTasks();
+    } catch (error) {
+      set({error: (error as Error).message});
+    }
+  },
+  createTemplateFromTask: async (taskId: string, parentInstanceId: string | null = null) => {
+    try {
+      await storage.createTemplateFromTask(taskId, parentInstanceId);
+      await get().loadTemplates();
     } catch (error) {
       set({error: (error as Error).message});
     }

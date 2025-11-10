@@ -41,6 +41,10 @@ export default function TemplateScreen() {
   useEffect(() => {
     loadTemplates();
   }, []);
+  useEffect(() => {
+    console.log("changed focus");
+    setSuggestionsVisible(false);
+  }, [focusedId]);
 
   const handleAddTemplate = () => {
     if (newTemplateTitle.trim()) {
@@ -125,7 +129,7 @@ export default function TemplateScreen() {
           <TextInput
             value={newTemplateTitle}
             onChangeText={setNewTemplateTitle}
-            placeholder="Add a new task..."
+            placeholder="Add a new list..."
             placeholderTextColor={colors.muted}
             onSubmitEditing={handleAddTemplate}
             style={{...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding:16, marginHorizontal:0}}
@@ -160,8 +164,8 @@ export default function TemplateScreen() {
       {/* Templates List */}
       <View className="flex-1">
         {tree.length === 0 ? (
-          <View className="flex-1 items-center justify-center p-8">
-            <Text className="text-lg text-gray-500 text-center">
+          <View style={styles.settingsRow}>
+            <Text style={styles.headerText}>
               No templates yet. Create your first template to get started!
             </Text>
           </View>
@@ -185,6 +189,7 @@ export default function TemplateScreen() {
                 removeTemplate={removeTemplate}
                 onInputMeasure={handleInputMeasure}
                 onTextChange={handleTextChange}
+                generateList={createTaskFromTemplate}
               />
             )}
           />

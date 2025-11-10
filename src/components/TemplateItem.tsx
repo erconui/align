@@ -5,8 +5,9 @@ import { BaseItem, TaskTemplate } from './BaseItem';
 interface TemplateNode {
   id: string;
   title: string;
-  children?: TemplateNode[];
   created_at?: string;
+  updated_at?: string;
+  children?: TemplateNode[];
 }
 
 interface TemplateItemProps {
@@ -19,6 +20,7 @@ interface TemplateItemProps {
   updateTemplate: (id: string, title: string) => void;
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => void;
   removeTemplate: (parentId: string | null, id: string) => void;
+  generateList: (id: string) => void;
   focusedId: string | null;
   suggestions: TaskTemplate[];
   parentId: string | null;
@@ -40,7 +42,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
   parentId,
   removeTemplate,
   onInputMeasure,
-  onTextChange
+  onTextChange,
+  generateList
                                                           }) => {
   const {createTemplate} = useTaskStore();
 
@@ -69,6 +72,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       isTask={false}
       onInputMeasure={onInputMeasure}
       onTextChange={onTextChange}
+      generateList={generateList}
     />
   );
 };

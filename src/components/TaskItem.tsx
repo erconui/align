@@ -6,6 +6,7 @@ interface TaskItemProps {
   taskNode: TaskNode;
   toggleTask: (id: string) => void;
   deleteTask: (id: string) => void;
+  generateList: (taskId: string) => void;
   addSubTask: (title: string, parentId: string | null) => void;
   addTaskAfter: (title: string, afterId: string | null) => void;
   updateTaskTitle: (id: string, title: string) => void;
@@ -27,7 +28,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                     focusedId,
   suggestions,
   onInputMeasure,
-  onTextChange
+  onTextChange,
+  generateList
                                                   }) => {
   return (
     <BaseItem
@@ -46,6 +48,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       isTask={true}
       onInputMeasure={onInputMeasure}
       onTextChange={onTextChange}
+      generateList={generateList}
     />
   );
 };

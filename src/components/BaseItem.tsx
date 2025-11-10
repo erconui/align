@@ -27,6 +27,7 @@ interface BaseItemProps<T extends BaseNode> {
   onDelete: (parentId: string | null, id: string) => void;
   onAddSubItem: (title: string, parentId: string | null) => void;
   onAddItemAfter: (title: string, afterId: string | null) => void;
+  generateList: (id: string) => void;
   onUpdateTitle: (id: string, title: string) => void;
   focusedId: string | null;
   level?: number;
@@ -53,7 +54,8 @@ export const BaseItem = <T extends BaseNode>({
                                                parentId,
                                                isTask,
                                                onInputMeasure,
-                                               onTextChange
+                                               onTextChange,
+                                               generateList
                                              }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
@@ -101,7 +103,7 @@ export const BaseItem = <T extends BaseNode>({
   const { colors, styles } = useTheme();
 
   return (
-    <View style={[styles.container, {backgroundColor: colors.background}]}> 
+    <View style={[{backgroundColor: colors.background}]}> 
       <DraggableContext
         itemId={node.id}
         onDragStart={() => {
@@ -142,19 +144,19 @@ export const BaseItem = <T extends BaseNode>({
             returnKeyType="done"
           />
 
-          <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.iconButton }>
+          <Pressable onPress={() => hasChildren?generateList(node.id):onAddSubItem("", node.id)} >
             {/* <Text style={styles.icon}>+</Text> */}
-            <Ionicons name="add-outline" size={18} color={colors.icon} />
+            <Ionicons name={hasChildren?isTask?"list-outline":"checkbox-outline":"add-outline"} size={18} style={{...styles.iconButton}}/>
           </Pressable>
 
-          <Pressable onPress={() => onDelete(parentId || null, node.id)} style={styles.iconButton}>
+          <Pressable onPress={() => onDelete(parentId || null, node.id)} >
             {/* <Text style={styles.icon}>x</Text> */}
-            <Ionicons name="trash-outline" size={18} color={colors.icon} />
+            <Ionicons name="trash-outline" size={18} color={colors.icon} style={{...styles.iconButton}}/>
           </Pressable>
         </View>
       </DraggableContext>
       {expanded && hasChildren && (
-        <View style={[styles.children, {paddingLeft: 20 + (level * 20)}]}>
+        <View style={[{paddingLeft: 20 + (level * 20)}]}>
           {node.children?.map(child => (
             <BaseItem
               key={child.id}
@@ -173,6 +175,7 @@ export const BaseItem = <T extends BaseNode>({
               isTask={isTask}
               onInputMeasure={onInputMeasure}
               onTextChange={onTextChange}
+              generateList={generateList}
             />
           ))}
         </View>

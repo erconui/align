@@ -12,7 +12,9 @@ export const initDatabase = async (): Promise<void> => {
         CREATE TABLE IF NOT EXISTS templates
         (
             id    TEXT PRIMARY KEY,
-            title TEXT NOT NULL
+            title TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     `);
 
@@ -23,6 +25,9 @@ export const initDatabase = async (): Promise<void> => {
             parent_id TEXT,
             child_id  TEXT    NOT NULL,
             position           INTEGER NOT NULL,
+            expanded   BOOLEAN NOT NULL DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (parent_id) REFERENCES templates (id),
             FOREIGN KEY (child_id) REFERENCES templates (id)
         );
@@ -35,16 +40,57 @@ export const initDatabase = async (): Promise<void> => {
             template_id TEXT,
             parent_id   TEXT,
             title       TEXT    NOT NULL,
+            expanded   BOOLEAN NOT NULL DEFAULT 0,
             completed   BOOLEAN NOT NULL DEFAULT 0,
---         due_date DATETIME,
---         recurrence_rule TEXT,
---         completed_at DATETIME,
+            completed_at DATETIME,
+            due_date DATETIME,
+            recurrence_rule TEXT,
             position  INTEGER NOT NULL DEFAULT 0,
---         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
---         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (template_id) REFERENCES templates (id),
             FOREIGN KEY (parent_id) REFERENCES tasks (id)
         );
+    `);
+
+    await dbInstance.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS update_template_updated_at 
+        AFTER UPDATE ON templates
+        BEGIN
+          UPDATE templates SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;`
+    );
+
+    await dbInstance.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS update_template_relation_updated_at 
+        AFTER UPDATE ON template_relations
+        BEGIN
+          UPDATE template_relations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;`
+    );
+
+    await dbInstance.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS update_tasks_updated_at 
+        AFTER UPDATE ON tasks
+        BEGIN
+          UPDATE tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END;`
+    );
+    
+    await dbInstance.execAsync(`
+      CREATE TRIGGER IF NOT EXISTS update_tasks_completed_at
+        AFTER UPDATE OF completed ON tasks
+        FOR EACH ROW
+        WHEN (NEW.completed != OLD.completed AND NEW.completed_at IS NULL)
+        BEGIN
+            UPDATE tasks 
+            SET completed_at = 
+                CASE 
+                    WHEN NEW.completed = 1 THEN CURRENT_TIMESTAMP
+                    ELSE NULL
+                END
+            WHERE id = NEW.id;
+        END;
     `);
 
     console.log('Database initialized successfully');
@@ -114,8 +160,8 @@ export const database = {
 
       await dbInstance.runAsync(
         `INSERT INTO tasks
-             (id, template_id, parent_id, title, completed, position)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+             (id, template_id, parent_id, title, completed, position, expanded)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           task.template_id || null,
@@ -123,6 +169,7 @@ export const database = {
           task.title,
           task.completed ? 1 : 0,
           position,
+          false
         ]
       );
 
@@ -323,6 +370,28 @@ export const database = {
       return taskId;
     } catch (error) {
       console.error('Error creating task from template:', error);
+      throw error;
+    }
+  },
+
+  createTemplateFromTask: async (taskId: string, parentInstanceId: string | null = null): Promise<string> => {
+    try {
+      console.log("Creating template from task:", taskId, "under parent template:", parentInstanceId);
+      const dbInstance = await db;
+      const task = await dbInstance.getFirstAsync<TaskInstance>('SELECT * FROM tasks WHERE id = ?', [taskId]);
+      if (!task) {
+        throw new Error('Task not found');
+      }
+      // Create the template from task
+      const templateId = await database.createTemplate({title: task.title, parent_id: parentInstanceId, completed: false});
+      // Recursively create templates from task children
+      const childTasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE parent_id = ?', [taskId]);
+      for (const childTask of childTasks) {
+        await database.createTemplateFromTask(childTask.id, templateId);
+      }
+      return templateId;
+    } catch (error) {
+      console.error('Error creating template from task:', error);
       throw error;
     }
   },

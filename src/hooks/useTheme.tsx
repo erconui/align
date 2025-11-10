@@ -52,7 +52,13 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
     borderRadius: 6,
     marginHorizontal: 8
   },
-  iconButton: {padding: 6, marginLeft: 6, backgroundColor: colors.background, borderRadius: 6},
+  iconButton: {
+    marginLeft: 6,
+    marginRight: 10,
+    backgroundColor: colors.background,
+    color: colors.icon,
+    borderRadius: 6
+  },
   icon: {fontSize: 18, fontWeight: "600", padding:4, color: colors.icon},
   children: {marginTop: 6},
   checkboxContainer: { width: 26, paddingLeft:26, alignItems: 'center', justifyContent: 'center' },

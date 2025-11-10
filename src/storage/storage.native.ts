@@ -60,6 +60,10 @@ const nativeStorage = {
     return await database.createTaskFromTemplate(templateId, parentInstanceId);
   },
 
+  createTemplateFromTask: async (taskId: string, parentInstanceId: string | null = null): Promise<string> => {
+    return await database.createTemplateFromTask(taskId, parentInstanceId);
+  },
+
   updateTemplate: async (templateId: string, newTitle: string, newChildren: string[]): Promise<void> => {
     await database.updateTemplate(templateId, newTitle, newChildren);
   },

@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -28,6 +28,7 @@ export default function HomeScreen() {
     deleteTask,
     updateTaskTitle,
     replaceTaskWithTemplate,
+    createTemplateFromTask,
     initDB
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -36,6 +37,11 @@ export default function HomeScreen() {
     const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
     const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
     const [currentSearchText, setCurrentSearchText] = useState('');
+
+    useEffect(() => {
+      console.log("changed focus");
+      setSuggestionsVisible(false);
+    }, [focusedId]);
 
   const suggestions = useMemo(() => {
     return tree.map(node => ({
@@ -83,7 +89,7 @@ export default function HomeScreen() {
   const remainingTasks = flatTasks.filter(t => !t.completed).length;
 
   const { colors, styles } = useTheme();
-  const progress = 100-100*remainingTasks/flatTasks.length;
+  const progress = flatTasks.length?100-100*remainingTasks/flatTasks.length:0;
 
   return (
     <View style={{flex: 1, backgroundColor: colors.background}}>
@@ -157,6 +163,7 @@ export default function HomeScreen() {
               }}
               onInputMeasure={handleInputMeasure}
               onTextChange={handleTextChange}
+              generateList={createTemplateFromTask}
             />
           )}/>
       </View>

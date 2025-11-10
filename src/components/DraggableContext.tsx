@@ -26,6 +26,7 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
   const startPos = useSharedValue({ x: 0, y: 0 });
 
   const panGesture = Gesture.Pan()
+    .activateAfterLongPress(250)
     .onBegin(() => {
       isActive.value = true;
       opacity.value = dragOpacity;
