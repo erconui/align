@@ -33,7 +33,8 @@ interface TaskStore {
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
 
   // templates
-  createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<void>;
+  createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<string>;
+  createTemplateWithoutLoad: (title: string, parentId: string | null, expanded?: boolean) => Promise<string>;
   addTemplateAfter: (title: string, afterId: string | null) => Promise<string>;
   getTemplateHierarchy: () => Promise<void>;
   getRootTemplates: () => Promise<TaskTemplate[]>;
@@ -101,6 +102,36 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       // Single load at the end
       await get().loadTasks();
       await get().loadTemplates();
+
+      let id = await get().createTemplateWithoutLoad('clean house', null, true);
+
+      let subId = await get().createTemplateWithoutLoad('clean bedroom', id, true);
+      await get().createTemplateWithoutLoad('make bed', subId);
+      await get().createTemplateWithoutLoad('organize closet', subId);
+      await get().createTemplateWithoutLoad('clean dresser', subId);
+      await get().createTemplateWithoutLoad('tidy', subId);
+      await get().createTemplateWithoutLoad('vacuum', subId);
+      await get().createTemplateWithoutLoad('mop', subId);
+      subId = await get().createTemplateWithoutLoad('clean lounge', id, true);
+      await get().createTemplateWithoutLoad('make couch', subId);
+      await get().createTemplateWithoutLoad('organize closet', subId);
+      await get().createTemplateWithoutLoad('tidy', subId);
+      await get().createTemplateWithoutLoad('vacuum', subId);
+      await get().createTemplateWithoutLoad('mop', subId);
+      subId = await get().createTemplateWithoutLoad('clean bathroom', id, true);
+      await get().createTemplateWithoutLoad('tidy', subId);
+      await get().createTemplateWithoutLoad('clean vanity', subId);
+      await get().createTemplateWithoutLoad('clean toilet', subId);
+      await get().createTemplateWithoutLoad('clean bathtub', subId);
+      await get().createTemplateWithoutLoad('vacuum', subId);
+      await get().createTemplateWithoutLoad('mop', subId);
+
+      id = await get().createTemplateWithoutLoad('grocery shopping', null, true);
+      await get().createTemplateWithoutLoad('buy fruits', id);
+      await get().createTemplateWithoutLoad('buy vegetables', id);
+      await get().createTemplateWithoutLoad('buy snacks', id);
+      await get().loadTemplates();
+
 
     } catch (error) {
       console.error('Error initializing database:', error);
@@ -280,15 +311,25 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   // Template actions
-  createTemplate: async (title: string, parentId: string | null, expanded?: boolean) => {
+  createTemplate: async (title: string, parentId: string | null, expanded?: boolean): Promise<string> => {
     try {
-      const newId = await storage.createTemplate({title: title, parent_id: parentId, expanded: expanded});
+      let newId = await storage.createTemplate({title: title, parent_id: parentId, expanded: expanded});
       if (parentId === null) {
         await storage.createTemplate({title:"", parent_id: newId});
       }
       await get().loadTemplates();
+      return newId;
     } catch (error) {
       set({error: (error as Error).message});
+      return '';
+    }
+  },
+  createTemplateWithoutLoad: async (title: string, parentId: string | null, expanded?: boolean): Promise<string> => {
+    try {
+      return await storage.createTemplate({title: title, parent_id: parentId, expanded: expanded});
+    } catch (error) {
+      set({error: (error as Error).message});
+      return '';
     }
   },
   addTemplateAfter: async (title: string, afterId: string | null) : Promise<string> => {
