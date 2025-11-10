@@ -12,7 +12,17 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
+const createStyles = (colors: typeof Colors.light) => {
+  const button = {
+    backgroundColor: colors.button,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: colors.buttonBorder,
+    color: colors.text
+
+  };
+  return StyleSheet.create({
   header: {
     ...Platform.select({
       android: { paddingTop: 40 },
@@ -63,28 +73,24 @@ const createStyles = (colors: typeof Colors.light) => StyleSheet.create({
   children: {marginTop: 6},
   checkboxContainer: { width: 26, paddingLeft:26, alignItems: 'center', justifyContent: 'center' },
   buttons: {color: colors.text, fontSize: 20},
-  button: {
-    backgroundColor: colors.tint, 
-    padding: 10, 
-    borderRadius: 6
-  },
   buttonText: {
     color: colors.background, 
     textAlign: "center",
     fontWeight: '500'
   },
-  pressableButton: {
-    backgroundColor: colors.button,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.buttonBorder,
-    color: colors.tint
-  },
+  pressableButton: button,
   pressableButtonPressed: {
+    ...button,
     backgroundColor: colors.tint + '20', // 20% opacity
+    // backgroundColor: colors.tint + '20' : 'transparent',
+    borderRadius: 6,
+    borderColor: colors.tint,
+  },
+  settingButton: {
+    ...button,
+    margin: 2
   }
-});
+})};
 
 export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
   const system = Appearance.getColorScheme();
