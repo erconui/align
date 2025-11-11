@@ -14,6 +14,9 @@ import { TaskItem } from '../src/components/TaskItem';
 import { useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
+const ITEM_HEIGHT = 37.33;
+const INDENTATION_WIDTH = 20;
+
 export default function HomeScreen() {
   const {
     tree,
@@ -44,12 +47,6 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
   useEffect(() => {
     setSuggestionsVisible(false);
   }, [focusedId]);
-// useEffect(() => {
-//   const task = InteractionManager.runAfterInteractions(() => {
-//     remeasureAllItems();
-//   });
-//   return () => task.cancel();
-// }, [flatTasks, tree]);
 
   const suggestions = useMemo(() => {
     return tree.map(node => ({
@@ -92,23 +89,8 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
     setSuggestionsItemId(null);
     setSuggestionsParentId(null);
   };
-  const remeasureAllItems = () => {
-    requestAnimationFrame(() => {
-      itemLayouts.current = {};
-      Object.entries(itemRefs.current).forEach(([id, ref]) => {
-        if (ref) {
-          ref.measureInWindow((x, y, width, height) => {
-            registerItemLayout(id, { x: x, y, width, height });
-          });
-        }
-      });
-    });
-    console.log('layouts');
-    console.log(itemLayouts.current);
-  };
-  const itemLayouts = useRef<Record<string, {x:number; y:number; width:number; height:number}>>({});
+
   const registerItemLayout = (itemId: string, layout: {x:number; y:number; width:number; height:number}) => {
-    itemLayouts.current[itemId] = layout;
   };
   const registerRefs = (itemId: string, ref: View | null) => {
     itemRefs.current[itemId] = ref;
@@ -122,55 +104,50 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
       </View>
     );
   }
-// Measure only the list container once
-const handleContainerLayout = (event: any) => {
-  const layout = event.nativeEvent.layout;
-  console.log("tasks layout", layout);
-  setContainerLayout(layout);
-  // calculateTreePositions();
-};
-// Core function: Calculate all positions from tree data
-const calculateTreePositions = () => {
-  const ITEM_HEIGHT = 37.33;
-  const INDENTATION_WIDTH = 20;
-  const positions: Record<string, { x: number; y: number; width: number; height: number }> = {};
-  let currentY = containerLayout.y;// + HEADER_HEIGHT;
-  console.log('tree');
-  console.log(tasks);
-
-  const traverse = (nodes: any[], depth: number = 0) => {
-    nodes.forEach(node => {
-      // Calculate position for this node
-      positions[node.id] = {
-        x: depth * INDENTATION_WIDTH,
-        y: currentY,
-        width: 400 - (depth * INDENTATION_WIDTH), // Adjust based on your screen
-        height: ITEM_HEIGHT
-      };
-      
-      currentY += ITEM_HEIGHT;
-      
-      // Recursively traverse children if expanded
-      if (node.expanded && node.children && node.children.length > 0) {
-        traverse(node.children, depth + 1);
-      }
-    });
+  // Measure only the list container once
+  const handleContainerLayout = (event: any) => {
+    const layout = event.nativeEvent.layout;
+    console.log("tasks layout", layout);
+    setContainerLayout(layout);
   };
+  // Core function: Calculate all positions from tree data
+  const calculateTreePositions = () => {
+    const positions: Record<string, { x: number; y: number; width: number; height: number }> = {};
+    let currentY = containerLayout.y;// + HEADER_HEIGHT;
+    console.log('tree');
+    console.log(tasks);
 
-  // Start with root nodes (no parentId)
-  traverse(tasks);
-  // console.log("calculated positions");
-  // console.log(positions);
-  
-  return positions;
-};
+    const traverse = (nodes: any[], depth: number = 0) => {
+      nodes.forEach(node => {
+        // Calculate position for this node
+        positions[node.id] = {
+          x: depth * INDENTATION_WIDTH,
+          y: currentY,
+          width: 400 - (depth * INDENTATION_WIDTH), // Adjust based on your screen
+          height: ITEM_HEIGHT
+        };
+        
+        currentY += ITEM_HEIGHT;
+        
+        // Recursively traverse children if expanded
+        if (node.expanded && node.children && node.children.length > 0) {
+          traverse(node.children, depth + 1);
+        }
+      });
+    };
+
+    // Start with root nodes (no parentId)
+    traverse(tasks);
+    
+    return positions;
+  };
   const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
     requestAnimationFrame(() => {
-      const layouts = calculateTreePositions(); //itemLayouts.current;
-      console.log('layouts',layouts);
-      console.log(itemId);
+      const layouts = calculateTreePositions();
+      // console.log('layouts',layouts);
+      // console.log(itemId);
       const dragged = layouts[itemId];
-      console.log('dragged',dragged);
+      // console.log('dragged',dragged);
       if (!dragged) return;
 
       // Compute final drop position
@@ -181,6 +158,8 @@ const calculateTreePositions = () => {
       console.log('Dragged item ',itemId, ' from layout:', dragged, ' to position(x,y):', dropX,',', dropCenterY);
       // Find potential drop target
       const entries = Object.entries(layouts).filter(([id]) => id !== itemId);
+      entries.find(([_WORKLET_RUNTIME, {x}]) => dropX )
+      console.log(entries);
       const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
       const lowestY = Object.values(layouts).length > 0 
         ? Math.min(...Object.values(layouts).map(layout => layout.y))
@@ -195,9 +174,16 @@ const calculateTreePositions = () => {
         return;
       };
       const [targetId, targetLayout] = targetEntry;
+      const xshift = dropX - targetLayout.x;
+      console.log("drop position", dropY, dropX, "targetlayout", targetLayout, dropX - targetLayout.x);
+      if (xshift >= INDENTATION_WIDTH) {
+        console.log('make a child');
+        moveTask(itemId, targetId, "sub");
+      } else {
+        console.log('shift', xshift, xshift/INDENTATION_WIDTH);
+        moveTask(itemId, targetId, 'after');
+      }
 
-      const horizontalShift = dropX - dragged.x;
-      moveTask(itemId, targetId, 'after').then(() => { remeasureAllItems();});
     });
   };
 

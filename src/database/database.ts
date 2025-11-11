@@ -252,8 +252,8 @@ export const database = {
       if (targetId !== null && !target) {
         throw new Error('Target not found');
       }
-      console.log("move task", movingTask);
-      console.log("target task", target);
+      // console.log("move task", movingTask);
+      // console.log("target task", target);
       let target_pos;
       let parentId = null;
       let position = 0;
@@ -261,6 +261,14 @@ export const database = {
         parentId = target.parent_id;
         if ( mode === 'after') {
           position = target.position + 1;
+        } else if (mode === 'sub') {
+          parentId = target.id;
+          if (!target.expanded) {
+            const result = await dbInstance.getFirstAsync<{ count: number }>(
+              'SELECT COUNT(*) as count FROM tasks WHERE parent_id IS ?',
+              [parentId]);
+            position = result?.count || 0;
+          }
         } else {//if ( mode === 'before') {
           position = target.position - 1;
         }
@@ -271,7 +279,7 @@ export const database = {
         'Update tasks set position = position + 1 where parent_id IS ? AND position >= ?',
         [parentId, position]
       );
-      console.log("Moving task ", id, " to ", mode, " target task ", targetId, parentId, position);
+      // console.log("Moving task ", id, " to ", mode, " target task ", targetId, parentId, position);
       await dbInstance.runAsync(
         'UPDATE tasks SET parent_id = ?, position = ? WHERE id = ?',
         [parentId, position, id]
@@ -281,6 +289,10 @@ export const database = {
         'UPDATE tasks SET position = position - 1 WHERE parent_id IS ? AND position > ?',
         [movingTask.parent_id, movingTask.position]
       );
+      await dbInstance.runAsync(
+        'Update tasks set expanded = TRUE where parent_id IS ?',
+        [parentId]
+      );//TODO: this isn't working, but if we add an item to a list i think we might want to expand the list so we can see where it was moved to.
     } catch (error) {
       console.error('Error moving task:', error);
       throw error;
@@ -289,7 +301,7 @@ export const database = {
 
   moveTemplate: async (relId: string, targetId: string, mode: string): Promise<void> => {
     try {
-      console.log('Move template from ', relId, ' to ', targetId);
+      // console.log('Move template from ', relId, ' to ', targetId);
       const dbInstance = await db;
       const relation = await dbInstance.getFirstAsync<TaskTemplateRelation>(
         'SELECT * FROM template_relations WHERE id = ?',[relId]
@@ -300,8 +312,8 @@ export const database = {
       if (!relation || !target) {
         throw new Error("Could not find source or destination when attempting move");
       }
-      console.log('source', relation);
-      console.log('target', target);
+      // console.log('source', relation);
+      // console.log('target', target);
 
       await dbInstance.runAsync(
         'UPDATE template_relations SET position = position + 1 WHERE parent_id IS ? and position > ?',

@@ -28,7 +28,6 @@ interface BaseItemProps<T extends BaseNode> {
   onUpdateTitle: (id: string, title: string) => void;
   toggleExpand: (parentId: string | null, id: string) => void;
   focusedId: string | null;
-  level?: number;
   parentId?: string | null;
   isTask: boolean;
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
@@ -47,7 +46,6 @@ export const BaseItem = <T extends BaseNode>({
                                               onAddItemAfter,
                                               onUpdateTitle,
                                               focusedId,
-                                              level = 0,
                                               parentId,
                                               isTask,
                                               onInputMeasure,
@@ -163,7 +161,7 @@ export const BaseItem = <T extends BaseNode>({
         </View>
       </DraggableContext>
       {node.expanded && hasChildren ? (
-        <View style={[{ paddingLeft: 20 + (level * 20) }]}>
+        <View style={[{ paddingLeft: 20 }]}>
           {node.children?.map(child => (
             <BaseItem
               key={child.id}
@@ -175,7 +173,6 @@ export const BaseItem = <T extends BaseNode>({
               onAddItemAfter={onAddItemAfter}
               onUpdateTitle={onUpdateTitle}
               focusedId={focusedId}
-              level={level + 1}
               parentId={node.id}
               isTask={isTask}
               onInputMeasure={onInputMeasure}
