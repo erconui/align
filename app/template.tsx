@@ -178,7 +178,7 @@ export default function TemplateScreen() {
     //   moveTask(itemId, targetId, 'before');
     // } else {
     //   // Drop below target
-    //   console.log(`UI Move ${itemId} after ${targetId}`);
+      console.log(`UI Move ${itemId} after ${targetId}`);
       moveTemplate(itemId, targetId, 'after');
     // }
   };

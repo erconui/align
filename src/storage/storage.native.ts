@@ -129,6 +129,14 @@ const nativeStorage = {
       console.error('Error toggling the task', error);
       throw error;
     }
+  },
+  moveTemplate: async (id: string, targetId: string, mode: string): Promise<void> => {
+    try {
+      await database.moveTemplate(id, targetId, mode);
+    } catch (error) {
+      console.error('Error moving template:', error);
+      throw error;
+    }
   }
 };
 

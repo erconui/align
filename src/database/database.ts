@@ -273,6 +273,41 @@ export const database = {
     }
   },
 
+  moveTemplate: async (relId: string, targetId: string, mode: string): Promise<void> => {
+    try {
+      console.log('Move template from ', relId, ' to ', targetId);
+      const dbInstance = await db;
+      const relation = await dbInstance.getFirstAsync<TaskTemplateRelation>(
+        'SELECT * FROM template_relations WHERE id = ?',[relId]
+      );
+      const target = await dbInstance.getFirstAsync<TaskTemplateRelation>(
+        'SELECT * FROM template_relations WHERE id = ?',[targetId]
+      );
+      if (!relation || !target) {
+        throw new Error("Could not find source or destination when attempting move");
+      }
+      console.log('source', relation);
+      console.log('target', target);
+
+      await dbInstance.runAsync(
+        'UPDATE template_relations SET position = position + 1 WHERE parent_id IS ? and position > ?',
+        [target.parent_id, target.position]
+      );
+      await dbInstance.runAsync(
+        'UPDATE template_relations SET parent_id = ?, position = ? WHERE id = ?',
+        [target.parent_id, target.position+1, relId]
+      );
+      await dbInstance.runAsync(
+        'UPDATE template_relations SET position = position - 1 WHERE parent_id IS ? and position > ?',
+        [relation.parent_id, relation.position]
+      );
+
+    } catch (error) {
+      console.error('Error moving template:', error);
+      throw error;
+    }
+  },
+
   // Template functions// Create a template (optionally under a parent template)
   createTemplate: async (template: AddTemplateParams): Promise<string> => {
     try {
