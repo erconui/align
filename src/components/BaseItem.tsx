@@ -121,11 +121,11 @@ export const BaseItem = <T extends BaseNode>({
   const { colors, styles } = useTheme();
 
   return (
-    <View style={[{ backgroundColor: colors.background }]} ref={itemRef}>
+    <View style={[{ backgroundColor: colors.background }]}>
       <DraggableContext
         itemId={node.relId?node.relId:node.id}
         onDrop={handleDrop}>
-        <View style={styles.row}>
+        <View style={styles.row} ref={itemRef}>
           {hasChildren ? <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.expand}>
             {node.expanded ? <Ionicons name="caret-down-outline" size={18} color={colors.icon} style={styles.icon} /> :
               <Ionicons name="caret-forward-outline" size={18} color={colors.icon} style={styles.icon} />}
@@ -162,7 +162,7 @@ export const BaseItem = <T extends BaseNode>({
           </Pressable>
         </View>
       </DraggableContext>
-      {node.expanded && hasChildren && (
+      {node.expanded && hasChildren ? (
         <View style={[{ paddingLeft: 20 + (level * 20) }]}>
           {node.children?.map(child => (
             <BaseItem
@@ -188,7 +188,7 @@ export const BaseItem = <T extends BaseNode>({
             />
           ))}
         </View>
-      )}
+      ):null}
     </View>
   );
 };
