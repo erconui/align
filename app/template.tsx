@@ -144,7 +144,8 @@ export default function TemplateScreen() {
     if (!dragged) return;
 
     // Compute final drop position
-    const dropCenterY = dragged.y + finalPosition.y + dragged.height / 2;
+    const dropY = dragged.y + finalPosition.y;
+    const dropCenterY = dropY + dragged.height / 2;
     const dropX = dragged.x + finalPosition.x;
 
     console.log('Dragged item ',itemId, ' from layout:', dragged, ' to position(x,y):', dropX,',', dropCenterY);
@@ -153,7 +154,10 @@ export default function TemplateScreen() {
     const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
 
     if (!targetEntry) {
-      console.log('No valid drop target found.');
+      console.log('Move to front');
+      if (dropY < dragged.height/2) {
+        moveTemplate(itemId, null, 'after'); // move it to the top of the list
+      }
       return;
     };
     const [targetId, targetLayout] = targetEntry;

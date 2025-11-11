@@ -161,18 +161,32 @@ export const webStorage = {
       throw error;
     }
   },
-  moveTask: async (id: string, targetId: string, mode: string): Promise<void> => {
+  moveTask: async (id: string, targetId: string | null, mode: string): Promise<void> => {
     try {
       const tasks = await webStorage.getTasks();
       console.log(tasks);
       const task = tasks.find(t => t.id === id);
       const target = tasks.find(t => t.id === targetId);
-      if (!task || !target) {
-        throw new Error('Task or target not found');
+      if (!task ) {
+        throw new Error('Task not found');
+      }
+
+      if (targetId !== null && !target) {
+        throw new Error("target relation not found");
       }
       console.log('moving task', task);
       console.log('to target', target);
       
+      let parentId = null;
+      let position = 0;
+      if (target) {
+        parentId = target.parent_id;
+        if ( mode === 'after') {
+          position = target.position + 1;
+        } else {//if ( mode === 'before') {
+          position = target.position - 1;
+        }
+      }
       // Remove task from current position
       const siblings = tasks.filter(t => t.parent_id === task.parent_id && t.id !== id);
       siblings.forEach((sibling) => {
@@ -181,9 +195,9 @@ export const webStorage = {
         }
       });
       
-      if (mode === 'after') {
-        task.parent_id = target.parent_id;
-        task.position = target.position + 1;
+      if (mode === 'after' || mode === 'before') {
+        task.parent_id = parentId;
+        task.position = position;
         // Adjust positions of siblings in new parent
         const newSiblings = tasks.filter(t => t.parent_id === task.parent_id && t.id !== id);
         newSiblings.forEach((sibling) => {
@@ -353,19 +367,38 @@ export const webStorage = {
       throw error;
     }
   },
-  moveTemplate: async (relId: string, targetId: string, mode: string): Promise<void> => {
+  moveTemplate: async (relId: string, targetId: string | null, mode: string): Promise<void> => {
     try {
+      console.log('storage move template');
       const { templates, relations } = await webStorage.getTemplateHierarchy();
-      // console.log('move template from ', relId, targetId);
+      console.log('move template from ', relId, targetId);
       const relation = relations.find(rel => rel.id == relId);
       const target = relations.find(rel => rel.id == targetId);
-      // console.log('source', relation);
-      // console.log('target', target);
+      console.log('source', relation);
+      console.log('target', target);
 
-      if (!relation || !target) {
-        throw new Error('source or destination template relation not found');
+      if (!relation) {
+        throw new Error('source template relation not found');
       }
 
+      if (targetId !== null && !target) {
+        throw new Error("target relation not found");
+      }
+
+      let parentId = null;
+      let position = 0;
+      if (target) {
+        parentId = target.parent_id;
+        if ( mode === 'after') {
+          position = target.position + 1;
+        } else {//if ( mode === 'before') {
+          position = target.position - 1;
+        }
+      }
+
+      console.log('move to ', parentId,position);
+
+      // remove template from its current position
       const siblings = relations.filter(rel => rel.parent_id === relation.parent_id);
       siblings.forEach((sibling) => {
         if (sibling.position > relation.position) {
@@ -373,10 +406,10 @@ export const webStorage = {
         }
       });
 
-      if (mode === 'after') {
-        relation.parent_id = target.parent_id;
-        relation.position = target.position + 1;
-        const newSiblings = relations.filter(rel => rel.parent_id === target.parent_id && rel.id !== relId);
+      if (mode === 'after' || mode === 'before') {
+        relation.parent_id = parentId;
+        relation.position = position;
+        const newSiblings = relations.filter(rel => rel.parent_id === parentId && rel.id !== relId);
         newSiblings.forEach((sibling) => {
           if (sibling.position >= relation.position) {
             sibling.position += 1;

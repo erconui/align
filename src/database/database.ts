@@ -241,26 +241,40 @@ export const database = {
         'SELECT * FROM tasks WHERE id = ?',
         [id]
       );
-      const targetTask = await dbInstance.getFirstAsync<TaskInstance>(
+      const target = await dbInstance.getFirstAsync<TaskInstance>(
         'SELECT * FROM tasks WHERE id = ?',
         [targetId]
       );
 
-      if (!movingTask || !targetTask) {
-        throw new Error('Moving task or target task not found');
+      if (!movingTask) {
+        throw new Error('Moving task task not found');
+      }
+      if (targetId !== null && !target) {
+        throw new Error('Target not found');
       }
       console.log("move task", movingTask);
-      console.log("target task", targetTask);
+      console.log("target task", target);
+      let target_pos;
+      let parentId = null;
+      let position = 0;
+      if (target) {
+        parentId = target.parent_id;
+        if ( mode === 'after') {
+          position = target.position + 1;
+        } else {//if ( mode === 'before') {
+          position = target.position - 1;
+        }
+      }
 
       // make space in the new position for the moving task
       await dbInstance.runAsync(
-        'Update tasks set position = position + 1 where parent_id IS ? AND position > ?',
-        [targetTask.parent_id, targetTask.position]
+        'Update tasks set position = position + 1 where parent_id IS ? AND position >= ?',
+        [parentId, position]
       );
-      console.log("Moving task ", id, " to ", mode, " target task ", targetId, targetTask.parent_id, targetTask.position);
+      console.log("Moving task ", id, " to ", mode, " target task ", targetId, parentId, position);
       await dbInstance.runAsync(
         'UPDATE tasks SET parent_id = ?, position = ? WHERE id = ?',
-        [targetTask.parent_id, targetTask.position+1, id]
+        [parentId, position, id]
       );
       // Remove moving task from its current position
       await dbInstance.runAsync(

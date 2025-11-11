@@ -31,7 +31,7 @@ interface TaskStore {
   toggleTask: (id: string) => Promise<void>;
   recursiveUpdateChildren: (id: string, completed: boolean) => Promise<void>;
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
-  moveTask: (id: string, targetId: string, mode: string) => Promise<void>;
+  moveTask: (id: string, targetId: string | null, mode: string) => Promise<void>;
 
   // templates
   createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<string>;
@@ -49,7 +49,7 @@ interface TaskStore {
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]) => TemplateNode[];
   removeTemplate: (parentId: string | null, id: string) => Promise<void>;
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => Promise<void>;
-  moveTemplate: (relId: string, targetId: string, mode: string) => Promise<void>;
+  moveTemplate: (relId: string, targetId: string | null, mode: string) => Promise<void>;
   replaceTaskWithTemplate: (taskId: string, templateId: string) => Promise<void>;
   toggleTaskExpand: (id: string) => Promise<void>;
   toggleTemplateExpand: (parentId: string | null, id: string) => Promise<void>;
@@ -151,10 +151,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const flatTasks = await storage.getTasks();
       const tree = get().getTree(flatTasks);
-      // console.log('Loaded tasks:');
-      // for (const t of flatTasks) {
-      //   console.log(t);
-      // }
+      console.log('Loaded tasks:');
+      for (const t of flatTasks) {
+        console.log(t);
+      }
       set({
         tasks: tree,
         flatTasks: flatTasks,
@@ -242,7 +242,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ error: (error as Error).message });
     }
   },
-  moveTask: async (id: string, targetId: string, mode: string) => {
+  moveTask: async (id: string, targetId: string | null, mode: string) => {
     try {
       await storage.moveTask(id, targetId, mode);
       await get().loadTasks();
@@ -520,8 +520,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ error: (error as Error).message });
     }
   },
-  moveTemplate: async (relId: string, targetId:string, mode:string ) => {
+  moveTemplate: async (relId: string, targetId:string | null, mode:string ) => {
     try {
+      console.log("store move template");
       await storage.moveTemplate(relId, targetId, mode);
       await get().loadTemplates();
       // await get().loadTasks();
