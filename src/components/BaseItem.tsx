@@ -10,6 +10,7 @@ interface BaseNode {
   title: string;
   expanded?: boolean;
   children?: BaseNode[];
+  relId?: string;
 }
 
 interface TaskNode extends BaseNode {
@@ -73,8 +74,11 @@ export const BaseItem = <T extends BaseNode>({
   }, [focusedId, node.id]);
 
   useEffect(() => {
-    registerRefs(node.id, itemRef.current);
-  }, [node.id, itemRef.current]);
+    const id = isTask?node.id:node.relId!;
+    if (id) {
+      registerRefs(id, itemRef.current);
+    }
+  }, [node.id, itemRef.current, node.relId, isTask]);
 
   // useEffect(() => {
   //   const measureItem = () => {
@@ -119,7 +123,7 @@ export const BaseItem = <T extends BaseNode>({
   return (
     <View style={[{ backgroundColor: colors.background }]} ref={itemRef}>
       <DraggableContext
-        itemId={node.id}
+        itemId={node.relId?node.relId:node.id}
         onDrop={handleDrop}>
         <View style={styles.row}>
           {hasChildren ? <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.expand}>

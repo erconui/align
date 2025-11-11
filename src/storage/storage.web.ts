@@ -353,6 +353,42 @@ export const webStorage = {
       throw error;
     }
   },
+  moveTemplate: async (relId: string, targetId: string, mode: string): Promise<void> => {
+    try {
+      const { templates, relations } = await webStorage.getTemplateHierarchy();
+      // console.log('move template from ', relId, targetId);
+      const relation = relations.find(rel => rel.id == relId);
+      const target = relations.find(rel => rel.id == targetId);
+      // console.log('source', relation);
+      // console.log('target', target);
+
+      if (!relation || !target) {
+        throw new Error('source or destination template relation not found');
+      }
+
+      const siblings = relations.filter(rel => rel.parent_id === relation.parent_id);
+      siblings.forEach((sibling) => {
+        if (sibling.position > relation.position) {
+          sibling.position -= 1;
+        }
+      });
+
+      if (mode === 'after') {
+        relation.parent_id = target.parent_id;
+        relation.position = target.position + 1;
+        const newSiblings = relations.filter(rel => rel.parent_id === target.parent_id && rel.id !== relId);
+        newSiblings.forEach((sibling) => {
+          if (sibling.position >= relation.position) {
+            sibling.position += 1;
+          }
+        });
+      }
+      await webStorage.saveTemplateRelations(relations);
+    } catch (error) {
+      console.error("Error moving template", error);
+      throw error;
+    }
+  },
   replaceTaskWithTemplate: async (taskId: string, templateId: string): Promise<void> => {
     try {
       const tasks = await webStorage.getTasks();

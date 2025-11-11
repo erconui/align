@@ -3,7 +3,7 @@ import { initStorage, storage } from '../storage/storage';
 import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
 
 export type TaskNode = TaskInstance & { children: TaskNode[] };
-export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean };
+export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
 
 interface TaskStore {
   tasks: TaskNode[];
@@ -49,6 +49,7 @@ interface TaskStore {
   buildTemplateTree: (templates: TaskTemplate[], relations: TaskTemplateRelation[]) => TemplateNode[];
   removeTemplate: (parentId: string | null, id: string) => Promise<void>;
   replaceTemplate: (parentId: string | null, oldId: string, newId: string) => Promise<void>;
+  moveTemplate: (relId: string, targetId: string, mode: string) => Promise<void>;
   replaceTaskWithTemplate: (taskId: string, templateId: string) => Promise<void>;
   toggleTaskExpand: (id: string) => Promise<void>;
   toggleTemplateExpand: (parentId: string | null, id: string) => Promise<void>;
@@ -104,33 +105,38 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await get().loadTasks();
       await get().loadTemplates();
 
-      let id = await get().createTemplateWithoutLoad('clean house', null, true);
+      // let id = await get().createTemplateWithoutLoad('clean house', null, true);
 
-      let subId = await get().createTemplateWithoutLoad('clean bedroom', id, true);
-      await get().createTemplateWithoutLoad('make bed', subId);
-      await get().createTemplateWithoutLoad('organize closet', subId);
-      await get().createTemplateWithoutLoad('clean dresser', subId);
-      await get().createTemplateWithoutLoad('tidy', subId);
-      await get().createTemplateWithoutLoad('vacuum', subId);
-      await get().createTemplateWithoutLoad('mop', subId);
-      subId = await get().createTemplateWithoutLoad('clean lounge', id, true);
-      await get().createTemplateWithoutLoad('make couch', subId);
-      await get().createTemplateWithoutLoad('organize closet', subId);
-      await get().createTemplateWithoutLoad('tidy', subId);
-      await get().createTemplateWithoutLoad('vacuum', subId);
-      await get().createTemplateWithoutLoad('mop', subId);
-      subId = await get().createTemplateWithoutLoad('clean bathroom', id, true);
-      await get().createTemplateWithoutLoad('tidy', subId);
-      await get().createTemplateWithoutLoad('clean vanity', subId);
-      await get().createTemplateWithoutLoad('clean toilet', subId);
-      await get().createTemplateWithoutLoad('clean bathtub', subId);
-      await get().createTemplateWithoutLoad('vacuum', subId);
-      await get().createTemplateWithoutLoad('mop', subId);
+      // let subId = await get().createTemplateWithoutLoad('clean bedroom', id, true);
+      // await get().createTemplateWithoutLoad('make bed', subId);
+      // await get().createTemplateWithoutLoad('organize closet', subId);
+      // await get().createTemplateWithoutLoad('clean dresser', subId);
+      // await get().createTemplateWithoutLoad('tidy', subId);
+      // await get().createTemplateWithoutLoad('vacuum', subId);
+      // await get().createTemplateWithoutLoad('mop', subId);
+      // subId = await get().createTemplateWithoutLoad('clean lounge', id, true);
+      // await get().createTemplateWithoutLoad('make couch', subId);
+      // await get().createTemplateWithoutLoad('organize closet', subId);
+      // await get().createTemplateWithoutLoad('tidy', subId);
+      // await get().createTemplateWithoutLoad('vacuum', subId);
+      // await get().createTemplateWithoutLoad('mop', subId);
+      // subId = await get().createTemplateWithoutLoad('clean bathroom', id, true);
+      // await get().createTemplateWithoutLoad('tidy', subId);
+      // await get().createTemplateWithoutLoad('clean vanity', subId);
+      // await get().createTemplateWithoutLoad('clean toilet', subId);
+      // await get().createTemplateWithoutLoad('clean bathtub', subId);
+      // await get().createTemplateWithoutLoad('vacuum', subId);
+      // await get().createTemplateWithoutLoad('mop', subId);
 
-      id = await get().createTemplateWithoutLoad('grocery shopping', null, true);
-      await get().createTemplateWithoutLoad('buy fruits', id);
-      await get().createTemplateWithoutLoad('buy vegetables', id);
-      await get().createTemplateWithoutLoad('buy snacks', id);
+      // id = await get().createTemplateWithoutLoad('grocery shopping', null, true);
+      // await get().createTemplateWithoutLoad('buy fruits', id);
+      // await get().createTemplateWithoutLoad('buy vegetables', id);
+      // await get().createTemplateWithoutLoad('buy snacks', id);
+      // await get().loadTemplates();
+      await get().createTemplateWithoutLoad('task1',null);
+      await get().createTemplateWithoutLoad('task2',null);
+      await get().createTemplateWithoutLoad('task3',null);
+      await get().createTemplateWithoutLoad('task4',null);
       await get().loadTemplates();
 
 
@@ -145,10 +151,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const flatTasks = await storage.getTasks();
       const tree = get().getTree(flatTasks);
-      console.log('Loaded tasks:');
-      for (const t of flatTasks) {
-        console.log(t);
-      }
+      // console.log('Loaded tasks:');
+      // for (const t of flatTasks) {
+      //   console.log(t);
+      // }
       set({
         tasks: tree,
         flatTasks: flatTasks,
@@ -457,7 +463,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         .map(rel => {
           const template = templates.find(t => t.id === rel.child_id);
           if (!template) return null;
-          return { ...template, children: buildHierarchy(template.id), expanded: rel.expanded };
+          return { ...template, children: buildHierarchy(template.id), expanded: rel.expanded, relId: rel.id, position: rel.position };
         }).filter(Boolean) as TemplateNode[];
     }
     const rootTemplates = templates.filter(template =>
@@ -466,13 +472,21 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     return rootTemplates.map(template => {
       const rel = relations.find(rel => rel.child_id === template.id && rel.parent_id === null);
-      return { ...template, children: buildHierarchy(template.id), expanded: rel!.expanded };
-    });
+      return { ...template, children: buildHierarchy(template.id), expanded: rel!.expanded, relId: rel!.id, position: rel!.position };
+    })
+        .sort((a, b) => a.position - b.position);
   },
   loadTemplates: async () => {
     try {
       const hierarchy = await storage.getTemplateHierarchy();
       const newTree = get().buildTemplateTree(hierarchy.templates, hierarchy.relations);
+      console.log('loaded templates');
+      for (const rel of newTree) {
+        console.log(rel);
+      }
+      // for (const rel of hierarchy.relations) {
+      //   console.log('rel', rel);
+      // }
       set({
         tree: newTree,
         templateHierarchy: hierarchy,
@@ -504,6 +518,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await await get().loadTemplates();
     } catch (error) {
       set({ error: (error as Error).message });
+    }
+  },
+  moveTemplate: async (relId: string, targetId:string, mode:string ) => {
+    try {
+      await storage.moveTemplate(relId, targetId, mode);
+      await get().loadTemplates();
+      // await get().loadTasks();
+    } catch (error) {
+      set({error: (error as Error).message});
     }
   }
 }));

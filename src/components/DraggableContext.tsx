@@ -45,9 +45,11 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
       // and call onHover or similar callbacks
     })
     .onEnd(() => {
+      // console.log("drag ended");
       const finalPosition = { x: translateX.value, y: translateY.value };
 
       if (onDrop) {
+        // console.log("call onDrop");
         runOnJS(onDrop)(itemId, finalPosition);
       }
 
