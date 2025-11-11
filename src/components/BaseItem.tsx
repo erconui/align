@@ -33,7 +33,7 @@ interface BaseItemProps<T extends BaseNode> {
   onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
   closeSuggestions: () => void;
-  registerItemLayout: (itemId: string, layout: { x: number; y: number; width: number; height: number }) => void;
+  registerRefs: (itemId: string, ref: View | null) => void;
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
 }
 
@@ -54,7 +54,7 @@ export const BaseItem = <T extends BaseNode>({
                                               generateList,
                                               toggleExpand,
                                               closeSuggestions,
-                                              registerItemLayout,
+                                              registerRefs,
                                               handleDrop
                                              }: BaseItemProps<T>) => {
   const [expanded, setExpanded] = useState(false);
@@ -73,17 +73,22 @@ export const BaseItem = <T extends BaseNode>({
   }, [focusedId, node.id]);
 
   useEffect(() => {
-    const measureItem = () => {
-      itemRef.current?.measure((x, y, width, height, pageX, pageY) => {
-        // pageX/pageY are absolute coordinates on the screen
-        registerItemLayout?.(node.id, { x: pageX, y: pageY, width, height });
-      });
-    };
+    registerRefs(node.id, itemRef.current);
+  }, [node.id, itemRef.current]);
 
-    // measure after layout settles
-    const timeout = setTimeout(measureItem, 0);
-    return () => clearTimeout(timeout);
-  }, [node.id]);
+  // useEffect(() => {
+  //   const measureItem = () => {
+  //     itemRef.current?.measure((x, y, width, height, pageX, pageY) => {
+  //       console.log(`Measured item ${node.id}:`, { x, y, width, height, pageX, pageY });
+  //       // pageX/pageY are absolute coordinates on the screen
+  //       registerRefs?.(node.id, { x: pageX, y: pageY, width, height });
+  //     });
+  //   };
+
+  //   // measure after layout settles
+  //   const timeout = setTimeout(measureItem, 0);
+  //   return () => clearTimeout(timeout);
+  // }, [node.id]);
 
   const handleTextChange = (text: string) => {
     setEditTitle(text);
@@ -174,7 +179,7 @@ export const BaseItem = <T extends BaseNode>({
               generateList={generateList}
               toggleExpand={toggleExpand}
               closeSuggestions={closeSuggestions}
-              registerItemLayout={registerItemLayout}
+              registerRefs={registerRefs}
               handleDrop={handleDrop}
             />
           ))}

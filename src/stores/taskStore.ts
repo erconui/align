@@ -31,6 +31,7 @@ interface TaskStore {
   toggleTask: (id: string) => Promise<void>;
   recursiveUpdateChildren: (id: string, completed: boolean) => Promise<void>;
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
+  moveTask: (id: string, targetId: string, mode: string) => Promise<void>;
 
   // templates
   createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<string>;
@@ -144,6 +145,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const flatTasks = await storage.getTasks();
       const tree = get().getTree(flatTasks);
+      console.log('Loaded tasks:');
+      for (const t of flatTasks) {
+        console.log(t);
+      }
       set({
         tasks: tree,
         flatTasks: flatTasks,
@@ -226,6 +231,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     try {
       await storage.updateTaskTitle(id, title.trim());
+      await get().loadTasks();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  moveTask: async (id: string, targetId: string, mode: string) => {
+    try {
+      await storage.moveTask(id, targetId, mode);
       await get().loadTasks();
     } catch (error) {
       set({ error: (error as Error).message });

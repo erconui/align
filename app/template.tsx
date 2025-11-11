@@ -86,6 +86,7 @@ export default function TemplateScreen() {
     }));
   }, [tree]);
   const { colors, styles } = useTheme();
+  const itemRefs = useRef<Record<string, View | null>>({});
 
   const handleUseTemplate = (templateId: string) => {
     Alert.alert(
@@ -112,9 +113,10 @@ export default function TemplateScreen() {
   };
 
   const itemLayouts = useRef<Record<string, {x:number; y:number; width:number; height:number}>>({});
-  const registerItemLayout = (itemId: string, layout: {x:number; y:number; width:number; height:number}) => {
-    itemLayouts.current[itemId] = layout;
-  }
+    const registerRefs = (itemId: string, ref: View | null) => {
+      // itemLayouts.current[itemId] = layout;
+      itemRefs.current[itemId] = ref;
+    }
   const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
     console.log('Handling drop for:', itemId, 'at position:', finalPosition);
     const layouts = itemLayouts.current;
@@ -236,7 +238,7 @@ export default function TemplateScreen() {
                 generateList={createTaskFromTemplate}
                 toggleExpand={async (parentId, id) => { toggleTemplateExpand(parentId, id); }}
                 closeSuggestions={closeSuggestions}
-                registerItemLayout={registerItemLayout}
+                registerRefs={registerRefs}
                 handleDrop={handleDrop}
               />
             )}

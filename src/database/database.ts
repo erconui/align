@@ -234,6 +234,45 @@ export const database = {
     }
   },
 
+  moveTask: async (id: string, targetId: string, mode: string): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      const movingTask = await dbInstance.getFirstAsync<TaskInstance>(
+        'SELECT * FROM tasks WHERE id = ?',
+        [id]
+      );
+      const targetTask = await dbInstance.getFirstAsync<TaskInstance>(
+        'SELECT * FROM tasks WHERE id = ?',
+        [targetId]
+      );
+
+      if (!movingTask || !targetTask) {
+        throw new Error('Moving task or target task not found');
+      }
+      console.log("move task", movingTask);
+      console.log("target task", targetTask);
+
+      // make space in the new position for the moving task
+      await dbInstance.runAsync(
+        'Update tasks set position = position + 1 where parent_id IS ? AND position > ?',
+        [targetTask.parent_id, targetTask.position]
+      );
+      console.log("Moving task ", id, " to ", mode, " target task ", targetId, targetTask.parent_id, targetTask.position);
+      await dbInstance.runAsync(
+        'UPDATE tasks SET parent_id = ?, position = ? WHERE id = ?',
+        [targetTask.parent_id, targetTask.position+1, id]
+      );
+      // Remove moving task from its current position
+      await dbInstance.runAsync(
+        'UPDATE tasks SET position = position - 1 WHERE parent_id IS ? AND position > ?',
+        [movingTask.parent_id, movingTask.position]
+      );
+    } catch (error) {
+      console.error('Error moving task:', error);
+      throw error;
+    }
+  },
+
   // Template functions// Create a template (optionally under a parent template)
   createTemplate: async (template: AddTemplateParams): Promise<string> => {
     try {

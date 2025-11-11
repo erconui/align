@@ -30,7 +30,8 @@ export default function HomeScreen() {
     updateTaskTitle,
     replaceTaskWithTemplate,
     createTemplateFromTask,
-    percentage
+    percentage,
+    moveTask
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -42,6 +43,10 @@ export default function HomeScreen() {
   useEffect(() => {
     setSuggestionsVisible(false);
   }, [focusedId]);
+  useEffect(() => {
+    remeasureAllItems();
+    // console.log('Loaded tasks:', flatTasks);
+  }, [flatTasks]);
 
   const suggestions = useMemo(() => {
     return tree.map(node => ({
@@ -50,6 +55,7 @@ export default function HomeScreen() {
     }));
   }, [tree]);
   const { colors, styles } = useTheme();
+  const itemRefs = useRef<Record<string, View | null>>({});
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -83,10 +89,25 @@ export default function HomeScreen() {
     setSuggestionsItemId(null);
     setSuggestionsParentId(null);
   };
-
+const remeasureAllItems = () => {
+  itemLayouts.current = {};
+  Object.entries(itemRefs.current).forEach(([id, ref]) => {
+    if (ref) {
+      ref.measureInWindow((x, y, width, height) => {
+        // const indent = 20 + (itemLevels.current[id] || 0) * 20; // include padding
+        // console.log(`Measured item ${id}:`, { x, y, width, height });
+        registerItemLayout(id, { x: x, y, width, height });
+      });
+    }
+  });
+};
   const itemLayouts = useRef<Record<string, {x:number; y:number; width:number; height:number}>>({});
   const registerItemLayout = (itemId: string, layout: {x:number; y:number; width:number; height:number}) => {
     itemLayouts.current[itemId] = layout;
+  };
+  const registerRefs = (itemId: string, ref: View | null) => {
+    // itemLayouts.current[itemId] = layout;
+    itemRefs.current[itemId] = ref;
   }
 
   if (isLoading) {
@@ -99,6 +120,7 @@ export default function HomeScreen() {
   }
 
   const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
+    // remeasureAllItems();
     const layouts = itemLayouts.current;
     const dragged = layouts[itemId];
     if (!dragged) return;
@@ -112,23 +134,34 @@ export default function HomeScreen() {
     const entries = Object.entries(layouts).filter(([id]) => id !== itemId);
     const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
 
-    if (!targetEntry) return;
+    if (!targetEntry) {
+      console.log('No valid drop target found.');
+      return;
+    };
     const [targetId, targetLayout] = targetEntry;
 
     const horizontalShift = dropX - dragged.x;
 
-    if (horizontalShift > 25) {
-      // Dragged right → indent under target
-      // addSubTask('', targetId);
-      console.log(`Indented ${itemId} under ${targetId}`);
-    } else if (horizontalShift < -25) {
-      // Dragged left → outdent to parent's level
-      // For this, find parent ID from your data structure (depends on your store)
-      console.log(`Outdented ${itemId}`);
-    } else {
+    // if (horizontalShift > 25) {
+    //   // Dragged right → indent under target
+    //   // addSubTask('', targetId);
+    //   console.log(`Indented ${itemId} under ${targetId}`);
+    // } else if (horizontalShift < -25) {
+    //   // Dragged left → outdent to parent's level
+    //   // For this, find parent ID from your data structure (depends on your store)
+    //   console.log(`Outdented ${itemId}`);
+    // } else {
       // No horizontal shift → reorder after target
       // addTaskAfter('', targetId);
-      console.log(`Moved ${itemId} after ${targetId}`);
+      console.log(dropCenterY, targetLayout.y, targetLayout.height);
+    if (dropCenterY < targetLayout.y + targetLayout.height / 2) {
+      // Drop above target
+      console.log(`UI Move ${itemId} before ${targetId}`);
+      moveTask(itemId, targetId, 'before');
+    } else {
+      // Drop below target
+      console.log(`UI Move ${itemId} after ${targetId}`);
+      moveTask(itemId, targetId, 'after');
     }
   };
 
@@ -208,7 +241,7 @@ export default function HomeScreen() {
               onTextChange={handleTextChange}
               generateList={createTemplateFromTask}
               closeSuggestions={closeSuggestions}
-              registerItemLayout={registerItemLayout}
+              registerRefs={registerRefs}
               handleDrop={handleDrop}
             />
           )} />

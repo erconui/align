@@ -161,6 +161,44 @@ export const webStorage = {
       throw error;
     }
   },
+  moveTask: async (id: string, targetId: string, mode: string): Promise<void> => {
+    try {
+      const tasks = await webStorage.getTasks();
+      console.log(tasks);
+      const task = tasks.find(t => t.id === id);
+      const target = tasks.find(t => t.id === targetId);
+      if (!task || !target) {
+        throw new Error('Task or target not found');
+      }
+      console.log('moving task', task);
+      console.log('to target', target);
+      
+      // Remove task from current position
+      const siblings = tasks.filter(t => t.parent_id === task.parent_id && t.id !== id);
+      siblings.forEach((sibling) => {
+        if (sibling.position > task.position) {
+          sibling.position -= 1;
+        }
+      });
+      
+      if (mode === 'after') {
+        task.parent_id = target.parent_id;
+        task.position = target.position + 1;
+        // Adjust positions of siblings in new parent
+        const newSiblings = tasks.filter(t => t.parent_id === task.parent_id && t.id !== id);
+        newSiblings.forEach((sibling) => {
+          if (sibling.position >= task.position) {
+            sibling.position += 1;
+          }
+        });
+      }
+      await webStorage.saveTasks(tasks);
+      // Additional modes like 'before', 'indent', 'outdent' can be implemented here
+    } catch (error) {
+      console.error('Error moving task:', error);
+      throw error;
+    }
+  },
   createTemplate: async (template: AddTemplateParams): Promise<string> => {
     try {
       const templates = await webStorage.getTemplates();

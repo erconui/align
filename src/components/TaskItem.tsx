@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { TaskNode } from '../stores/taskStore';
 import { BaseItem } from './BaseItem';
 
@@ -15,7 +16,7 @@ interface TaskItemProps {
   onTextChange?: (text: string) => void;
   toggleExpand: (parentId: string | null, id: string) => void;
   closeSuggestions: () => void;
-  registerItemLayout: (itemId: string, layout: { x: number; y: number; width: number; height: number }) => void;
+  registerRefs: (itemId: string, ref: View | null) => void;
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
 }
 
@@ -32,7 +33,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                    generateList,
                                                    toggleExpand,
                                                    closeSuggestions,
-                                                   registerItemLayout,
+                                                   registerRefs,
                                                    handleDrop
                                                   }) => {
   return (
@@ -53,7 +54,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       generateList={generateList}
       toggleExpand={toggleExpand}
       closeSuggestions={closeSuggestions}
-      registerItemLayout={registerItemLayout}
+      registerRefs={registerRefs}
       handleDrop={handleDrop}
     />
   );

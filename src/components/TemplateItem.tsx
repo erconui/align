@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { TemplateNode, useTaskStore } from '../stores/taskStore';
 import { BaseItem } from './BaseItem';
 
@@ -19,7 +20,7 @@ interface TemplateItemProps {
   onTextChange?: (text: string) => void;
   closeSuggestions: () => void;
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
-  registerItemLayout: (itemId: string, layout: { x: number; y: number; width: number; height: number }) => void;
+  registerRefs: (itemId: string, ref: View | null) => void;
 }
 
 export const TemplateItem: React.FC<TemplateItemProps> = ({
@@ -38,7 +39,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                            generateList,
                                                            toggleExpand,
                                                            closeSuggestions,
-                                                           registerItemLayout,
+                                                           registerRefs,
                                                            handleDrop
                                                           }) => {
   const { createTemplate } = useTaskStore();
@@ -70,7 +71,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       toggleExpand={toggleExpand}
       closeSuggestions={closeSuggestions}
       handleDrop={handleDrop}
-      registerItemLayout={registerItemLayout}
+      registerRefs={registerRefs}
     />
   );
 };

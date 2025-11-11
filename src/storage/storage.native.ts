@@ -39,7 +39,15 @@ const nativeStorage = {
   },
   updateTaskTitle: async (id: string, title: string): Promise<void> => {
     await database.updateTaskTitle(id, title);
-  },// Add to both storage files
+  },
+  moveTask: async (id: string, targetId: string, mode: string): Promise<void> => {
+    try {
+      await database.moveTask(id, targetId, mode);
+    } catch (error) {
+      console.error('Error moving task:', error);
+      throw error;
+    }
+  },
   createTemplate: async (template: AddTemplateParams): Promise<string> => {
     return await database.createTemplate(template);
   },
