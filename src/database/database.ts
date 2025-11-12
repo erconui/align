@@ -234,7 +234,7 @@ export const database = {
     }
   },
 
-  moveTask: async (id: string, targetId: string, mode: string, levelsOffset: number): Promise<void> => {
+  moveTask: async (id: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {
       const dbInstance = await db;
       const movingTask = await dbInstance.getFirstAsync<TaskInstance>(
@@ -255,8 +255,7 @@ export const database = {
       if (targetId !== null && !target) {
         throw new Error('Target not found');
       }
-      // console.log("move task", movingTask);
-      // console.log("target task", target);
+      
       let target_pos;
       let parentId = null;
       let position = 0;
@@ -293,7 +292,6 @@ export const database = {
         'Update tasks set position = position + 1 where parent_id IS ? AND position >= ?',
         [parentId, position]
       );
-      // console.log("Moving task ", id, " to ", mode, " target task ", targetId, parentId, position);
       await dbInstance.runAsync(
         'UPDATE tasks SET parent_id = ?, position = ? WHERE id = ?',
         [parentId, position, id]
@@ -304,38 +302,75 @@ export const database = {
         [movingTask.parent_id, movingTask.position]
       );
       await dbInstance.runAsync(
-        'Update tasks set expanded = TRUE where parent_id IS ?',
+        'Update tasks set expanded = 1 where id IS ?',
         [parentId]
-      );//TODO: this isn't working, but if we add an item to a list i think we might want to expand the list so we can see where it was moved to.
+      );
     } catch (error) {
       console.error('Error moving task:', error);
       throw error;
     }
   },
 
-  moveTemplate: async (relId: string, targetId: string, mode: string): Promise<void> => {
+  moveTemplate: async (relId: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {
-      // console.log('Move template from ', relId, ' to ', targetId);
+      console.log('Move template from ', relId, ' to ', targetId, 'at', levelsOffset);
       const dbInstance = await db;
       const relation = await dbInstance.getFirstAsync<TaskTemplateRelation>(
         'SELECT * FROM template_relations WHERE id = ?',[relId]
       );
-      const target = await dbInstance.getFirstAsync<TaskTemplateRelation>(
+      let target = await dbInstance.getFirstAsync<TaskTemplateRelation>(
         'SELECT * FROM template_relations WHERE id = ?',[targetId]
       );
-      if (!relation || !target) {
-        throw new Error("Could not find source or destination when attempting move");
+      if (!relation) {
+        throw new Error('Moving task task not found');
       }
-      // console.log('source', relation);
-      // console.log('target', target);
+      if (targetId !== null && !target) {
+        throw new Error('Target not found');
+      }
+      
+      let target_pos;
+      let parentId = null;
+      let position = 0;
+      if (target) {
+        parentId = target.parent_id;
+        if ( levelsOffset === 0) {
+          console.log("target relation", target);
+          position = target.position + 1;
+        } else if (levelsOffset === 1) {
+          parentId = target.child_id;
+          if (!target.expanded) {
+            const result = await dbInstance.getFirstAsync<{ count: number }>(
+              'SELECT COUNT(*) as count FROM template_relations WHERE parent_id IS ?',
+              [parentId]);
+            position = result?.count || 0;
+          }
+        } else {
+          while (levelsOffset < 0 && parentId) {
+            target = await dbInstance.getFirstAsync<TaskTemplateRelation>(
+              'SELECT * FROM template_relations WHERE child_id = ?',
+              [parentId]
+            );
+            levelsOffset++;
+            if (!target) {
+              throw new Error('Database corrupted, parentId points at a nonexistent target');
+            }
+            parentId = target.parent_id;
+            position = target.position + 1;
+          }
+        }
+      }
 
       await dbInstance.runAsync(
-        'UPDATE template_relations SET position = position + 1 WHERE parent_id IS ? and position > ?',
-        [target.parent_id, target.position]
+        'UPDATE template_relations SET position = position + 1 WHERE parent_id IS ? and position >= ?',
+        [parentId, position]
+      );
+      await dbInstance.runAsync(
+        'UPDATE template_relations SET expanded = 1 WHERE child_id IS ?',
+        [parentId]
       );
       await dbInstance.runAsync(
         'UPDATE template_relations SET parent_id = ?, position = ? WHERE id = ?',
-        [target.parent_id, target.position+1, relId]
+        [parentId, position, relId]
       );
       await dbInstance.runAsync(
         'UPDATE template_relations SET position = position - 1 WHERE parent_id IS ? and position > ?',

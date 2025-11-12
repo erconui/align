@@ -42,7 +42,7 @@ export default function HomeScreen() {
   const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
   const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
   const [currentSearchText, setCurrentSearchText] = useState('');
-const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
+  const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
 
   useEffect(() => {
     setSuggestionsVisible(false);
@@ -144,10 +144,7 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
   const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
     requestAnimationFrame(() => {
       const layouts = calculateTreePositions();
-      console.log('layouts',layouts);
-      // console.log(itemId);
       const dragged = layouts[itemId];
-      // console.log('dragged',dragged);
       if (!dragged) return;
 
       // Compute final drop position
@@ -155,19 +152,16 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
       const dropCenterY = dropY + dragged.height / 2;
       const dropX = dragged.x + finalPosition.x;
 
-      console.log('Dragged item ',itemId, ' from layout:', dragged, ' to position(x,y):', dropX,',', dropCenterY);
       // Find potential drop target
       const entries = Object.entries(layouts)//.filter(([id]) => id !== itemId);
       entries.find(([_WORKLET_RUNTIME, {x}]) => dropX )
-      console.log(entries);
       const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
       const lowestY = Object.values(layouts).length > 0 
         ? Math.min(...Object.values(layouts).map(layout => layout.y))
         : 0;
       if (!targetEntry) {
         if (dropY < lowestY + 2*dragged.height/3) {
-          console.log("move task to first point");
-          moveTask(itemId, null, 'after', 0); // move it to the top of the list
+          moveTask(itemId, null, 0); // move it to the top of the list
         } else {
         console.log('No valid drop target found.', dropY, lowestY, lowestY + dragged.height/2);
         }
@@ -175,13 +169,10 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
       };
       const [targetId, targetLayout] = targetEntry;
       const xshift = dropX - targetLayout.x;
-      console.log("drop position", dropY, dropX, "targetlayout", targetLayout, dropX - targetLayout.x);
       if (xshift >= INDENTATION_WIDTH) {
-        console.log('make a child');
-        moveTask(itemId, targetId, "sub", 1);
+        moveTask(itemId, targetId, 1);
       } else {
-        console.log('shift', xshift, Math.round(xshift/INDENTATION_WIDTH));
-        moveTask(itemId, targetId, 'after', Math.round(xshift/INDENTATION_WIDTH));
+        moveTask(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
       }
 
     });

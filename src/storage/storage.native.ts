@@ -40,9 +40,9 @@ const nativeStorage = {
   updateTaskTitle: async (id: string, title: string): Promise<void> => {
     await database.updateTaskTitle(id, title);
   },
-  moveTask: async (id: string, targetId: string, mode: string, levelsOffset: number): Promise<void> => {
+  moveTask: async (id: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {
-      await database.moveTask(id, targetId, mode, levelsOffset);
+      await database.moveTask(id, targetId, levelsOffset);
     } catch (error) {
       console.error('Error moving task:', error);
       throw error;
@@ -130,9 +130,9 @@ const nativeStorage = {
       throw error;
     }
   },
-  moveTemplate: async (id: string, targetId: string, mode: string): Promise<void> => {
+  moveTemplate: async (id: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {
-      await database.moveTemplate(id, targetId, mode);
+      await database.moveTemplate(id, targetId, levelsOffset);
     } catch (error) {
       console.error('Error moving template:', error);
       throw error;

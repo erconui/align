@@ -14,6 +14,9 @@ import { TemplateItem } from '../src/components/TemplateItem';
 import { useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
+const ITEM_HEIGHT = 37.33;
+const INDENTATION_WIDTH = 20;
+
 export default function TemplateScreen() {
   const {
     focusedId,
@@ -39,6 +42,7 @@ export default function TemplateScreen() {
   const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
   const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
   const [currentSearchText, setCurrentSearchText] = useState('');
+  const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
 
   useEffect(() => {
     loadTemplates();
@@ -137,54 +141,79 @@ export default function TemplateScreen() {
     // itemLayouts.current[itemId] = layout;
     itemRefs.current[itemId] = ref;
   }
-  const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
-    // remeasureAllItems();
-    const layouts = itemLayouts.current;
-    const dragged = layouts[itemId];
-    if (!dragged) return;
+  // Measure only the list container once
+  const handleContainerLayout = (event: any) => {
+    const layout = event.nativeEvent.layout;
+    console.log("tasks layout", layout);
+    setContainerLayout(layout);
+  };
+  // Core function: Calculate all positions from tree data
+  const calculateTreePositions = () => {
+    const positions: Record<string, { x: number; y: number; width: number; height: number }> = {};
+    let currentY = containerLayout.y;// + HEADER_HEIGHT;
+    console.log('tree');
+    console.log(tree);
 
-    // Compute final drop position
-    const dropY = dragged.y + finalPosition.y;
-    const dropCenterY = dropY + dragged.height / 2;
-    const dropX = dragged.x + finalPosition.x;
-
-    console.log('Dragged item ',itemId, ' from layout:', dragged, ' to position(x,y):', dropX,',', dropCenterY);
-    // Find potential drop target
-    const entries = Object.entries(layouts).filter(([id]) => id !== itemId);
-    const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
-
-    if (!targetEntry) {
-      console.log('Move to front');
-      if (dropY < dragged.height/2) {
-        moveTemplate(itemId, null, 'after'); // move it to the top of the list
-      }
-      return;
+    const traverse = (nodes: any[], depth: number = 0) => {
+      nodes.forEach(node => {
+        // Calculate position for this node
+        positions[node.relId] = {
+          x: depth * INDENTATION_WIDTH,
+          y: currentY,
+          width: 400 - (depth * INDENTATION_WIDTH), // Adjust based on your screen
+          height: ITEM_HEIGHT
+        };
+        
+        currentY += ITEM_HEIGHT;
+        
+        // Recursively traverse children if expanded
+        if (node.expanded && node.children && node.children.length > 0) {
+          traverse(node.children, depth + 1);
+        }
+      });
     };
-    const [targetId, targetLayout] = targetEntry;
 
-    const horizontalShift = dropX - dragged.x;
+    // Start with root nodes (no parentId)
+    traverse(tree);
+    
+    return positions;
+  };
+  const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
+    requestAnimationFrame(() => {
+      const layouts = calculateTreePositions();
+      console.log('layout',layouts);
+      const dragged = layouts[itemId];
+      if (!dragged) return;
 
-    // if (horizontalShift > 25) {
-    //   // Dragged right → indent under target
-    //   // addSubTask('', targetId);
-    //   console.log(`Indented ${itemId} under ${targetId}`);
-    // } else if (horizontalShift < -25) {
-    //   // Dragged left → outdent to parent's level
-    //   // For this, find parent ID from your data structure (depends on your store)
-    //   console.log(`Outdented ${itemId}`);
-    // } else {
-      // No horizontal shift → reorder after target
-      // addTaskAfter('', targetId);
-      console.log(dropCenterY, targetLayout.y, targetLayout.height);
-    // if (dropCenterY < targetLayout.y + targetLayout.height / 2) {
-    //   // Drop above target
-    //   console.log(`UI Move ${itemId} before ${targetId}`);
-    //   moveTask(itemId, targetId, 'before');
-    // } else {
-    //   // Drop below target
-      console.log(`UI Move ${itemId} after ${targetId}`);
-      moveTemplate(itemId, targetId, 'after');
-    // }
+      // Compute final drop position
+      const dropY = dragged.y + finalPosition.y;
+      const dropCenterY = dropY + dragged.height / 2;
+      const dropX = dragged.x + finalPosition.x;
+
+      // Find potential drop target
+      const entries = Object.entries(layouts)//.filter(([id]) => id !== itemId);
+      entries.find(([_WORKLET_RUNTIME, {x}]) => dropX )
+      const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
+      const lowestY = Object.values(layouts).length > 0 
+        ? Math.min(...Object.values(layouts).map(layout => layout.y))
+        : 0;
+      if (!targetEntry) {
+        if (dropY < lowestY + 2*dragged.height/3) {
+          moveTemplate(itemId, null, 0); // move it to the top of the list
+        } else {
+        console.log('No valid drop target found.', dropY, lowestY, lowestY + dragged.height/2);
+        }
+        return;
+      };
+      const [targetId, targetLayout] = targetEntry;
+      const xshift = dropX - targetLayout.x;
+      if (xshift >= INDENTATION_WIDTH) {
+        moveTemplate(itemId, targetId, 1);
+      } else {
+        moveTemplate(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
+      }
+
+    });
   };
   if (isLoading) {
     return (
@@ -244,7 +273,7 @@ export default function TemplateScreen() {
       />
 
       {/* Templates List */}
-      <View className="flex-1">
+      <View className="flex-1" onLayout={handleContainerLayout}>
         {tree.length === 0 ? (
           <View style={styles.settingsRow}>
             <Text style={styles.headerText}>
