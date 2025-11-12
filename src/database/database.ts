@@ -116,6 +116,7 @@ export const database = {
       throw error;
     }
   },
+
   getAllTasks: async (): Promise<TaskInstance[]> => {
     try {
       const dbInstance = await db;
@@ -309,7 +310,7 @@ export const database = {
       throw error;
     }
   },
-
+  //TODO update corresponding tasks
   moveTemplate: async (relId: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {
       const dbInstance = await db;
@@ -374,12 +375,35 @@ export const database = {
         [relation.parent_id, relation.position]
       );
 
+
+      // delete all tasks where rel.parent.id==task.parent.template_id && rel.child_id==task.template_id
+      if (relation.parent_id) {
+        const parents = await dbInstance.getAllAsync<TaskInstance>(
+          'SELECT * FROM tasks WHERE template_id = ? and completed = 0', [relation.parent_id]);
+        for (const parent of parents) {
+          const tasks = await dbInstance.getAllAsync<TaskInstance>(
+            'SELECT * FROM tasks WHERE template_id = ? AND parent_id IS ? AND completed = 0', [relation.child_id, parent.id]);
+            for (const task of tasks) {
+              database.deleteTask(task.id);
+            }
+        }
+
+      }
+       // check if there are tasks we need to add this to as well
+      if (parentId) {
+        const tasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE template_id = ? and completed = 0', [parentId]);
+        for (const task of tasks) {
+          database.createTaskFromTemplate(relation.child_id, task.id, position);
+        }
+      }
+
     } catch (error) {
       console.error('Error moving template:', error);
       throw error;
     }
   },
 
+  // TODO if template has parent and there is a task that correlates to parent, then update task
   // Template functions// Create a template (optionally under a parent template)
   createTemplate: async (template: AddTemplateParams): Promise<string> => {
     try {
@@ -412,6 +436,13 @@ export const database = {
         [relId, template.parent_id || null, id, position] // position 0 for now
       );
       // }
+      if (template.parent_id) {
+        // check if there are tasks we need to add this to as well
+        const tasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE template_id = ? and completed = 0', [template.parent_id]);
+        for (const task of tasks) {
+          database.createTaskFromTemplate(id, task.id, position);
+        }
+      }
 
       return id;
     } catch (error) {
@@ -478,7 +509,7 @@ export const database = {
   },
 
   // Create task instance from template (with full hierarchy)
-  createTaskFromTemplate: async (templateId: string, parentInstanceId: string | null = null): Promise<string> => {
+  createTaskFromTemplate: async (templateId: string, parentInstanceId: string | null = null, position?: number): Promise<string> => {
     try {
       const dbInstance = await db;
       const template = await dbInstance.getFirstAsync<TaskTemplate>(
@@ -492,24 +523,26 @@ export const database = {
 
       // Create the main task from template
       const taskId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+      position = position||0;
 
+      await dbInstance.runAsync('UPDATE tasks SET position = position + 1 WHERE parent_id IS ? AND position >= ?',
+        [parentInstanceId, position]);
       await dbInstance.runAsync(
         `INSERT INTO tasks (id, template_id, parent_id, title, completed, position)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [taskId, templateId, parentInstanceId, template.title, 0, 0] // completed=0 = bound to template
+        [taskId, templateId, parentInstanceId, template.title, 0, position||0] // completed=0 = bound to template
       );
 
       // Recursively create tasks from template children
-      const childTemplates = await dbInstance.getAllAsync<TaskTemplate>(`
-          SELECT t.*
-          FROM templates t
-                   INNER JOIN template_relations r ON t.id = r.child_id
+      const childTemplates = await dbInstance.getAllAsync<TaskTemplateRelation>(`
+          SELECT *
+          FROM template_relations r
           WHERE r.parent_id = ?
           ORDER BY r.position ASC
       `, [templateId]);
 
       for (const childTemplate of childTemplates) {
-        await database.createTaskFromTemplate(childTemplate.id, taskId);
+        await database.createTaskFromTemplate(childTemplate.child_id, taskId, childTemplate.position);
       }
 
       return taskId;
@@ -519,6 +552,7 @@ export const database = {
     }
   },
 
+  // ParentInstanceId should always be null
   createTemplateFromTask: async (taskId: string, parentInstanceId: string | null = null): Promise<string> => {
     try {
       const dbInstance = await db;
@@ -540,6 +574,7 @@ export const database = {
     }
   },
 
+  // update tasks
   // Update template title and structure
   updateTemplate: async (templateId: string, newTitle: string, newChildren: string[]): Promise<void> => {
     try {
@@ -547,6 +582,10 @@ export const database = {
       const dbInstance = await db;
       await dbInstance.runAsync(
         'UPDATE templates SET title = ? WHERE id = ?',
+        [newTitle.trim(), templateId]
+      );
+      await dbInstance.runAsync(
+        'UPDATE tasks SET title = ? WHERE template_id = ? AND completed = 0',
         [newTitle.trim(), templateId]
       );
 
@@ -660,6 +699,7 @@ export const database = {
     }
   },
 
+  // update tasks
   // Remove template from parent, delete template if it is now an orphan
   removeTemplate: async (parentId: string | null, id: string): Promise<void> => {
     try {
@@ -668,11 +708,23 @@ export const database = {
         'DELETE FROM template_relations WHERE parent_id IS ? AND child_id IS ?',
         [parentId, id]
       );
+
+      const parents = await dbInstance.getAllAsync<TaskInstance>(
+        'SELECT * FROM tasks WHERE template_id = ? and completed = 0', [parentId]);
+      for (const parent of parents) {
+        const tasks = await dbInstance.getAllAsync<TaskInstance>(
+          'SELECT * FROM tasks WHERE template_id = ? AND parent_id IS ? AND completed = 0', [id, parent.id]);
+          for (const task of tasks) {
+            database.deleteTask(task.id);
+          }
+      }
+      
       // Check if template is now an orphan
       const result = await dbInstance.getFirstAsync<{ count: number }>(
         'SELECT COUNT(*) as count FROM template_relations WHERE child_id = ?',
         [id]
       );
+
       if (!result?.count) {
         const children = await database.getTemplateChildren(id);
         for (const child of children) {
@@ -685,6 +737,7 @@ export const database = {
       throw error;
     }
   },
+  // update tasks
   // Delete template and its relations
   deleteTemplate: async (id: string): Promise<void> => {
     try {
@@ -699,6 +752,7 @@ export const database = {
 
       // Then delete the template itself
       await dbInstance.runAsync('DELETE FROM templates WHERE id = ?', [id]);
+      await dbInstance.runAsync('DELETE FROM tasks WHERE template_id = ? AND completed = 0', [id]);
     } catch (error) {
       console.error('Error deleting template:', error);
       throw error;
@@ -730,6 +784,28 @@ export const database = {
         'SELECT COUNT(*) as count FROM template_relations WHERE child_id = ? OR parent_id = ?',
         [oldId, oldId]
       );
+
+
+      // delete all tasks where rel.parent.id==task.parent.template_id && rel.child_id==task.template_id
+      const parents = await dbInstance.getAllAsync<TaskInstance>(
+        'SELECT * FROM tasks WHERE template_id = ? and completed = 0', [parentId]);
+      for (const parent of parents) {
+        const tasks = await dbInstance.getAllAsync<TaskInstance>(
+          'SELECT * FROM tasks WHERE template_id = ? AND parent_id IS ? AND completed = 0', [oldId, parent.id]);
+          for (const task of tasks) {
+            database.deleteTask(task.id);
+          }
+      }
+
+       // check if there are tasks we need to add this to as well
+       const position = await dbInstance.getFirstAsync<number>('select position FROM template_relations WHERE parent_id IS ? AND child_id IS ?', [parentId, newId]);
+      if (parentId) {
+        const tasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE template_id = ? and completed = 0', [parentId]);
+        for (const task of tasks) {
+          database.createTaskFromTemplate(newId, task.id, position||0);
+        }
+      }
+
 
       if (!result?.count) {
         await database.deleteTemplate(oldId);

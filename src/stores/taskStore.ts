@@ -71,7 +71,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
       await initStorage();
-      await get().loadTasks();
+      // await get().loadTasks();
       await get().loadTemplates();
     } catch (error) {
       set({ error: (error as Error).message });
@@ -102,7 +102,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         await get().addTaskWithoutLoad(`Task ${idx}`, null);
       }
       // Single load at the end
-      await get().loadTasks();
+      // await get().loadTasks();
       await get().loadTemplates();
 
       let id = await get().createTemplateWithoutLoad('clean house', null, true);
@@ -410,7 +410,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       await storage.updateTemplate(templateId, newTitle);
       await get().loadTemplates();
-      await get().loadTasks(); // Refresh tasks to show template changes
+      // await get().loadTasks(); // Refresh tasks to show template changes
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -423,7 +423,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
       await storage.replaceTemplate(parentId, oldId, newId);
       await get().loadTemplates();
-      await get().loadTasks();
+      // await get().loadTasks();
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -433,7 +433,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       await storage.replaceTaskWithTemplate(taskId, templateId);
       await get().loadTemplates();
-      await get().loadTasks();
+      // await get().loadTasks();
     } catch (error) {
       set({ error: (error as Error).message });
       throw error;
@@ -480,6 +480,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const hierarchy = await storage.getTemplateHierarchy();
       const newTree = get().buildTemplateTree(hierarchy.templates, hierarchy.relations);
+      await get().loadTasks();
       // console.log('loaded templates');
       // for (const rel of newTree) {
       //   console.log('list',rel);
@@ -534,7 +535,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       await storage.moveTemplate(relId, targetId, levelsOffset);
       await get().loadTemplates();
-      await get().loadTasks();
+      // await get().loadTasks();
     } catch (error) {
       set({error: (error as Error).message});
     }

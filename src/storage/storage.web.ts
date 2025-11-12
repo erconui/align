@@ -97,6 +97,11 @@ export const webStorage = {
         position: position,
         expanded: false
       };
+      tasks.forEach(task => {
+        if (task.parent_id === parentId && task.position >= position) {
+          task.position++;
+        }
+      });
 
       tasks.push(newTask);
       await webStorage.saveTasks(tasks);
@@ -258,7 +263,6 @@ export const webStorage = {
         position = siblings.length;
       }
 
-      // if (parentId) {
       const relId = webStorage.generateId();
       const newRelation: TaskTemplateRelation = {
         id: relId,
@@ -271,7 +275,16 @@ export const webStorage = {
       };
       relations.push(newRelation);
       await webStorage.saveTemplateRelations(relations);
-      // }
+
+      if (template.parent_id) {
+        // check if there are tasks we need to add this to as well
+        const tasks = await webStorage.getTasks();
+        const template_tasks = tasks.filter(t => t.template_id == template.parent_id && !t.completed);
+        // const tasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE template_id = ? and completed = 0', [template.parent_id]);
+        for (const task of template_tasks) {
+          storage.createTaskFromTemplate(id, task.id, position);
+        }
+      }
       return id;
     } catch (error) {
       console.error('Error creating task template', error);
@@ -285,6 +298,12 @@ export const webStorage = {
       if (index !== -1) {
         templates[index] = { ...templates[index], title };
         await webStorage.saveTemplates(templates);
+      }
+      const tasks = await webStorage.getTasks();
+      const taskIndex = tasks.findIndex(t=> t.template_id == id && !t.completed);
+      if (taskIndex !== -1) {
+        tasks[taskIndex] = {...tasks[taskIndex], title};
+        await webStorage.saveTasks(tasks);
       }
     } catch (error) {
       console.error('Error updating template title', error);
@@ -372,6 +391,29 @@ export const webStorage = {
         }
       }
       await webStorage.saveTemplateRelations(relations);
+
+      const tasks = await webStorage.getTasks();
+      // Remove tasks from parent instances that reference this template
+      const parentTasks = tasks.filter(task => 
+        task.template_id === parentId && !task.completed
+      );
+      
+      for (const parentTask of parentTasks) {
+        const tasksToRemove = tasks.filter(task => 
+          task.template_id === oldId && task.parent_id === parentTask.id && !task.completed
+        );
+        
+        for (const task of tasksToRemove) {
+          await webStorage.deleteTask(task.id);
+        }
+      }
+      const position = relations[relIdx].position;
+      if (parentId) {
+        const filtered_tasks = tasks.filter(task => task.template_id === parentId && !task.completed);
+        for (const task of filtered_tasks) {
+          await webStorage.createTaskFromTemplate(newId, task.id, position||0);
+        }
+      }
     } catch (error) {
       console.error('Error replacing template relation', error);
       throw error;
@@ -391,6 +433,17 @@ export const webStorage = {
         throw new Error("target relation not found");
       }
 
+      let tasks = await webStorage.getTasks();
+
+      if (relation.parent_id) {
+        const parents = tasks.filter(task => task.template_id === relation.parent_id && !task.completed);
+        for ( const parent of parents) {
+          const to_remove = tasks.filter(task => task.template_id === relation.child_id && task.parent_id===parent.id && !task.completed);
+          for ( const task of to_remove ) {
+            await webStorage.deleteTask(task.id);
+          }
+        }
+      }
       let parentId: string | null = null;
       let position = 0;
       if (target) {
@@ -437,6 +490,16 @@ export const webStorage = {
         target.expanded = true;
       }
       await webStorage.saveTemplateRelations(relations);
+
+
+      tasks = await webStorage.getTasks();
+      if (parentId) {
+        const tasks_to_add = tasks.filter(task => task.template_id === parentId && !task.completed);
+        for (const task of tasks_to_add) {
+          await webStorage.createTaskFromTemplate(relation.child_id, task.id, position);
+        }
+
+      }
     } catch (error) {
       console.error("Error moving template", error);
       throw error;
@@ -500,6 +563,23 @@ export const webStorage = {
       const { templates, relations } = await webStorage.getTemplateHierarchy();
       let newRelations = relations.filter((relation) => relation.parent_id !== parentId || relation.child_id !== id);
       await webStorage.saveTemplateRelations(newRelations);
+
+      const tasks = await webStorage.getTasks();
+      // Remove tasks from parent instances that reference this template
+      const parentTasks = tasks.filter(task => 
+        task.template_id === parentId && !task.completed
+      );
+      
+      for (const parentTask of parentTasks) {
+        const tasksToRemove = tasks.filter(task => 
+          task.template_id === id && task.parent_id === parentTask.id && !task.completed
+        );
+        
+        for (const task of tasksToRemove) {
+          await webStorage.deleteTask(task.id);
+        }
+      }
+      
       if (!newRelations.find((relation) => relation.child_id === id)) {
         const children = await webStorage.getTemplateChildren(id);
         let newTemplates = templates.filter((template) => template.id !== id);
@@ -520,22 +600,26 @@ export const webStorage = {
       let newRelations = relations.filter((relation) => relation.parent_id !== id && relation.child_id !== id);
       await webStorage.saveTemplates(newTemplates);
       await webStorage.saveTemplateRelations(newRelations);
+      let tasks = await webStorage.getTasks();
+      let newTasks = tasks.filter((task) => task.template_id !== id || task.completed);
+      await webStorage.saveTasks(newTasks);
     } catch (error) {
       console.error('Error deleting template', error);
       throw error;
     }
   },
-  createTaskFromTemplate: async (templateId: string, parentId: string | null = null): Promise<string> => {
+  createTaskFromTemplate: async (templateId: string, parentId: string | null = null, position?: number): Promise<string> => {
     try {
       const relations = await webStorage.getTemplateRelations();
       const templates = await webStorage.getTemplates()
+      position = position || 0;
 
       const template = templates.find(t => t.id === templateId);
       if (!template) {
         throw new Error('Template not found');
       }
 
-      const id = await webStorage.addTask({ template_id: templateId, parent_id: parentId, title: template.title, completed: false });
+      const id = await webStorage.addTask({ template_id: templateId, parent_id: parentId, title: template.title, completed: false, position: position });
 
       const tasks = await webStorage.getTasks();
       await webStorage.createTasksFromTemplateChildren(templateId, id, tasks, relations, templates);
