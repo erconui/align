@@ -720,7 +720,14 @@ export const webStorage = {
       // Recursively create tasks for grandchildren
       await webStorage.createTasksFromTemplateChildren(childTemplate.id, childTaskId, tasksArray, relations, templates);
     }
-  }
+  },
+  saveRelations: async (relations: TaskTemplateRelation[]) => {
+    try {
+      await AsyncStorage.setItem(TEMPLATE_RELATION_KEY, JSON.stringify(relations));
+    } catch (error) {
+      console.error('Error saving relations to storage:', error);
+    }
+  },
 };
 
 export const initStorage = async (): Promise<void> => {

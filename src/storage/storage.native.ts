@@ -137,7 +137,31 @@ const nativeStorage = {
       console.error('Error moving template:', error);
       throw error;
     }
-  }
+  },
+  saveTasks: async (tasks: TaskInstance[]) => {
+    try {
+      await database.saveTasks(tasks);
+    } catch (error) {
+      console.error('Error saving tasks', error);
+      throw error;
+    }
+  },
+  saveTemplates: async (templates: TaskTemplate[]) => {
+    try {
+      await database.saveTemplates(templates);
+    } catch (error) {
+      console.error('Error saving tasks', error);
+      throw error;
+    }
+  },
+  saveRelations: async (relations: TaskTemplateRelation[]) => {
+    try {
+      await database.saveRelations(relations);
+    } catch (error) {
+      console.error('Error saving tasks', error);
+      throw error;
+    }
+  },
 };
 
 export const initStorage = async (): Promise<void> => {

@@ -32,6 +32,7 @@ interface TaskStore {
   recursiveUpdateChildren: (id: string, completed: boolean) => Promise<void>;
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
   moveTask: (id: string, targetId: string | null, levelsOffset: number) => Promise<void>;
+  saveTasks: (tasks: TaskInstance[]) => Promise<void>;
 
   // templates
   createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<string>;
@@ -54,6 +55,8 @@ interface TaskStore {
   toggleTaskExpand: (id: string) => Promise<void>;
   toggleTemplateExpand: (parentId: string | null, id: string) => Promise<void>;
   calculatePercentage: (tree: TaskNode[]) => number;
+  saveTemplates: (templates: TaskTemplate[]) => Promise<void>;
+  saveRelations: (relations: TaskTemplateRelation[]) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -67,6 +70,32 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   error: null,
   percentage: 0,
 
+  saveTasks: async (tasks: TaskInstance[]) => {
+    try {
+      await storage.saveTasks(tasks);
+      await get().loadTasks();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  saveTemplates: async (templates: TaskTemplate[]) => {
+    try {
+      await storage.saveTemplates(templates);
+      await get().loadTemplates();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+
+  },
+  saveRelations: async(relations: TaskTemplateRelation[]) => {
+    try {
+      await storage.saveRelations(relations);
+      await get().loadTemplates();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+
+  },
   init: async () => {
     try {
       set({ isLoading: true, error: null });
@@ -133,11 +162,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       await get().createTemplateWithoutLoad('buy vegetables', id);
       await get().createTemplateWithoutLoad('buy snacks', id);
       await get().loadTemplates();
-      // await get().createTemplateWithoutLoad('task1',null);
-      // await get().createTemplateWithoutLoad('task2',null);
-      // await get().createTemplateWithoutLoad('task3',null);
-      // await get().createTemplateWithoutLoad('task4',null);
-      // await get().loadTemplates();
+      await get().createTemplateWithoutLoad('task1',null);
+      await get().createTemplateWithoutLoad('task2',null);
+      await get().createTemplateWithoutLoad('task3',null);
+      await get().createTemplateWithoutLoad('task4',null);
+      await get().loadTemplates();
 
 
     } catch (error) {

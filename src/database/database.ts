@@ -916,5 +916,119 @@ export const database = {
       console.error('Error clearing database:', error);
       throw error;
     }
-  }
+  },
+  saveTasks: async (tasks: TaskInstance[]): Promise<void> => {
+    if (!tasks || tasks.length === 0) return;
+    try {
+      // Begin a transaction for efficiency
+      const dbInstance = await db;
+      for (const task of tasks) {
+        await dbInstance.runAsync(
+          `
+          INSERT OR REPLACE INTO tasks (
+            id,
+            template_id,
+            parent_id,
+            title,
+            expanded,
+            completed,
+            completed_at,
+            due_date,
+            recurrence_rule,
+            position,
+            created_at,
+            updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            task.id,
+            task.template_id,
+            task.parent_id,
+            task.title,
+            task.expanded ? 1 : 0,
+            task.completed ? 1 : 0,
+            task.completed_at ?? null,
+            task.due_date ?? null,
+            task.recurrence_rule ?? null,
+            task.position ?? 0,
+            task.created_at ?? new Date().toISOString(),
+            task.updated_at ?? new Date().toISOString(),
+          ]
+        );
+      }
+
+      console.log(`✅ Saved ${tasks.length} task(s) to database.`);
+    } catch (err) {
+      console.error("❌ Failed to save tasks:", err);
+      throw err;
+    }
+  },
+  saveTemplates: async (templates: TaskTemplate[]): Promise<void> => {
+    if (!templates || templates.length === 0) return;
+    try {
+      const dbInstance = await db;
+      for (const template of templates) {
+        await dbInstance.runAsync(
+          `
+          INSERT OR REPLACE INTO templates (
+            id,
+            title,
+            created_at,
+            updated_at
+          ) VALUES (?, ?, ?, ?)
+          `,
+          [
+            template.id,
+            template.title,
+            template.created_at ?? new Date().toISOString(),
+            template.updated_at ?? new Date().toISOString(),
+          ]
+        );
+      }
+
+      console.log(`✅ Saved ${templates.length} template(s) to database.`);
+
+    } catch (error) {
+      console.error("❌ Failed to save templates:", error);
+      throw error;
+    }
+
+  },
+  saveRelations: async (relations: TaskTemplateRelation[]): Promise<void> => {
+    if (!relations || relations.length === 0) return;
+    try {
+      const dbInstance = await db;
+      for (const relation of relations) {
+        await dbInstance.runAsync(
+          `
+          INSERT OR REPLACE INTO template_relations (
+            id,
+            parent_id,
+            child_id,
+            position,
+            expanded,
+            created_at,
+            updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            relation.id,
+            relation.parent_id,
+            relation.child_id,
+            relation.position ?? 0,
+            relation.expanded ? 1 : 0,
+            relation.created_at ?? new Date().toISOString(),
+            relation.updated_at ?? new Date().toISOString(),
+          ]
+        );
+      }
+
+      console.log(`✅ Saved ${relations.length} task(s) to database.`);
+
+    } catch (error) {
+      console.error("❌ Failed to save relations:", error);
+      throw error;
+    }
+
+  },
 };
