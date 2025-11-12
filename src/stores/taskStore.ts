@@ -31,7 +31,7 @@ interface TaskStore {
   toggleTask: (id: string) => Promise<void>;
   recursiveUpdateChildren: (id: string, completed: boolean) => Promise<void>;
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
-  moveTask: (id: string, targetId: string | null, mode: string) => Promise<void>;
+  moveTask: (id: string, targetId: string | null, mode: string, levelsOffset: number) => Promise<void>;
 
   // templates
   createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<string>;
@@ -242,9 +242,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ error: (error as Error).message });
     }
   },
-  moveTask: async (id: string, targetId: string | null, mode: string) => {
+  moveTask: async (id: string, targetId: string | null, mode: string, levelsOffset: number) => {
     try {
-      await storage.moveTask(id, targetId, mode);
+      await storage.moveTask(id, targetId, mode, levelsOffset);
       await get().loadTasks();
     } catch (error) {
       set({ error: (error as Error).message });
@@ -520,7 +520,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ error: (error as Error).message });
     }
   },
-  moveTemplate: async (relId: string, targetId:string | null, mode:string ) => {
+  moveTemplate: async (relId: string, targetId:string | null, mode:string) => {
     try {
       // console.log("store move template");
       await storage.moveTemplate(relId, targetId, mode);

@@ -234,17 +234,20 @@ export const database = {
     }
   },
 
-  moveTask: async (id: string, targetId: string, mode: string): Promise<void> => {
+  moveTask: async (id: string, targetId: string, mode: string, levelsOffset: number): Promise<void> => {
     try {
       const dbInstance = await db;
       const movingTask = await dbInstance.getFirstAsync<TaskInstance>(
         'SELECT * FROM tasks WHERE id = ?',
         [id]
       );
-      const target = await dbInstance.getFirstAsync<TaskInstance>(
+      let target = await dbInstance.getFirstAsync<TaskInstance>(
         'SELECT * FROM tasks WHERE id = ?',
         [targetId]
       );
+      if (id === targetId && levelsOffset>=0){
+        throw new Error('Trying to move task to itself');
+      }
 
       if (!movingTask) {
         throw new Error('Moving task task not found');
@@ -259,9 +262,9 @@ export const database = {
       let position = 0;
       if (target) {
         parentId = target.parent_id;
-        if ( mode === 'after') {
+        if ( levelsOffset === 0) {
           position = target.position + 1;
-        } else if (mode === 'sub') {
+        } else if (levelsOffset === 1) {
           parentId = target.id;
           if (!target.expanded) {
             const result = await dbInstance.getFirstAsync<{ count: number }>(
@@ -269,8 +272,19 @@ export const database = {
               [parentId]);
             position = result?.count || 0;
           }
-        } else {//if ( mode === 'before') {
-          position = target.position - 1;
+        } else {
+          while (levelsOffset < 0 && parentId) {
+            target = await dbInstance.getFirstAsync<TaskInstance>(
+              'SELECT * FROM tasks WHERE id = ?',
+              [parentId]
+            );
+            levelsOffset++;
+            if (!target) {
+              throw new Error('Database corrupted, parentId points at a nonexistent target');
+            }
+            parentId = target.parent_id;
+            position = target.position + 1;
+          }
         }
       }
 

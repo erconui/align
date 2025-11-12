@@ -40,9 +40,9 @@ const nativeStorage = {
   updateTaskTitle: async (id: string, title: string): Promise<void> => {
     await database.updateTaskTitle(id, title);
   },
-  moveTask: async (id: string, targetId: string, mode: string): Promise<void> => {
+  moveTask: async (id: string, targetId: string, mode: string, levelsOffset: number): Promise<void> => {
     try {
-      await database.moveTask(id, targetId, mode);
+      await database.moveTask(id, targetId, mode, levelsOffset);
     } catch (error) {
       console.error('Error moving task:', error);
       throw error;

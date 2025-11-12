@@ -144,7 +144,7 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
   const handleDrop = (itemId: string, finalPosition: { x: number; y: number }) => {
     requestAnimationFrame(() => {
       const layouts = calculateTreePositions();
-      // console.log('layouts',layouts);
+      console.log('layouts',layouts);
       // console.log(itemId);
       const dragged = layouts[itemId];
       // console.log('dragged',dragged);
@@ -157,7 +157,7 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
 
       console.log('Dragged item ',itemId, ' from layout:', dragged, ' to position(x,y):', dropX,',', dropCenterY);
       // Find potential drop target
-      const entries = Object.entries(layouts).filter(([id]) => id !== itemId);
+      const entries = Object.entries(layouts)//.filter(([id]) => id !== itemId);
       entries.find(([_WORKLET_RUNTIME, {x}]) => dropX )
       console.log(entries);
       const targetEntry = entries.find(([_, { y, height }]) => dropCenterY > y && dropCenterY < y + height);
@@ -167,7 +167,7 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
       if (!targetEntry) {
         if (dropY < lowestY + 2*dragged.height/3) {
           console.log("move task to first point");
-          moveTask(itemId, null, 'after'); // move it to the top of the list
+          moveTask(itemId, null, 'after', 0); // move it to the top of the list
         } else {
         console.log('No valid drop target found.', dropY, lowestY, lowestY + dragged.height/2);
         }
@@ -178,10 +178,10 @@ const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
       console.log("drop position", dropY, dropX, "targetlayout", targetLayout, dropX - targetLayout.x);
       if (xshift >= INDENTATION_WIDTH) {
         console.log('make a child');
-        moveTask(itemId, targetId, "sub");
+        moveTask(itemId, targetId, "sub", 1);
       } else {
-        console.log('shift', xshift, xshift/INDENTATION_WIDTH);
-        moveTask(itemId, targetId, 'after');
+        console.log('shift', xshift, Math.round(xshift/INDENTATION_WIDTH));
+        moveTask(itemId, targetId, 'after', Math.round(xshift/INDENTATION_WIDTH));
       }
 
     });
