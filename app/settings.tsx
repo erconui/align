@@ -78,20 +78,20 @@ export default function SettingScreen() {
     }
   };
   // ---- EXPORT HANDLER ----
-  const handleExport = async () => {
+  const handleExport = async (type: string) => {
     try {
       const exportData = {
         tasks: flatTasks ?? [],
         lists: templateHierarchy.templates ?? [],
         listRelations: templateHierarchy.relations ?? []
       };
-      const jsonData = JSON.stringify(exportData, null, 2);
-      const fileName = `tasks_export_${Date.now()}.json`;
+      const data = type==='json'?JSON.stringify(exportData, null, 2):convertToCsv(exportData);
+      const fileName = `tasks_export_${Date.now()}.${type}`;
       const fileUri = FileSystem.documentDirectory + fileName;
 
       if (Platform.OS === "web") {
         // ✅ Web-friendly download
-        const blob = new Blob([jsonData], { type: "application/json" });
+        const blob = new Blob([data], { type: type==='json'?"application/json":"text/csv" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -104,7 +104,7 @@ export default function SettingScreen() {
         return;
       }
       // Write the file
-      await FileSystem.writeAsStringAsync(fileUri, jsonData, {
+      await FileSystem.writeAsStringAsync(fileUri, data, {
         encoding: FileSystem.EncodingType.UTF8,
       });
 
@@ -121,7 +121,66 @@ export default function SettingScreen() {
       Alert.alert("Export failed", String(err));
     }
   };
-
+  const convertToCsv = (data: any): string => {
+    const allRows = [];
+    
+    // Combine all data with type identifiers
+    if (data.tasks && data.tasks.length > 0) {
+      const tasksWithType = data.tasks.map((task: any) => ({
+        type: 'TASK',
+        ...task
+      }));
+      allRows.push(...tasksWithType);
+    }
+    
+    if (data.lists && data.lists.length > 0) {
+      const listsWithType = data.lists.map((list: any) => ({
+        type: 'LIST',
+        ...list
+      }));
+      allRows.push(...listsWithType);
+    }
+    
+    if (data.listRelations && data.listRelations.length > 0) {
+      const relationsWithType = data.listRelations.map((relation: any) => ({
+        type: 'RELATION',
+        ...relation
+      }));
+      allRows.push(...relationsWithType);
+    }
+    
+    return convertArrayToCsv(allRows);
+  };
+  // Helper function to convert an array of objects to CSV
+  const convertArrayToCsv = (items: any[]): string => {
+  if (!items || items.length === 0) return '';
+  
+  // Collect ALL unique headers from ALL items
+  const headers = Array.from(new Set(
+    items.flatMap(item => Object.keys(item))
+  ));
+  
+  const csvRows = [];
+  
+  // Add header row
+  csvRows.push(headers.map(header => `"${String(header).replace(/"/g, '""')}"`).join(','));
+  
+  // Add data rows
+  for (const item of items) {
+    const row = headers.map(header => {
+      const value = item[header];
+      // Handle different data types and escape quotes
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'object') {
+        return `"${JSON.stringify(value).replace(/"/g, '""')}"`;
+      }
+      return `"${String(value).replace(/"/g, '""')}"`;
+    });
+    csvRows.push(row.join(','));
+  }
+  
+  return csvRows.join('\n');
+};
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.header}>
@@ -151,10 +210,10 @@ export default function SettingScreen() {
 
             <View style={styles.settingsRow}>
               <Text style={{ color: colors.text, fontWeight: '800', flex: 1 }}>Export Database</Text>
-              <Pressable onPress={() => {handleExport();}} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
+              <Pressable onPress={() => {handleExport('json');}} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
                 <Text style={{ color: colors.text, fontWeight: '500' }}>JSON</Text>
               </Pressable>
-              <Pressable onPress={() => {handleExport();}} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
+              <Pressable onPress={() => {handleExport('csv');}} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
                 <Text style={{ color: colors.text, fontWeight: '500' }}>CSV</Text>
               </Pressable>
             </View>
