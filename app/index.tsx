@@ -107,15 +107,12 @@ export default function HomeScreen() {
   // Measure only the list container once
   const handleContainerLayout = (event: any) => {
     const layout = event.nativeEvent.layout;
-    console.log("tasks layout", layout);
     setContainerLayout(layout);
   };
   // Core function: Calculate all positions from tree data
   const calculateTreePositions = () => {
     const positions: Record<string, { x: number; y: number; width: number; height: number }> = {};
     let currentY = containerLayout.y;// + HEADER_HEIGHT;
-    console.log('tree');
-    console.log(tasks);
 
     const traverse = (nodes: any[], depth: number = 0) => {
       nodes.forEach(node => {
@@ -163,7 +160,7 @@ export default function HomeScreen() {
         if (dropY < lowestY + 2*dragged.height/3) {
           moveTask(itemId, null, 0); // move it to the top of the list
         } else {
-        console.log('No valid drop target found.', dropY, lowestY, lowestY + dragged.height/2);
+          console.log('No valid drop target found.', dropY, lowestY, lowestY + dragged.height/2);
         }
         return;
       };

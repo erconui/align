@@ -255,8 +255,7 @@ export const database = {
       if (targetId !== null && !target) {
         throw new Error('Target not found');
       }
-      
-      let target_pos;
+
       let parentId = null;
       let position = 0;
       if (target) {
@@ -313,7 +312,6 @@ export const database = {
 
   moveTemplate: async (relId: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {
-      console.log('Move template from ', relId, ' to ', targetId, 'at', levelsOffset);
       const dbInstance = await db;
       const relation = await dbInstance.getFirstAsync<TaskTemplateRelation>(
         'SELECT * FROM template_relations WHERE id = ?',[relId]
@@ -334,7 +332,6 @@ export const database = {
       if (target) {
         parentId = target.parent_id;
         if ( levelsOffset === 0) {
-          console.log("target relation", target);
           position = target.position + 1;
         } else if (levelsOffset === 1) {
           parentId = target.child_id;

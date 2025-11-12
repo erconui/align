@@ -31,7 +31,6 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
       isActive.value = true;
       opacity.value = dragOpacity;
       startPos.value = { x: translateX.value, y: translateY.value };
-      console.log('Drag started for:', itemId, ' at position:', startPos.value);
 
       if (onDragStart) {
         runOnJS(onDragStart)(itemId);
@@ -45,11 +44,9 @@ export const DraggableContext: React.FC<DraggableContextProps> = ({
       // and call onHover or similar callbacks
     })
     .onEnd(() => {
-      // console.log("drag ended");
       const finalPosition = { x: translateX.value, y: translateY.value };
 
       if (onDrop) {
-        // console.log("call onDrop");
         runOnJS(onDrop)(itemId, finalPosition);
       }
 

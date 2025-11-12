@@ -78,20 +78,6 @@ export const BaseItem = <T extends BaseNode>({
     }
   }, [node.id, itemRef.current, node.relId, isTask]);
 
-  // useEffect(() => {
-  //   const measureItem = () => {
-  //     itemRef.current?.measure((x, y, width, height, pageX, pageY) => {
-  //       console.log(`Measured item ${node.id}:`, { x, y, width, height, pageX, pageY });
-  //       // pageX/pageY are absolute coordinates on the screen
-  //       registerRefs?.(node.id, { x: pageX, y: pageY, width, height });
-  //     });
-  //   };
-
-  //   // measure after layout settles
-  //   const timeout = setTimeout(measureItem, 0);
-  //   return () => clearTimeout(timeout);
-  // }, [node.id]);
-
   const handleTextChange = (text: string) => {
     setEditTitle(text);
     if (onTextChange) {
