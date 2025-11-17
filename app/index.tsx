@@ -233,6 +233,7 @@ export default function HomeScreen() {
       <View className="flex-1" onLayout={handleContainerLayout}>
         <FlatList
           data={tasks}
+          style={{marginBottom:containerLayout.y}}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <TaskItem

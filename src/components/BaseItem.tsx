@@ -100,7 +100,18 @@ export const BaseItem = <T extends BaseNode>({
     onUpdateTitle(node.id, editTitle);
     closeSuggestions();
   };
-
+  const handleKeyPress = ({ nativeEvent }) => {
+    if (nativeEvent.key === 'Enter') {
+      if (nativeEvent.shiftKey) {
+        // Allow Shift+Enter for new lines
+        return;
+      } else {
+        // Regular Enter key - submit
+        nativeEvent.preventDefault();
+        handleSubmit();
+      }
+    }
+  };
   const hasChildren = node.children && node.children.length > 0;
   const { colors, styles } = useTheme();
 
@@ -134,7 +145,9 @@ export const BaseItem = <T extends BaseNode>({
             onChangeText={handleTextChange}
             onSubmitEditing={handleSubmit}
             onBlur={handleBlur}
+            multiline={true}
             returnKeyType="done"
+            submitBehavior='submit'
           />
 
           <Pressable onPress={() => hasChildren ? generateList(node.id) : onAddSubItem("", node.id)} >
@@ -146,6 +159,7 @@ export const BaseItem = <T extends BaseNode>({
           </Pressable>
         </View>
       </DraggableContext>
+
       {node.expanded && hasChildren ? (
         <View style={[{ paddingLeft: 20 }]}>
           {node.children?.map(child => (

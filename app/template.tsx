@@ -275,6 +275,7 @@ export default function TemplateScreen() {
         ) : (
           <FlatList
             data={tree}
+            style={{marginBottom:containerLayout.y}}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <TemplateItem

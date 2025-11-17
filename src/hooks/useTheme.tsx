@@ -50,7 +50,7 @@ const createStyles = (colors: typeof Colors.light) => {
       paddingBottom: 12,
     },
     container: { marginBottom: 6 },
-    row: { flexDirection: "row", alignItems: "center" },
+    row: { flexDirection: "row", alignItems: "center", minHeight:40 },
     expand: {
       width: 24,
       alignItems: "center"
