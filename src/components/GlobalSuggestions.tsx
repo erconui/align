@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Suggestion {
@@ -33,33 +33,15 @@ export const GlobalSuggestions = ({
     ),
     [suggestions, searchText, removeIds]
   );
-  useEffect(() => {
-    // setSuggestionsVisible(false);
-    if (!keyboardHeight) {
-      setTimeout(() => {
-        visible =false;
-      }, 200);
-    }
-  }, [keyboardHeight]);
-  // useEffect(() => {
-  //   if (!keyboardHeight) {
-  //     setTimeout(() => {
-  //       visible =false;
-  //     }, 200);
-  //   }
-  // ), [keyboardHeight]);
+
 
   if (!visible || !filteredSuggestions.length || !position) return null;
 
   const screenHeight = Dimensions.get('window').height;
-  // const offset = screenHeight - keyboardHeight;
-  console.log("TEST", screenHeight);
 
   // Determine if we should show above or below based on screen space
   const spaceBelow = screenHeight - keyboardHeight - position.y;
   const showAbove = spaceBelow < 200 && position.y > 200;
-  console.log('below', spaceBelow, 'above', showAbove);
-  console.log('position', position.y);
 
   const containerStyle = {
     ...styles.suggestionsContainer,

@@ -81,6 +81,14 @@ export default function HomeScreen() {
     };
   }, []);
 
+
+  useEffect(() => {
+    if (!keyboardHeight) {
+      setTimeout(() => {
+        setSuggestionsVisible(false);
+      }, 800);
+    }
+  }, [keyboardHeight]);
   const handleAddTask = () => {
     // if (newTaskTitle.trim()) {
       addSubTask(newTaskTitle.trim(), null);
@@ -192,16 +200,16 @@ export default function HomeScreen() {
       const xshift = dropX - targetLayout.x;
       if (xshift >= INDENTATION_WIDTH*2) {
         moveTask(itemId, targetId, 1);
-      } else if (xshift >= -1*INDENTATION_WIDTH) {
+      } else if (xshift >= -2*INDENTATION_WIDTH/3) {
         moveTask(itemId, targetId, 0);
       } else {
         moveTask(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
       }
-
     });
   };
 
-  const remainingTasks = flatTasks.filter(t => !t.completed).length;
+  const remainingTasks = tasks.filter(t => !t.completed);
+  const remainingSubTasks = flatTasks.filter(t => !t.completed && remainingTasks.some(task => task.id == t.parent_id)).length;
 
 
   return (
@@ -209,7 +217,7 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={{ color: colors.muted, marginTop: 4 }}>
-          {remainingTasks} {remainingTasks === 1 ? 'task' : 'tasks'} remaining
+          {remainingTasks.length} {remainingTasks.length === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
         </Text>
         <ProgressBar value={percentage}
           progressColor={colors.highlight}
@@ -224,6 +232,7 @@ export default function HomeScreen() {
         suggestions={suggestions}
         position={suggestionsPosition}
         visible={suggestionsVisible}
+        keyboardHeight={keyboardHeight}
         searchText={currentSearchText}
         onSuggestionSelect={(suggestion) => {
           if (suggestionsItemId) {

@@ -446,14 +446,13 @@ export const database = {
           [template.parent_id ?? null]);
         position = result?.position ?? 0;
       }
-      console.log("create template at position", position);
-      // if (template.parent_id) {
+
       const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
       await dbInstance.runAsync(
         'INSERT INTO template_relations (id, parent_id, child_id, position, expanded) VALUES (?, ?, ?, ?, ?)',
-        [relId, template.parent_id || null, id, position, template.expanded?true:false] // position 0 for now
+        [relId, template.parent_id || null, id, position, template.expanded?true:false]
       );
-      // }
+
       if (template.parent_id) {
         // check if there are tasks we need to add this to as well
         const tasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE template_id = ? and completed = 0', [template.parent_id]);
@@ -974,8 +973,6 @@ export const database = {
           ]
         );
       }
-
-      console.log(`✅ Saved ${tasks.length} task(s) to database.`);
     } catch (err) {
       console.error("❌ Failed to save tasks:", err);
       throw err;
@@ -1003,9 +1000,6 @@ export const database = {
           ]
         );
       }
-
-      console.log(`✅ Saved ${templates.length} template(s) to database.`);
-
     } catch (error) {
       console.error("❌ Failed to save templates:", error);
       throw error;
@@ -1040,9 +1034,6 @@ export const database = {
           ]
         );
       }
-
-      console.log(`✅ Saved ${relations.length} task(s) to database.`);
-
     } catch (error) {
       console.error("❌ Failed to save relations:", error);
       throw error;

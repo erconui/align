@@ -51,10 +51,6 @@ const createStyles = (colors: typeof Colors.light) => {
     },
     container: { marginBottom: 6 },
     row: { flexDirection: "row", alignItems: "center", minHeight:40 },
-    expand: {
-      width: 24,
-      alignItems: "center"
-    },
     input: {
       flex: 1,
       padding: 8,
@@ -65,18 +61,11 @@ const createStyles = (colors: typeof Colors.light) => {
       borderRadius: 6,
       marginHorizontal: 8
     },
-    iconButton: {
-      marginLeft: 6,
-      marginRight: 10,
-      backgroundColor: colors.background,
-      color: colors.icon,
-      borderRadius: 6
-    },
     icon: {
       fontSize: 18,
       fontWeight: "600",
       padding: 4,
-      color: colors.icon
+      color: colors.icon,
     },
     children: { marginTop: 6 },
     checkboxContainer: {

@@ -100,18 +100,6 @@ export const BaseItem = <T extends BaseNode>({
     onUpdateTitle(node.id, editTitle);
     closeSuggestions();
   };
-  // const handleKeyPress = ({ nativeEvent }) => {
-  //   if (nativeEvent.key === 'Enter') {
-  //     if (nativeEvent.shiftKey) {
-  //       // Allow Shift+Enter for new lines
-  //       return;
-  //     } else {
-  //       // Regular Enter key - submit
-  //       nativeEvent.preventDefault();
-  //       handleSubmit();
-  //     }
-  //   }
-  // };
   const hasChildren = node.children && node.children.length > 0;
   const { colors, styles } = useTheme();
 
@@ -121,10 +109,12 @@ export const BaseItem = <T extends BaseNode>({
         itemId={node.relId?node.relId:node.id}
         onDrop={handleDrop}>
         <View style={styles.row} ref={itemRef}>
-          {hasChildren ? <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.expand}>
+          {hasChildren ? 
+          <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.icon}>
             {node.expanded ? <Ionicons name="caret-down-outline" size={18} style={styles.icon} /> :
               <Ionicons name="caret-forward-outline" size={18} style={styles.icon} />}
-          </Pressable> : <Pressable onPress={() => onAddSubItem("", node.id)} >
+          </Pressable> :
+          <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.icon} >
             <Ionicons name={"add-outline"} size={18} style={styles.icon} />
           </Pressable>}
 
@@ -151,13 +141,16 @@ export const BaseItem = <T extends BaseNode>({
             returnKeyType="done"
             submitBehavior='submit'
           />
-
+          {hasChildren? <Pressable onPress={() => generateList(node.id)} >
+            <Ionicons name={isTask ? "list-outline" : "checkbox-outline"} size={18} style={{...styles.icon }} />
+          </Pressable> : null}
+{/* 
           <Pressable onPress={() => hasChildren ? generateList(node.id) : onAddSubItem("", node.id)} >
-            <Ionicons name={hasChildren ? isTask ? "list-outline" : "checkbox-outline" : "add-outline"} size={18} style={{ ...styles.iconButton }} />
-          </Pressable>
+            <Ionicons name={hasChildren ? isTask ? "list-outline" : "checkbox-outline" : "add-outline"} size={18} style={{ ...styles.icon }} />
+          </Pressable> */}
 
           <Pressable onPress={() => onDelete(parentId || null, node.id)} >
-            <Ionicons name="trash-outline" size={18} color={colors.icon} style={{ ...styles.iconButton }} />
+            <Ionicons name="trash-outline" size={18} color={colors.icon} style={{marginRight:10, ...styles.icon }} />
           </Pressable>
         </View>
       </DraggableContext>

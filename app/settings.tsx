@@ -45,19 +45,12 @@ export default function SettingScreen() {
       }
 
       const parsed = JSON.parse(jsonString);
-      console.log(parsed);
 
       // Handle new structured export format
       if (parsed.tasks && parsed.lists && parsed.listRelations) {
         const { tasks, lists, listRelations } = parsed;
         const templates = lists;
         const relations = listRelations;
-
-        console.log("✅ Imported structured data:", {
-          taskCount: tasks.length,
-          templateCount: templates.length,
-          relationCount: relations.length,
-        });
 
         await saveTasks(tasks);
         await saveTemplates(templates);
@@ -71,7 +64,6 @@ export default function SettingScreen() {
         throw new Error("Invalid JSON format — expected structured export.");
       }
 
-      console.log("✅ Import successful!");
     } catch (error) {
       console.error("Import failed:", error);
       Alert.alert("Import failed", String(error));
@@ -100,15 +92,12 @@ export default function SettingScreen() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        console.log("✅ Web export complete");
         return;
       }
       // Write the file
       await FileSystem.writeAsStringAsync(fileUri, data, {
         encoding: FileSystem.EncodingType.UTF8,
       });
-
-      console.log("File exported to:", fileUri);
 
       // Share the file (if supported)
       if (await Sharing.isAvailableAsync()) {

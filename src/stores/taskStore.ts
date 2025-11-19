@@ -58,6 +58,7 @@ interface TaskStore {
   calculatePercentage: (tree: TaskNode[]) => number;
   saveTemplates: (templates: TaskTemplate[]) => Promise<void>;
   saveRelations: (relations: TaskTemplateRelation[]) => Promise<void>;
+  getSuggestionExclusionIds: (parentId: string, id: string) => string[];
   getAncestry: (parentId: string) => string[];
 }
 
@@ -222,7 +223,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     return roots;
   },
   calculatePercentage: (tree: TaskNode[]): number => {
-    console.log('TEST calc percentage');
     let completion = 0.0;
     for (const task of tree) {
       if (!task.completed && task.children.length > 0) {
@@ -294,7 +294,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const task = get().flatTasks.find(t=> t.id === id)
       const sibling = get().flatTasks.find(t=>t.parent_id === task?.parent_id);
       await storage.deleteTask(id);
-      console.log("TEST",sibling);
       await get().loadTasks();
       if (sibling) {
         await get().recursiveUpdateParents(sibling.id, sibling.completed);
@@ -411,7 +410,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       let id = await storage.createTemplate({
         title: title.trim(),
         parent_id: parentId,
-        expanded: false,
+        expanded: true,
         after_id: afterId
       });
       if (parentId === null) {
@@ -525,24 +524,27 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     })
         .sort((a, b) => a.position - b.position);
   },
+  getSuggestionExclusionIds: (parentId: string, id: string): string[] => {
+    let ids: string[] = [];
+    const relations = get().templateHierarchy.relations;
+    let siblings = relations.filter(rel => rel.parent_id === parentId);
+    siblings.forEach( rel => {
+      ids.push(rel.child_id);
+    });
+    ids.push(...get().getAncestry(parentId));
+    return ids;
+  },
   getAncestry: (parentId: string): string[] => {
     let ids: string[] = [];
     const relations = get().templateHierarchy.relations;
     let parents = relations.filter(rel => rel.child_id === parentId);
-    console.log('parents',parents);
     parents.forEach(rel => {
       if (rel.parent_id) {
         ids.push(...get().getAncestry(rel.parent_id));
       }
     });
     ids.push(parentId);
-    console.log('ids',ids);
-    // console.log('test names', get().templateHierarchy.templates.filter(t => t.id in ids));
-    console.log(get().templateHierarchy.templates.filter(rel => {
-        return rel.id !== null && ids.includes(rel.id);
-    }));
     return ids;
-
   },
   loadTemplates: async () => {
     try {
@@ -551,7 +553,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const suggestions = hierarchy.templates.filter((template: TaskTemplate) =>
         hierarchy.relations.some((rel: TaskTemplateRelation )=> rel.parent_id === template.id )
       );
-      console.log('suggestions', suggestions);
+      // console.log('suggestions', suggestions);
       // console.log(newTree);
       await get().loadTasks();
       // console.log('loaded templates');

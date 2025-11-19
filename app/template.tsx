@@ -36,7 +36,7 @@ export default function TemplateScreen() {
     removeTemplate,
     toggleTemplateExpand,
     moveTemplate,
-    getAncestry
+    getSuggestionExclusionIds
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -87,7 +87,7 @@ export default function TemplateScreen() {
   }, []);
   const handleAddTemplate = () => {
     // if (newTemplateTitle.trim()) {
-      createTemplate(newTemplateTitle.trim(), null, false);
+      createTemplate(newTemplateTitle.trim(), null, true);
       setNewTemplateTitle('');
     // }
   };
@@ -98,7 +98,7 @@ export default function TemplateScreen() {
     setSuggestionsParentId(parentId || null);
     setSuggestionsVisible(true);
     if (parentId) {
-      setparentIds(getAncestry(parentId));
+      setparentIds(getSuggestionExclusionIds(parentId, itemId));
     } else {
       setparentIds([]);
     }
@@ -223,9 +223,7 @@ export default function TemplateScreen() {
       const lowestY = Object.values(layouts).length > 0 
         ? Math.min(...Object.values(layouts).map(layout => layout.y))
         : 0;
-      console.log(targetEntry);
       if (!targetEntry) {
-        // console.log(dropY, lowestY, lowestY+2*dragged.height/3)
         if (dropY < lowestY + 2*dragged.height/3) {
           moveTemplate(itemId, null, 0); // move it to the top of the list
         } else {
@@ -235,11 +233,11 @@ export default function TemplateScreen() {
       };
       const [targetId, targetLayout] = targetEntry;
       const xshift = dropX - targetLayout.x;
-      if (xshift >= INDENTATION_WIDTH) {
-        console.log(itemId, targetId, 1);
+      if (xshift >= INDENTATION_WIDTH*2) {
         moveTemplate(itemId, targetId, 1);
+      } else if (xshift >= -2*INDENTATION_WIDTH/3) {
+        moveTemplate(itemId, targetId, 0);
       } else {
-        console.log(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
         moveTemplate(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
       }
 
