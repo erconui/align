@@ -178,15 +178,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   loadTasks: async () => {
     try {
-      const flatTasks = await storage.getTasks();
-      const tree = get().getTree(flatTasks);
+      const tasks = await storage.getTasks();
+      const tree = get().getTree(tasks);
       // console.log('Loaded tasks:');
-      // for (const t of flatTasks) {
+      // for (const t of tasks) {
       //   console.log(t);
       // }
       set({
         tasks: tree,
-        flatTasks: flatTasks,
+        flatTasks: tasks,
         error: null
       });
     } catch (error) {
@@ -219,6 +219,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     return roots;
   },
   calculatePercentage: (tree: TaskNode[]): number => {
+    console.log('TEST calc percentage');
     let completion = 0.0;
     for (const task of tree) {
       if (!task.completed && task.children.length > 0) {
@@ -242,10 +243,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   addSubTask: async (title: string, parentId: string | null): Promise<string> => {
     let id = await get().addTask({ title: title.trim(), parent_id: parentId, completed: false })
+    if (parentId && !get().flatTasks.find(t=>t.parent_id===parentId)?.expanded) {
+      await get().toggleTaskExpand(parentId);
+    }
+    await get().recursiveUpdateParents(id,false);
+    await get().loadTasks();
     set({ focusedId: id });
     return id;
   },
   addTaskAfter: async (title: string, afterId: string | null): Promise<string> => {
+    await get().recursiveUpdateParents(afterId,false);
     let id = await get().addTask({ title: title.trim(), after_id: afterId, completed: false });
     set({ focusedId: id });
     return id;
@@ -281,7 +288,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   deleteTask: async (id: string) => {
     try {
+      const task = get().flatTasks.find(t=> t.id === id)
+      const sibling = get().flatTasks.find(t=>t.parent_id === task?.parent_id);
       await storage.deleteTask(id);
+      console.log("TEST",sibling);
+      await get().loadTasks();
+      if (sibling) {
+        await get().recursiveUpdateParents(sibling.id, sibling.completed);
+      }
       await get().loadTasks();
     } catch (error) {
       set({ error: (error as Error).message });
@@ -361,11 +375,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   // Template actions
   createTemplate: async (title: string, parentId: string | null, expanded?: boolean): Promise<string> => {
     try {
-      let newId = await storage.createTemplate({ title: title, parent_id: parentId, expanded: expanded });
+      let newId = await storage.createTemplate({ title: title, parent_id: parentId, expanded: true });
       if (parentId === null) {
-        await storage.createTemplate({ title: "", parent_id: newId });
+        await storage.createTemplate({ title: "", parent_id: newId, expanded: true });
       }
       await get().loadTemplates();
+      if (!title.trim()) {
+        set({focusedId: newId});
+      }
       return newId;
     } catch (error) {
       set({ error: (error as Error).message });
@@ -391,7 +408,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       let id = await storage.createTemplate({
         title: title.trim(),
         parent_id: parentId,
-        completed: false,
+        expanded: false,
         after_id: afterId
       });
       if (parentId === null) {
@@ -509,6 +526,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const hierarchy = await storage.getTemplateHierarchy();
       const newTree = get().buildTemplateTree(hierarchy.templates, hierarchy.relations);
+      // console.log(newTree);
       await get().loadTasks();
       // console.log('loaded templates');
       // for (const rel of newTree) {

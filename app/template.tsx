@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
   Text,
   TextInput,
   TouchableOpacity,
@@ -43,6 +44,7 @@ export default function TemplateScreen() {
   const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
   const [currentSearchText, setCurrentSearchText] = useState('');
   const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     loadTemplates();
@@ -51,11 +53,32 @@ export default function TemplateScreen() {
     setSuggestionsVisible(false);
   }, [focusedId]);
 
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height-40);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    // Cleanup function
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
   const handleAddTemplate = () => {
-    if (newTemplateTitle.trim()) {
-      createTemplate(newTemplateTitle.trim(), null, true);
+    // if (newTemplateTitle.trim()) {
+      createTemplate(newTemplateTitle.trim(), null, false);
       setNewTemplateTitle('');
-    }
+    // }
   };
 
   const handleInputMeasure = (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => {
@@ -189,7 +212,9 @@ export default function TemplateScreen() {
       const lowestY = Object.values(layouts).length > 0 
         ? Math.min(...Object.values(layouts).map(layout => layout.y))
         : 0;
+      console.log(targetEntry);
       if (!targetEntry) {
+        // console.log(dropY, lowestY, lowestY+2*dragged.height/3)
         if (dropY < lowestY + 2*dragged.height/3) {
           moveTemplate(itemId, null, 0); // move it to the top of the list
         } else {
@@ -200,8 +225,10 @@ export default function TemplateScreen() {
       const [targetId, targetLayout] = targetEntry;
       const xshift = dropX - targetLayout.x;
       if (xshift >= INDENTATION_WIDTH) {
+        console.log(itemId, targetId, 1);
         moveTemplate(itemId, targetId, 1);
       } else {
+        console.log(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
         moveTemplate(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
       }
 
@@ -239,7 +266,7 @@ export default function TemplateScreen() {
           />
           <TouchableOpacity
             onPress={handleAddTemplate}
-            disabled={!newTemplateTitle.trim()}
+            // disabled={!newTemplateTitle.trim()}
             style={{ borderTopRightRadius: 8, borderBottomRightRadius: 8, ...styles.pressableButton }}
           >
             <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
@@ -275,7 +302,7 @@ export default function TemplateScreen() {
         ) : (
           <FlatList
             data={tree}
-            style={{marginBottom:containerLayout.y}}
+            style={{marginBottom:containerLayout.y + keyboardHeight}}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <TemplateItem

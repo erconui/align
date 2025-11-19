@@ -203,6 +203,23 @@ export const database = {
   deleteTask: async (id: string): Promise<void> => {
     try {
       const dbInstance = await db;
+      await dbInstance.runAsync(
+        `UPDATE tasks
+          SET expanded = 0
+          WHERE id IN (
+              SELECT t1.parent_id
+              FROM tasks t1
+              JOIN (
+                  SELECT parent_id
+                  FROM tasks
+                  WHERE parent_id IS NOT NULL
+                  GROUP BY parent_id
+                  HAVING COUNT(*) = 1
+              ) t2 ON t1.parent_id = t2.parent_id
+              WHERE t1.id = ?
+          )`,
+        [id]
+      );
       await dbInstance.runAsync(`
           WITH RECURSIVE descendants AS (SELECT id
                                          FROM tasks
@@ -425,15 +442,16 @@ export const database = {
           [template.parent_id ?? null, existingRelation.position]);
       } else {
         const result = await dbInstance.getFirstAsync<{ position: number }>(
-          'SELECT COALESCE(MAX(position) + 1, 0) as position FROM template_relations WHERE parent_id = ?',
+          'SELECT COALESCE(MAX(position) + 1, 0) as position FROM template_relations WHERE parent_id IS ?',
           [template.parent_id ?? null]);
         position = result?.position ?? 0;
       }
+      console.log("create template at position", position);
       // if (template.parent_id) {
       const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
       await dbInstance.runAsync(
-        'INSERT INTO template_relations (id, parent_id, child_id, position) VALUES (?, ?, ?, ?)',
-        [relId, template.parent_id || null, id, position] // position 0 for now
+        'INSERT INTO template_relations (id, parent_id, child_id, position, expanded) VALUES (?, ?, ?, ?, ?)',
+        [relId, template.parent_id || null, id, position, template.expanded?true:false] // position 0 for now
       );
       // }
       if (template.parent_id) {
@@ -561,7 +579,7 @@ export const database = {
         throw new Error('Task not found');
       }
       // Create the template from task
-      const templateId = await database.createTemplate({ title: task.title, parent_id: parentInstanceId, completed: false });
+      const templateId = await database.createTemplate({ title: task.title, parent_id: parentInstanceId, completed: false, expanded: false });
       // Recursively create templates from task children
       const childTasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE parent_id = ?', [taskId]);
       for (const childTask of childTasks) {

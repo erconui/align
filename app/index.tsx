@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Keyboard,
   Text,
   TextInput,
   TouchableOpacity,
@@ -43,6 +44,7 @@ export default function HomeScreen() {
   const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
   const [currentSearchText, setCurrentSearchText] = useState('');
   const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     setSuggestionsVisible(false);
@@ -57,11 +59,33 @@ export default function HomeScreen() {
   const { colors, styles } = useTheme();
   const itemRefs = useRef<Record<string, View | null>>({});
 
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height-40);
+      }
+    );
+
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    // Cleanup function
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
+
   const handleAddTask = () => {
-    if (newTaskTitle.trim()) {
+    // if (newTaskTitle.trim()) {
       addSubTask(newTaskTitle.trim(), null);
       setNewTaskTitle('');
-    }
+    // }
   };
 
   const handleInputMeasure = (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => {
@@ -219,7 +243,7 @@ export default function HomeScreen() {
           />
           <TouchableOpacity
             onPress={handleAddTask}
-            disabled={!newTaskTitle.trim()}
+            // disabled={!newTaskTitle.trim()}
             style={{ ...styles.pressableButton, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
           >
             <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
@@ -233,7 +257,7 @@ export default function HomeScreen() {
       <View className="flex-1" onLayout={handleContainerLayout}>
         <FlatList
           data={tasks}
-          style={{marginBottom:containerLayout.y}}
+          style={{marginBottom:containerLayout.y + keyboardHeight}}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <TaskItem
