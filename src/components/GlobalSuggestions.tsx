@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Suggestion {
   id: string;
   title: string;
+  ancestry?: string[]
 }
 
 interface GlobalSuggestionsProps {
@@ -12,6 +13,8 @@ interface GlobalSuggestionsProps {
   position: { x: number; y: number; width: number } | null;
   visible: boolean;
   searchText: string; // Add searchText prop
+  removeIds?: string[];
+  keyboardHeight: number;
 }
 
 export const GlobalSuggestions = ({
@@ -19,23 +22,44 @@ export const GlobalSuggestions = ({
   onSuggestionSelect,
   position,
   visible,
-  searchText
+  searchText,
+  removeIds,
+  keyboardHeight
 }: GlobalSuggestionsProps) => {
   // Filter suggestions based on search text
   const filteredSuggestions = useMemo(() =>
     suggestions.filter(template =>
-      template.title.toLowerCase().startsWith(searchText.toLowerCase())
+      template.title.toLowerCase().includes(searchText.toLowerCase()) && !removeIds?.includes(template.id)
     ),
-    [suggestions, searchText]
+    [suggestions, searchText, removeIds]
   );
+  useEffect(() => {
+    // setSuggestionsVisible(false);
+    if (!keyboardHeight) {
+      setTimeout(() => {
+        visible =false;
+      }, 200);
+    }
+  }, [keyboardHeight]);
+  // useEffect(() => {
+  //   if (!keyboardHeight) {
+  //     setTimeout(() => {
+  //       visible =false;
+  //     }, 200);
+  //   }
+  // ), [keyboardHeight]);
 
   if (!visible || !filteredSuggestions.length || !position) return null;
 
   const screenHeight = Dimensions.get('window').height;
+  // const offset = screenHeight - keyboardHeight;
+  console.log("TEST", screenHeight);
 
   // Determine if we should show above or below based on screen space
-  const spaceBelow = screenHeight - position.y;
+  const spaceBelow = screenHeight - keyboardHeight - position.y;
   const showAbove = spaceBelow < 200 && position.y > 200;
+  console.log('below', spaceBelow, 'above', showAbove);
+  console.log('position', position.y);
 
   const containerStyle = {
     ...styles.suggestionsContainer,
@@ -43,7 +67,7 @@ export const GlobalSuggestions = ({
     left: position.x,
     width: position.width,
     [showAbove ? 'bottom' : 'top']: showAbove ?
-      (screenHeight - position.y) :
+      (screenHeight - 30 - position.y) :
       position.y,
   };
 
@@ -73,7 +97,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 4,
-    maxHeight: 150,
+    // maxHeight: 150,
     zIndex: 1000,
     elevation: 5,
     shadowColor: '#000',
@@ -85,7 +109,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   suggestionItem: {
-    padding: 12,
+    padding: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },

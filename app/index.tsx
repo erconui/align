@@ -190,8 +190,10 @@ export default function HomeScreen() {
       };
       const [targetId, targetLayout] = targetEntry;
       const xshift = dropX - targetLayout.x;
-      if (xshift >= INDENTATION_WIDTH) {
+      if (xshift >= INDENTATION_WIDTH*2) {
         moveTask(itemId, targetId, 1);
+      } else if (xshift >= -1*INDENTATION_WIDTH) {
+        moveTask(itemId, targetId, 0);
       } else {
         moveTask(itemId, targetId, Math.round(xshift/INDENTATION_WIDTH));
       }

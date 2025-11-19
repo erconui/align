@@ -100,18 +100,18 @@ export const BaseItem = <T extends BaseNode>({
     onUpdateTitle(node.id, editTitle);
     closeSuggestions();
   };
-  const handleKeyPress = ({ nativeEvent }) => {
-    if (nativeEvent.key === 'Enter') {
-      if (nativeEvent.shiftKey) {
-        // Allow Shift+Enter for new lines
-        return;
-      } else {
-        // Regular Enter key - submit
-        nativeEvent.preventDefault();
-        handleSubmit();
-      }
-    }
-  };
+  // const handleKeyPress = ({ nativeEvent }) => {
+  //   if (nativeEvent.key === 'Enter') {
+  //     if (nativeEvent.shiftKey) {
+  //       // Allow Shift+Enter for new lines
+  //       return;
+  //     } else {
+  //       // Regular Enter key - submit
+  //       nativeEvent.preventDefault();
+  //       handleSubmit();
+  //     }
+  //   }
+  // };
   const hasChildren = node.children && node.children.length > 0;
   const { colors, styles } = useTheme();
 
@@ -122,9 +122,11 @@ export const BaseItem = <T extends BaseNode>({
         onDrop={handleDrop}>
         <View style={styles.row} ref={itemRef}>
           {hasChildren ? <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.expand}>
-            {node.expanded ? <Ionicons name="caret-down-outline" size={18} color={colors.icon} style={styles.icon} /> :
-              <Ionicons name="caret-forward-outline" size={18} color={colors.icon} style={styles.icon} />}
-          </Pressable> : <View style={styles.expand} />}
+            {node.expanded ? <Ionicons name="caret-down-outline" size={18} style={styles.icon} /> :
+              <Ionicons name="caret-forward-outline" size={18} style={styles.icon} />}
+          </Pressable> : <Pressable onPress={() => onAddSubItem("", node.id)} >
+            <Ionicons name={"add-outline"} size={18} style={styles.icon} />
+          </Pressable>}
 
           {showCompletionToggle && onToggleCompletion && (
             <View style={styles.checkboxContainer}>

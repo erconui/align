@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -23,6 +23,7 @@ export default function TemplateScreen() {
     focusedId,
     tree,
     templateHierarchy,
+    suggestions,
     isLoading,
     error,
     createTemplate,
@@ -34,7 +35,8 @@ export default function TemplateScreen() {
     replaceTemplate,
     removeTemplate,
     toggleTemplateExpand,
-    moveTemplate
+    moveTemplate,
+    getAncestry
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -45,6 +47,7 @@ export default function TemplateScreen() {
   const [currentSearchText, setCurrentSearchText] = useState('');
   const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [parentIds, setparentIds] = useState<string[]>([]);
 
   useEffect(() => {
     loadTemplates();
@@ -52,6 +55,14 @@ export default function TemplateScreen() {
   useEffect(() => {
     setSuggestionsVisible(false);
   }, [focusedId]);
+
+  useEffect(() => {
+    if (!keyboardHeight) {
+      setTimeout(() => {
+        setSuggestionsVisible(false);
+      }, 800);
+    }
+  }, [keyboardHeight]);
 
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -86,6 +97,11 @@ export default function TemplateScreen() {
     setSuggestionsItemId(itemId);
     setSuggestionsParentId(parentId || null);
     setSuggestionsVisible(true);
+    if (parentId) {
+      setparentIds(getAncestry(parentId));
+    } else {
+      setparentIds([]);
+    }
   };
 
   const handleTextChange = (text: string) => {
@@ -99,6 +115,7 @@ export default function TemplateScreen() {
     setCurrentSearchText('');
     setSuggestionsItemId(null);
     setSuggestionsParentId(null);
+    setparentIds([]);
   };
 
   const closeSuggestions = () => {
@@ -107,12 +124,6 @@ export default function TemplateScreen() {
     }, 200);
   };
 
-  const suggestions = useMemo(() => {
-    return tree.map(node => ({
-      id: node.id,
-      title: node.title,
-    }));
-  }, [tree]);
   const { colors, styles } = useTheme();
   const itemRefs = useRef<Record<string, View | null>>({});
 
@@ -284,6 +295,8 @@ export default function TemplateScreen() {
         position={suggestionsPosition}
         visible={suggestionsVisible}
         searchText={currentSearchText}
+        removeIds={parentIds}
+        keyboardHeight={keyboardHeight}
         onSuggestionSelect={(suggestion) => {
           if (suggestionsItemId) {
             handleSuggestionSelect(suggestion, suggestionsItemId, suggestionsParentId);
