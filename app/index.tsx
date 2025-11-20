@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   Keyboard,
+  Pressable,
   Text,
   TextInput,
   TouchableOpacity,
@@ -25,6 +26,7 @@ export default function HomeScreen() {
     tasks,
     flatTasks,
     isLoading,
+    suggestions,
     error,
     addSubTask,
     addTaskAfter,
@@ -39,6 +41,7 @@ export default function HomeScreen() {
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [suggestionsPosition, setSuggestionsPosition] = useState<{ x: number; y: number; width: number } | null>(null);
   const [suggestionsItemId, setSuggestionsItemId] = useState<string | null>(null);
   const [suggestionsParentId, setSuggestionsParentId] = useState<string | null>(null);
@@ -49,16 +52,20 @@ export default function HomeScreen() {
   useEffect(() => {
     setSuggestionsVisible(false);
   }, [focusedId]);
-
-  const suggestions = useMemo(() => {
-    return tree.map(node => ({
-      id: node.id,
-      title: node.title,
-    }));
-  }, [tree]);
-  const { colors, styles } = useTheme();
-  const itemRefs = useRef<Record<string, View | null>>({});
-
+  useEffect(() => {
+    if (showCompleted) {
+      setTimeout(() => {
+        setShowCompleted(false);
+      }, 10*1000);
+    }
+  }, [showCompleted]);
+  useEffect(() => {
+    if (!keyboardHeight) {
+      setTimeout(() => {
+        setSuggestionsVisible(false);
+      }, 800);
+    }
+  }, [keyboardHeight]);
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
@@ -80,15 +87,11 @@ export default function HomeScreen() {
       keyboardDidHideListener.remove();
     };
   }, []);
+  const { colors, styles } = useTheme();
+  const itemRefs = useRef<Record<string, View | null>>({});
 
 
-  useEffect(() => {
-    if (!keyboardHeight) {
-      setTimeout(() => {
-        setSuggestionsVisible(false);
-      }, 800);
-    }
-  }, [keyboardHeight]);
+
   const handleAddTask = () => {
     // if (newTaskTitle.trim()) {
       addSubTask(newTaskTitle.trim(), null);
@@ -207,9 +210,23 @@ export default function HomeScreen() {
       }
     });
   };
+  const isWithinTime = (dateString: string | null,
+    { minutes = 0, hours = 0, days = 0 }: { minutes?: number; hours?: number; days?: number }) => {
+    if (!dateString) return false;
+    const date = new Date(dateString).getTime();
+    const now = Date.now();
+    const totalMs =
+      minutes * 60_000 +
+      hours * 3_600_000 +
+      days * 86_400_000;
 
-  const remainingTasks = tasks.filter(t => !t.completed);
+    return now - date <= totalMs;
+  };
+
+  const remainingTasks = tasks.filter(t => !t.completed || isWithinTime(t.completed_at, {minutes:5}) );
   const remainingSubTasks = flatTasks.filter(t => !t.completed && remainingTasks.some(task => task.id == t.parent_id)).length;
+  const num_completed = tasks.length - tasks.filter(t=> !t.completed).length;
+  const num_tasks_remaining = tasks.length - num_completed;
 
 
   return (
@@ -217,7 +234,7 @@ export default function HomeScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={{ color: colors.muted, marginTop: 4 }}>
-          {remainingTasks.length} {remainingTasks.length === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
+          {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
         </Text>
         <ProgressBar value={percentage}
           progressColor={colors.highlight}
@@ -265,10 +282,10 @@ export default function HomeScreen() {
           <Text style={{ color: '#ef4444', marginTop: 8, fontSize: 12 }}>{error}</Text>
         )}
       </View>
-      <View className="flex-1" onLayout={handleContainerLayout}>
+      <View className="flex-1" onLayout={handleContainerLayout}
+          style={{marginBottom:containerLayout.y + keyboardHeight}}>
         <FlatList
-          data={tasks}
-          style={{marginBottom:containerLayout.y + keyboardHeight}}
+          data={showCompleted?tasks:remainingTasks}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <TaskItem
@@ -291,6 +308,10 @@ export default function HomeScreen() {
               handleDrop={handleDrop}
             />
           )} />
+          {!showCompleted && (tasks.length-remainingTasks.length>0)?
+            <Pressable onPress={() => setShowCompleted(true)} style={{...styles.row}}>
+              <Text style={{...styles.input,backgroundColor: colors.progressBackground, textAlign: 'center'}}>{tasks.length-remainingTasks.length} tasks completed</Text>
+              </Pressable>:null}
       </View>
     </View>
   );

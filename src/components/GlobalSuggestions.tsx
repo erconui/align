@@ -23,6 +23,7 @@ export const GlobalSuggestions = ({
   removeIds,
   keyboardHeight
 }: GlobalSuggestionsProps) => {
+  const { colors, styles } = useTheme();
   // Filter suggestions based on search text
   const filteredSuggestions = useMemo(() =>
     suggestions.filter(template =>
@@ -42,7 +43,6 @@ export const GlobalSuggestions = ({
   // Determine if we should show above or below based on screen space
   const spaceBelow = screenHeight - keyboardHeight - position.y;
   const showAbove = spaceBelow < 200 && position.y > 200;
-  const { colors, styles } = useTheme();
 
   const containerStyle = {
     ...styles.suggestionsContainer,

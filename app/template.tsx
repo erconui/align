@@ -55,7 +55,6 @@ export default function TemplateScreen() {
   useEffect(() => {
     setSuggestionsVisible(false);
   }, [focusedId]);
-
   useEffect(() => {
     if (!keyboardHeight) {
       setTimeout(() => {
@@ -63,7 +62,6 @@ export default function TemplateScreen() {
       }, 800);
     }
   }, [keyboardHeight]);
-
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
@@ -85,6 +83,9 @@ export default function TemplateScreen() {
       keyboardDidHideListener.remove();
     };
   }, []);
+  const { colors, styles } = useTheme();
+  const itemRefs = useRef<Record<string, View | null>>({});
+
   const handleAddTemplate = () => {
     // if (newTemplateTitle.trim()) {
       createTemplate(newTemplateTitle.trim(), null, true);
@@ -124,8 +125,6 @@ export default function TemplateScreen() {
     }, 200);
   };
 
-  const { colors, styles } = useTheme();
-  const itemRefs = useRef<Record<string, View | null>>({});
 
   const handleUseTemplate = (templateId: string) => {
     Alert.alert(

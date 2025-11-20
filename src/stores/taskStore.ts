@@ -372,6 +372,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     if (updateParent) {
       await storage.toggleTask(parent.id, completed);
+      if (completed) {
+        await storage.toggleTaskExpand(parent.id);
+      }
       await get().recursiveUpdateParents(task.parent_id, completed);
     }
   },
@@ -562,7 +565,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       .map((template: TaskTemplate) => {
         const ids = get().getAncestryIds(template.id);
         const parents = ids
-          .map(id => hierarchy.templates.find(t => t.id === id))
+          .map(id => hierarchy.templates.find((t: TaskTemplate) => t.id === id))
           .filter(Boolean)
           .map(t => t!.title);
 
@@ -593,7 +596,6 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         let idx = 0;
 
         for (idx = 0; idx < minLength; idx++) {
-          console.log(arrays[0][idx],idx);
           const value = arrays[0][idx];
           if (arrays.every(a => a[idx] === value)) {
           } else {

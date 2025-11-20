@@ -67,12 +67,20 @@ export const BaseItem = <T extends BaseNode>({
     setEditTitle(node.title);
   }, [node.title]);
   useEffect(() => {
+    if (node.expanded && hasChildren && children?.length == 0) {
+      setTimeout(() => {
+        setShowCompleted(false);
+        toggleExpand(parentId||null, node.id);
+      }, 10*1000);
+    }
+    
     if (!node.expanded) {
       setShowCompleted(false);
     } else if (showCompleted) {
       setTimeout(() => {
         setShowCompleted(false);
-      }, 30*1000);
+        
+      }, 10*1000);
     }
   }, [showCompleted, node.expanded]);
 
@@ -88,6 +96,7 @@ export const BaseItem = <T extends BaseNode>({
       registerRefs(id, itemRef.current);
     }
   }, [node.id, itemRef.current, node.relId, isTask]);
+  const { colors, styles } = useTheme();
 
   const handleTextChange = (text: string) => {
     setEditTitle(text);
@@ -106,19 +115,17 @@ export const BaseItem = <T extends BaseNode>({
     await onAddItemAfter("", node.id);
     closeSuggestions
   };
-  const isWithinTime = (dateString: string | null, days?:number, minutes?: number) => {
+  const isWithinTime = (dateString: string | null,
+    { minutes = 0, hours = 0, days = 0 }: { minutes?: number; hours?: number; days?: number }) => {
     if (!dateString) return false;
-    const date = new Date(dateString);
+    const date = new Date(dateString).getTime();
     const now = Date.now();
-    days = days?days:0;
-    const hours  = days * 24;
-    minutes = minutes?minutes:0 + hours * 60;
-    const time_ms = minutes * 60 * 1000;
-    console.log(days,hours,minutes,time_ms);
-    console.log(now, date, time_ms, now-date.getTime()
-  );
+    const totalMs =
+      minutes * 60_000 +
+      hours * 3_600_000 +
+      days * 86_400_000;
 
-    return now - date.getTime() <= time_ms;
+    return now - date <= totalMs;
   };
 
   const handleBlur = () => {
@@ -128,13 +135,12 @@ export const BaseItem = <T extends BaseNode>({
   const hasChildren = node.children && node.children.length > 0;
   const children = showCompleted?node.children: node.children?.filter(child => {
     if ('completed' in child) {
-      return !isWithinTime((child as TaskNode).completed_at, 0, 5);
+      return !(child as TaskNode).completed || isWithinTime((child as TaskNode).completed_at, {minutes:5});
     } else {
       return true;
     }
   });
   const num_completed = hasChildren? node.children!.length - children!.length: 0;
-  const { colors, styles } = useTheme();
 
 
   return (
@@ -215,7 +221,7 @@ export const BaseItem = <T extends BaseNode>({
           ))}
           {num_completed>0?
             <Pressable onPress={() => setShowCompleted(true)} style={{paddingLeft: 20+18+4+18+2, ...styles.row}}>
-              <Text style={styles.input}>{num_completed} tasks completed</Text>
+              <Text style={{...styles.input,backgroundColor: colors.progressBackground}}>{num_completed} tasks completed</Text>
               </Pressable>:null}
         </View>
       ):null}

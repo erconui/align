@@ -186,10 +186,12 @@ export const database = {
       const dbInstance = await db;
       await dbInstance.runAsync(
         `UPDATE tasks
-         SET completed = ? --
+         SET completed = ?,
+         completed_at = ?
          WHERE id = ?`,
         [
           isCompleted ? 1 : 0,
+          isCompleted?Date.now():null,
           id
         ]
       );
@@ -243,8 +245,8 @@ export const database = {
     try {
       const dbInstance = await db;
       await dbInstance.runAsync(
-        'UPDATE tasks SET title = ? WHERE id = ?',
-        [title, id]
+        'UPDATE tasks SET title = ?, updated_at = ? WHERE id = ?',
+        [title, Date.now(), id]
       );
     } catch (error) {
       console.error('Error updating task title:', error);
