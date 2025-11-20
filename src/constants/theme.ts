@@ -10,6 +10,7 @@ export const Colors = {
   light: {
     text: '#11181C',
     background: '#fff',
+    popupBackground: '#bfb8daff',
     tint: tintColorLight,
     icon: '#687076',
     border: '#e6e6e6',
@@ -24,6 +25,7 @@ export const Colors = {
   dark: {
     text: '#eceeecff',
     background: '#0f120fff',
+    popupBackground: '#374737ff',
     tint: tintColorDark,
     icon: '#9ba69dff',
     border: '#222425',

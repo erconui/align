@@ -1,11 +1,8 @@
 import React, { useMemo } from 'react';
-import { Dimensions, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../hooks/useTheme';
+import { Suggestion } from '../stores/taskStore';
 
-interface Suggestion {
-  id: string;
-  title: string;
-  ancestry?: string[]
-}
 
 interface GlobalSuggestionsProps {
   suggestions: Suggestion[];
@@ -33,7 +30,10 @@ export const GlobalSuggestions = ({
     ),
     [suggestions, searchText, removeIds]
   );
-
+  const duplicateTitles = useMemo(() => {
+    const titles = filteredSuggestions.map(s => s.title);
+    return titles.filter((title, index) => titles.indexOf(title) !== index);
+  }, [filteredSuggestions]);
 
   if (!visible || !filteredSuggestions.length || !position) return null;
 
@@ -42,6 +42,7 @@ export const GlobalSuggestions = ({
   // Determine if we should show above or below based on screen space
   const spaceBelow = screenHeight - keyboardHeight - position.y;
   const showAbove = spaceBelow < 200 && position.y > 200;
+  const { colors, styles } = useTheme();
 
   const containerStyle = {
     ...styles.suggestionsContainer,
@@ -64,7 +65,8 @@ export const GlobalSuggestions = ({
             style={styles.suggestionItem}
             onPress={() => onSuggestionSelect(item)}
           >
-            <Text style={styles.suggestionText}>{item.title}</Text>
+            <Text style={styles.suggestionText}>{item.title}
+  {duplicateTitles.includes(item.title) && ` (${item.parents.join('/')})`}</Text>
           </TouchableOpacity>
         )}
         style={styles.suggestionsList}
@@ -72,30 +74,3 @@ export const GlobalSuggestions = ({
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  suggestionsContainer: {
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    // maxHeight: 150,
-    zIndex: 1000,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-  },
-  suggestionsList: {
-    flex: 1,
-  },
-  suggestionItem: {
-    padding: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  suggestionText: {
-    fontSize: 16,
-  },
-});

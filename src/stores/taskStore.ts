@@ -4,13 +4,14 @@ import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from 
 
 export type TaskNode = TaskInstance & { children: TaskNode[] };
 export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
+export type Suggestion = TaskTemplate & { parents: string[] };
 
 interface TaskStore {
   tasks: TaskNode[];
   flatTasks: TaskInstance[];
   tree: TemplateNode[];
   flatTemplates: TaskTemplate[];
-  suggestions: TaskTemplate[];
+  suggestions: Suggestion[];
   templateHierarchy: { templates: TaskTemplate[], relations: TaskTemplateRelation[] };
   isLoading: boolean;
   focusedId: string | null;
@@ -59,7 +60,7 @@ interface TaskStore {
   saveTemplates: (templates: TaskTemplate[]) => Promise<void>;
   saveRelations: (relations: TaskTemplateRelation[]) => Promise<void>;
   getSuggestionExclusionIds: (parentId: string, id: string) => string[];
-  getAncestry: (parentId: string) => string[];
+  getAncestryIds: (parentId: string) => string[];
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -531,16 +532,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     siblings.forEach( rel => {
       ids.push(rel.child_id);
     });
-    ids.push(...get().getAncestry(parentId));
+    ids.push(...get().getAncestryIds(parentId));
     return ids;
   },
-  getAncestry: (parentId: string): string[] => {
+  getAncestryIds: (parentId: string): string[] => {
     let ids: string[] = [];
     const relations = get().templateHierarchy.relations;
     let parents = relations.filter(rel => rel.child_id === parentId);
     parents.forEach(rel => {
       if (rel.parent_id) {
-        ids.push(...get().getAncestry(rel.parent_id));
+        ids.push(...get().getAncestryIds(rel.parent_id));
       }
     });
     ids.push(parentId);
@@ -550,11 +551,58 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       const hierarchy = await storage.getTemplateHierarchy();
       const newTree = get().buildTemplateTree(hierarchy.templates, hierarchy.relations);
-      const suggestions = hierarchy.templates.filter((template: TaskTemplate) =>
-        hierarchy.relations.some((rel: TaskTemplateRelation )=> rel.parent_id === template.id )
-      );
-      // console.log('suggestions', suggestions);
-      // console.log(newTree);
+      set({
+        tree: newTree,
+        templateHierarchy: hierarchy,
+      });
+      const suggestionsUnfiltered: Suggestion[] = hierarchy.templates
+      .filter((template: TaskTemplate) =>
+        hierarchy.relations.some((rel: TaskTemplateRelation)=> rel.parent_id === template.id )
+      )
+      .map((template: TaskTemplate) => {
+        const ids = get().getAncestryIds(template.id);
+        const parents = ids
+          .map(id => hierarchy.templates.find(t => t.id === id))
+          .filter(Boolean)
+          .map(t => t!.title);
+
+        return { ...template, parents };
+      });
+      const unique_titles = [...new Set(suggestionsUnfiltered.map((s:TaskTemplate)=>s.title))];
+
+      // console.log('temp',suggestionsUnfiltered);
+      let newSuggestions: Suggestion[] = [];
+      unique_titles.forEach(title => {
+        const duplicates = suggestionsUnfiltered.filter((s:Suggestion)=>s.title===title);
+
+        const paths = duplicates.map((d: Suggestion) => d.parents);
+        const idx = longestCommonPrefix(paths);
+
+        duplicates.forEach((d:Suggestion) => {
+          d.parents = d.parents.slice(idx);
+          newSuggestions.push(d);
+        });
+
+        
+      });
+      function longestCommonPrefix(arrays: string[][]): number {
+        if (arrays.length === 0) return 0;
+
+        const minLength = Math.min(...arrays.map(a => a.length));
+        let prefix: string[] = [];
+        let idx = 0;
+
+        for (idx = 0; idx < minLength; idx++) {
+          console.log(arrays[0][idx],idx);
+          const value = arrays[0][idx];
+          if (arrays.every(a => a[idx] === value)) {
+          } else {
+            return idx;
+          }
+        }
+
+        return 0;
+      }
       await get().loadTasks();
       // console.log('loaded templates');
       // for (const rel of newTree) {
@@ -574,9 +622,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       //   }
       // }
       set({
-        suggestions: suggestions,
-        tree: newTree,
-        templateHierarchy: hierarchy,
+        suggestions: newSuggestions,
         error: null
       });
     } catch (error) {

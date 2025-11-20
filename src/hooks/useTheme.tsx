@@ -91,7 +91,33 @@ const createStyles = (colors: typeof Colors.light) => {
     settingButton: {
       ...button,
       margin: 2
-    }
+    },
+    suggestionsContainer: {
+      // backgroundColor: 'white',
+      backgroundColor: colors.popupBackground,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 4,
+      // maxHeight: 150,
+      zIndex: 1000,
+      elevation: 5,
+      shadowColor: colors.muted,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+    },
+    suggestionsList: {
+      flex: 1,
+    },
+    suggestionItem: {
+      padding: 5,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    suggestionText: {
+      color: colors.text,
+      fontSize: 16,
+    },
   })
 };
 

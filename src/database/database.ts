@@ -584,6 +584,8 @@ export const database = {
       for (const childTask of childTasks) {
         await database.createTemplateFromTask(childTask.id, templateId);
       }
+      await dbInstance.runAsync('UPDATE tasks SET template_id = ? WHERE id IS ?',
+        [templateId, taskId]);
       return templateId;
     } catch (error) {
       console.error('Error creating template from task:', error);
