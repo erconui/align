@@ -22,6 +22,10 @@ const createStyles = (colors: typeof Colors.light) => {
     color: colors.text
 
   };
+  const deleteButton = {...button,
+    color:colors.deleteBorder,
+    borderColor: colors.deleteBorder,
+    backgroundColor: colors.delete};
   return StyleSheet.create({
     header: {
       ...Platform.select({
@@ -40,6 +44,7 @@ const createStyles = (colors: typeof Colors.light) => {
       marginBottom: 16,
       color: colors.text
     },
+    settingText: {color: colors.text, fontWeight: '800', flex: 1},
     settingsRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -48,6 +53,39 @@ const createStyles = (colors: typeof Colors.light) => {
       borderBottomColor: colors.border,
       borderBottomWidth: 1,
       paddingBottom: 12,
+    },
+    detailContainer: {
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+
+    },
+    detailRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      // marginTop: 8,
+      borderBottomColor: colors.border,
+      borderBottomWidth: 1,
+      padding: 6
+      // paddingBottom: 12,
+    },
+    radioRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 10,
+      gap: 8,
+    },
+    radioDot: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      borderWidth: 2,
+      borderColor: "#999",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    radioDotSelected: {
+      backgroundColor: "#999",
     },
     container: { marginBottom: 6 },
     row: { flexDirection: "row", alignItems: "center", minHeight:40 },
@@ -81,6 +119,7 @@ const createStyles = (colors: typeof Colors.light) => {
       fontWeight: '500'
     },
     pressableButton: button,
+    deleteButton: deleteButton,
     pressableButtonPressed: {
       ...button,
       backgroundColor: colors.tint + '20', // 20% opacity
@@ -91,6 +130,12 @@ const createStyles = (colors: typeof Colors.light) => {
     settingButton: {
       ...button,
       margin: 2
+    },
+    detailButton: {
+      ...button,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    margin:6
     },
     suggestionsContainer: {
       // backgroundColor: 'white',

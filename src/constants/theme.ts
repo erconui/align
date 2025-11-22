@@ -21,6 +21,8 @@ export const Colors = {
     tabIconSelected: tintColorLight,
     button: '#07ce00ff',
     buttonBorder: '#036300ff',
+    delete: '#ce0000ff',
+    deleteBorder: '#630000ff',
     highlight: '#09ff00ff',
   },
   dark: {
@@ -36,6 +38,8 @@ export const Colors = {
     tabIconDefault: '#9ba69bff',
     tabIconSelected: tintColorDark,
     button: '#00550bff',
+    delete: '#550000ff',
+    deleteBorder: '#8f0000ff',
     buttonBorder: '#008f0cff',
     highlight: '#00c030ff',
   },

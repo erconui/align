@@ -3,7 +3,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, Text, TextInput, View } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useTheme } from '../hooks/useTheme';
+import { TaskNode } from '../stores/taskStore';
+import { TaskInstance } from '../types';
 import { DraggableContext } from './DraggableContext';
+import TaskDetail from './TaskDetail';
 
 interface BaseNode {
   id: string;
@@ -13,10 +16,10 @@ interface BaseNode {
   relId?: string;
 }
 
-interface TaskNode extends BaseNode {
-  completed: boolean;
-  completed_at: string | null;
-}
+// interface TaskNode extends BaseNode {
+//   completed: boolean;
+//   completed_at: string | null;
+// }
 
 interface BaseItemProps<T extends BaseNode> {
   node: T;
@@ -170,8 +173,14 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
               />
             </View>
           )}
+          <Text style={styles.input} onPress={() => {
+            console.log(node);
+            setSelectedTask(node as unknown as TaskNode);}}>{editTitle}</Text>
 
-          <TextInput
+          {/* Detail View Modal */}
+          <TaskDetail task={selectedTask as unknown as TaskInstance} onSave={() => console.log('save')} onClose={() => setSelectedTask(null)}
+          />
+          {/* <TextInput
             ref={textInputRef}
             style={styles.input}
             autoFocus={focusedId === node.id}
@@ -182,7 +191,7 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
             multiline={true}
             returnKeyType="done"
             submitBehavior='submit'
-          />
+          /> */}
           {hasChildren? <Pressable onPress={() => generateList(node.id)} >
             <Ionicons name={isTask ? "list-outline" : "checkbox-outline"} size={18} style={{...styles.icon }} />
           </Pressable> : null}
