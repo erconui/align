@@ -37,7 +37,9 @@ export default function HomeScreen() {
     replaceTaskWithTemplate,
     createTemplateFromTask,
     percentage,
-    moveTask
+    moveTask,
+    setTaskView,
+    taskViewId
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -48,9 +50,13 @@ export default function HomeScreen() {
   const [currentSearchText, setCurrentSearchText] = useState('');
   const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+const [extraData, setExtraData] = useState(false);
 
   useEffect(() => {
     setSuggestionsVisible(false);
+    setExtraData(prev => !prev);
+    // scrollToFocusedItem();
   }, [focusedId]);
   useEffect(() => {
     if (showCompleted) {
@@ -191,8 +197,12 @@ export default function HomeScreen() {
       const lowestY = Object.values(layouts).length > 0 
         ? Math.min(...Object.values(layouts).map(layout => layout.y))
         : 0;
+      console.log(dropY, lowestY - 2*dragged.height/3, lowestY+2*dragged.height/3);
       if (!targetEntry) {
-        if (dropY < lowestY + 2*dragged.height/3) {
+        if (dropY < lowestY - 2*dragged.height) {
+          console.log("focused view of task");
+          setTaskView(itemId);
+        } else if (dropY < lowestY + 2*dragged.height/3) {
           moveTask(itemId, null, 0); // move it to the top of the list
         } else {
           console.log('No valid drop target found.', dropY, lowestY, lowestY + dragged.height/2);
@@ -222,18 +232,51 @@ export default function HomeScreen() {
 
     return now - date <= totalMs;
   };
-
+  const scrollToFocusedItem = () => {
+    if (!focusedId || !flatListRef.current) return;
+    
+    // Find the index of the focused item in your data array
+    const dataToUse = showCompleted ? tasks : remainingTasks;
+    const focusedIndex = dataToUse.findIndex(item => item.id === focusedId);
+    
+    if (focusedIndex !== -1) {
+      // Scroll to the focused item with a small delay to ensure it's rendered
+      setTimeout(() => {
+        if (flatListRef){
+          flatListRef.current?.scrollToIndex({
+            index: focusedIndex,
+            animated: true,
+            viewPosition: 0.5, // Center the item in the view
+            viewOffset: 50, // Add some offset from top/bottom
+          });
+        }
+        }, 100);
+      }
+  };
   const remainingTasks = tasks.filter(t => !t.completed || isWithinTime(t.completed_at, {minutes:5}) );
   const remainingSubTasks = flatTasks.filter(t => !t.completed && remainingTasks.some(task => task.id == t.parent_id)).length;
   const num_completed = tasks.length - tasks.filter(t=> !t.completed).length;
   const num_tasks_remaining = tasks.length - num_completed;
+  const getTitle = () => {
+    if (taskViewId) {
+        return (<Text style={{ color: colors.muted, marginTop: 4 }}> {taskViewId?flatTasks.find(t=>t.id===taskViewId)?.title:null}
+        </Text>);
+    } 
+  };
+  const title = taskViewId?flatTasks.find(t=>t.id===taskViewId)?.title:null;
 
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }} >
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={{ color: colors.muted, marginTop: 4 }}>
+      <View style={{...styles.header, flexDirection:'row', alignItems:'center'}}>
+        {taskViewId? <View style={{flexDirection: 'row', justifyContent:'center'}}>
+          <Pressable onPress={() => setTaskView(null)} style={{justifyContent:'center'}}>
+            <Ionicons name="chevron-back" size={24} style={{...styles.headerText, marginBottom: 0, color: colors.buttonBorder, fontSize: 36}} /></Pressable>
+          <Text style={{...styles.headerText, marginBottom: 0}}>{title}:  </Text></View>
+          :null}
+        <View style={{flex: 1,alignItems:'center'}}>
+        <Text style={{ color: colors.muted }}>
           {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
         </Text>
         <ProgressBar value={percentage}
@@ -241,7 +284,7 @@ export default function HomeScreen() {
           backgroundColor={colors.button}
           textColor={percentage > 45 ? colors.text : colors.muted}
           rounded
-          showPercent />
+          showPercent /></View>
       </View>
 
       {/* Global Suggestions */}
@@ -285,7 +328,10 @@ export default function HomeScreen() {
       <View className="flex-1" onLayout={handleContainerLayout}
           style={{marginBottom:containerLayout.y + keyboardHeight}}>
         <FlatList
+          ref={flatListRef}
           data={showCompleted?tasks:remainingTasks}
+              removeClippedSubviews={false}
+              // extraData={extraData} -- this doesn't work
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <TaskItem

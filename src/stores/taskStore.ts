@@ -17,6 +17,9 @@ interface TaskStore {
   focusedId: string | null;
   error: string | null;
   percentage: number;
+  hidden: boolean;
+  taskViewId: string|null;
+  templateViewId: string|null;
 
   // Actions
   init: () => Promise<void>;
@@ -61,6 +64,9 @@ interface TaskStore {
   saveRelations: (relations: TaskTemplateRelation[]) => Promise<void>;
   getSuggestionExclusionIds: (parentId: string, id: string) => string[];
   getAncestryIds: (parentId: string) => string[];
+  updatePrivacy: (hidden: boolean) => Promise<void>;
+  setTaskView: (parentId: string | null) => Promise<void>;
+  setTemplateView: (parentId: string | null) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -74,7 +80,27 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   focusedId: null,
   error: null,
   percentage: 0,
+  hidden: false,
+  taskViewId: null,
+  templateViewId: null,
 
+  setTaskView: async (id: string | null) => {
+    set({taskViewId: id});
+    await get().loadTasks();
+  },
+  setTemplateView: async (id: string | null) => {
+    const rel = get().templateHierarchy.relations.find(rel => rel.id === id);
+    set({templateViewId: rel?.child_id||null});
+    await get().loadTemplates();
+  },
+  updatePrivacy: async (hidden: boolean) => { 
+    try {
+      set({hidden: hidden});
+      await get().loadTemplates();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
   saveTasks: async (tasks: TaskInstance[]) => {
     try {
       await storage.saveTasks(tasks);
@@ -183,10 +209,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   loadTasks: async () => {
     try {
+      // console.log('load tasks');
       const tasks = await storage.getTasks();
       const tree = get().getTree(tasks);
       // console.log('Loaded tasks:');
-      // for (const t of tasks) {
+      // for (const t of tree) {
       //   console.log(t);
       // }
       set({
@@ -210,13 +237,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     // Build hierarchy
     tasks?.forEach(task => {
       const node = map.get(task.id)!;
-      if (task.parent_id) {
+      if (task.parent_id === get().taskViewId) {
+        roots.push(node);
+      } else if (task.parent_id) {
         const parent = map.get(task.parent_id);
         if (parent) {
           parent.children.push(node);
         }
-      } else {
-        roots.push(node);
       }
     });
     set({ percentage: get().calculatePercentage(roots) * 100 });
@@ -519,11 +546,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         }).filter(Boolean) as TemplateNode[];
     }
     const rootTemplates = templates.filter(template =>
-      relations.some(rel => rel.child_id === template.id && rel.parent_id === null)
+      relations.some(rel => rel.child_id === template.id && rel.parent_id === get().templateViewId)
     );
 
     return rootTemplates.map(template => {
-      const rel = relations.find(rel => rel.child_id === template.id && rel.parent_id === null);
+      const rel = relations.find(rel => rel.child_id === template.id && rel.parent_id === get().templateViewId);
       return { ...template, children: buildHierarchy(template.id), expanded: rel!.expanded, relId: rel!.id, position: rel!.position };
     })
         .sort((a, b) => a.position - b.position);

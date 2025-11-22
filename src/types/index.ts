@@ -11,6 +11,7 @@ export interface TaskInstance {
   recurrence_rule: string | null;
   position: number;
   expanded: boolean;
+  private: boolean;
 }
 
 export interface TaskTemplate {

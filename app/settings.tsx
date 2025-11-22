@@ -14,7 +14,9 @@ export default function SettingScreen() {
     isLoading,
     saveTasks,
     saveTemplates,
-    saveRelations
+    saveRelations,
+    hidden,
+    updatePrivacy
   } = useTaskStore();
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -184,6 +186,12 @@ export default function SettingScreen() {
           <Text style={{ color: colors.text, fontWeight: '800', flex: 1 }}>Color Theme:</Text>
           <Pressable onPress={toggleTheme} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
             <Text style={{ color: colors.text, fontWeight: '500' }}>{theme}</Text>
+          </Pressable>
+        </View>
+        <View style={styles.settingsRow}>
+          <Text style={{ color: colors.text, fontWeight: '800', flex: 1 }}>View Type:</Text>
+          <Pressable onPress={() => updatePrivacy(!hidden)} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
+            <Text style={{ color: colors.text, fontWeight: '500' }}>{hidden?'comprehensive':'private'}</Text>
           </Pressable>
         </View>
 

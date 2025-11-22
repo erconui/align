@@ -36,18 +36,19 @@ export const initDatabase = async (): Promise<void> => {
     await dbInstance.execAsync(`
         CREATE TABLE IF NOT EXISTS tasks
         (
-            id          TEXT PRIMARY KEY,
-            template_id TEXT,
-            parent_id   TEXT,
-            title       TEXT    NOT NULL,
-            expanded   BOOLEAN NOT NULL DEFAULT 0,
-            completed   BOOLEAN NOT NULL DEFAULT 0,
-            completed_at DATETIME,
-            due_date DATETIME,
-            recurrence_rule TEXT,
-            position  INTEGER NOT NULL DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            id               TEXT PRIMARY KEY,
+            template_id      TEXT,
+            parent_id        TEXT,
+            title            TEXT    NOT NULL,
+            expanded         BOOLEAN NOT NULL DEFAULT 0,
+            completed        BOOLEAN NOT NULL DEFAULT 0,
+            completed_at     DATETIME,
+            due_date         DATETIME,
+            recurrence_rule  TEXT,
+            private          BOOLEAN NOT NULL DEFAULT 0,
+            position         INTEGER NOT NULL DEFAULT 0,
+            created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (template_id) REFERENCES templates (id),
             FOREIGN KEY (parent_id) REFERENCES tasks (id)
         );

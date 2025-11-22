@@ -62,6 +62,7 @@ export const BaseItem = <T extends BaseNode>({
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
   const itemRef = useRef<View>(null);
+const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
 
   useEffect(() => {
     setEditTitle(node.title);
@@ -157,6 +158,7 @@ export const BaseItem = <T extends BaseNode>({
           <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.icon} >
             <Ionicons name={"add-outline"} size={18} style={styles.icon} />
           </Pressable>}
+
 
           {showCompletionToggle && onToggleCompletion && (
             <View style={styles.checkboxContainer}>

@@ -5,6 +5,7 @@ import {
   Alert,
   FlatList,
   Keyboard,
+  Pressable,
   Text,
   TextInput,
   TouchableOpacity,
@@ -36,7 +37,9 @@ export default function TemplateScreen() {
     removeTemplate,
     toggleTemplateExpand,
     moveTemplate,
-    getSuggestionExclusionIds
+    getSuggestionExclusionIds,
+    setTemplateView,
+    templateViewId
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -223,7 +226,10 @@ export default function TemplateScreen() {
         ? Math.min(...Object.values(layouts).map(layout => layout.y))
         : 0;
       if (!targetEntry) {
-        if (dropY < lowestY + 2*dragged.height/3) {
+        if (dropY < lowestY - 2*dragged.height) {
+          console.log("focused view of template", itemId);
+          setTemplateView(itemId);
+        } else if (dropY < lowestY + 2*dragged.height/3) {
           moveTemplate(itemId, null, 0); // move it to the top of the list
         } else {
           console.log('No valid drop target found.', dropY, lowestY, lowestY + dragged.height/2);
@@ -250,12 +256,18 @@ export default function TemplateScreen() {
       </View>
     );
   }
+  const title = templateViewId?(templateHierarchy.templates.find(t=>t.id===templateViewId)?.title):'Lists';
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text }}>Lists</Text>
+        {templateViewId? <View style={{flexDirection: 'row'}}>
+          <Pressable onPress={() => setTemplateView(null)} style={{justifyContent:'center'}}>
+            <Ionicons name="chevron-back" size={24} style={{...styles.headerText, marginBottom: 0, color: colors.buttonBorder, fontSize: 36}} /></Pressable>
+          <Text style={{...styles.headerText, marginBottom: 0}}>{title}</Text></View>
+          :<Text style={{...styles.headerText, marginBottom: 0}}>{title}</Text>}
+        {/* <Text style={{ fontSize: 24, fontWeight: '700', color: colors.text }}>{title}</Text> */}
         <Text style={{ color: colors.muted, marginTop: 4 }}>
           {tree.length} {tree.length === 1 ? 'list' : 'lists'}
         </Text>
@@ -312,6 +324,7 @@ export default function TemplateScreen() {
         ) : (
           <FlatList
             data={tree}
+              removeClippedSubviews={false}
             style={{marginBottom:containerLayout.y + keyboardHeight}}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
