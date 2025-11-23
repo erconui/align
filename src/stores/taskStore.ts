@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { initStorage, storage } from '../storage/storage';
-import { AddTaskParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 
 export type TaskNode = TaskInstance & { children: TaskNode[] };
 export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
@@ -17,14 +17,16 @@ interface TaskStore {
   focusedId: string | null;
   error: string | null;
   percentage: number;
-  hidden: boolean;
+  publicView: boolean;
   taskViewId: string|null;
   templateViewId: string|null;
+  gestures: boolean;
 
   // Actions
   init: () => Promise<void>;
   initDB: () => Promise<void>;
   loadTasks: () => Promise<void>;
+  updateTask: (task: TaskParams) => Promise<void>;
   getTree: (tasks: TaskInstance[]) => TaskNode[];
   addTask: (task: AddTaskParams) => Promise<string>;
   addSubTask: (title: string, parentId: string | null) => Promise<string>;
@@ -64,9 +66,10 @@ interface TaskStore {
   saveRelations: (relations: TaskTemplateRelation[]) => Promise<void>;
   getSuggestionExclusionIds: (parentId: string, id: string) => string[];
   getAncestryIds: (parentId: string) => string[];
-  updatePrivacy: (hidden: boolean) => Promise<void>;
+  updatePrivacy: (publicView: boolean) => Promise<void>;
   setTaskView: (parentId: string | null) => Promise<void>;
   setTemplateView: (parentId: string | null) => Promise<void>;
+  updateInteractiveMode: (gestures: boolean) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -80,9 +83,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   focusedId: null,
   error: null,
   percentage: 0,
-  hidden: false,
+  publicView: false,
   taskViewId: null,
   templateViewId: null,
+  gestures:false,
 
   setTaskView: async (id: string | null) => {
     set({taskViewId: id});
@@ -93,9 +97,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     set({templateViewId: rel?.child_id||null});
     await get().loadTemplates();
   },
-  updatePrivacy: async (hidden: boolean) => { 
+  updateInteractiveMode: async (gestures: boolean) => { 
     try {
-      set({hidden: hidden});
+      set({gestures: gestures});
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  updatePrivacy: async (publicView: boolean) => { 
+    try {
+      set({publicView: publicView});
       await get().loadTemplates();
     } catch (error) {
       set({ error: (error as Error).message });
@@ -211,14 +222,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       // console.log('load tasks');
       const tasks = await storage.getTasks();
-      const tree = get().getTree(tasks);
-      // console.log('Loaded tasks:');
+      const filteredTasks = get().publicView?tasks.filter(t=>!t.private):tasks;
+
+      const tree = get().getTree(filteredTasks);
+      // console.log('Loaded filteredTasks:');
       // for (const t of tree) {
       //   console.log(t);
       // }
       set({
         tasks: tree,
-        flatTasks: tasks,
+        flatTasks: filteredTasks,
         error: null
       });
     } catch (error) {
@@ -304,6 +317,14 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     try {
       await storage.updateTaskTitle(id, title.trim());
+      await get().loadTasks();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+  updateTask: async (task: TaskParams) => {
+    try {
+      await storage.updateTask(task);
       await get().loadTasks();
     } catch (error) {
       set({ error: (error as Error).message });

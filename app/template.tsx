@@ -39,6 +39,7 @@ export default function TemplateScreen() {
     moveTemplate,
     getSuggestionExclusionIds,
     setTemplateView,
+    gestures,
     templateViewId
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
@@ -212,7 +213,20 @@ export default function TemplateScreen() {
       const layouts = calculateTreePositions();
       const dragged = layouts[itemId];
       if (!dragged) return;
-
+      if (Math.abs(finalPosition.y) < ITEM_HEIGHT && finalPosition.x <= -1*INDENTATION_WIDTH*10) {
+        const rel = templateHierarchy.relations.find(rel => rel.id === itemId);
+        if (rel) {
+          createTaskFromTemplate(rel.child_id, rel.parent_id);
+          return;
+        }
+      }
+      if (Math.abs(finalPosition.y) < ITEM_HEIGHT && finalPosition.x > INDENTATION_WIDTH*10) {
+        const rel = templateHierarchy.relations.find(rel => rel.id === itemId);
+        if (rel) {
+          removeTemplate(rel.parent_id, rel.child_id);
+          return;
+        }
+      }
       // Compute final drop position
       const dropY = dragged.y + finalPosition.y;
       const dropCenterY = dropY + dragged.height / 2;
@@ -227,7 +241,7 @@ export default function TemplateScreen() {
         : 0;
       if (!targetEntry) {
         if (dropY < lowestY - 2*dragged.height) {
-          console.log("focused view of template", itemId);
+          // console.log("focused view of template", itemId);
           setTemplateView(itemId);
         } else if (dropY < lowestY + 2*dragged.height/3) {
           moveTemplate(itemId, null, 0); // move it to the top of the list
@@ -324,7 +338,8 @@ export default function TemplateScreen() {
         ) : (
           <FlatList
             data={tree}
-              removeClippedSubviews={false}
+            // keyboardShouldPersistTaps={true}
+            removeClippedSubviews={false}
             style={{marginBottom:containerLayout.y + keyboardHeight}}
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
@@ -346,6 +361,7 @@ export default function TemplateScreen() {
                 closeSuggestions={closeSuggestions}
                 registerRefs={registerRefs}
                 handleDrop={handleDrop}
+                minimalistView={gestures}
               />
             )}
           />

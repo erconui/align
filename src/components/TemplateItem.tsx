@@ -21,6 +21,7 @@ interface TemplateItemProps {
   closeSuggestions: () => void;
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
   registerRefs: (itemId: string, ref: View | null) => void;
+  minimalistView: boolean;
 }
 
 export const TemplateItem: React.FC<TemplateItemProps> = ({
@@ -40,7 +41,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                            toggleExpand,
                                                            closeSuggestions,
                                                            registerRefs,
-                                                           handleDrop
+                                                           handleDrop,
+                                                           minimalistView
                                                           }) => {
   const { createTemplate } = useTaskStore();
 
@@ -72,6 +74,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       closeSuggestions={closeSuggestions}
       handleDrop={handleDrop}
       registerRefs={registerRefs}
+      minimalistView={minimalistView}
     />
   );
 };

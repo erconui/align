@@ -5,41 +5,27 @@ import React, { useState } from "react";
 import { Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 import { useTheme } from "../hooks/useTheme";
 
-import type { TaskInstance } from "../types";
+import type { TaskInstance, TaskParams } from "../types";
 
 export interface RecurrenceRule {
   type: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
   interval?: number;
   days_of_week?: number[];
-  catch_up?: boolean;
+  skipIfMissed?: boolean;
+  endType: "never" | "on" | "after";
+  endDate: Date | null;
+  occurrences: number;
 }
 
 interface Props {
-  task: TaskInstance;
-  onSave: (updated: TaskInstance) => void;
+  task: TaskInstance | null;
+  onSave: (updated: TaskParams) => void;
   onClose: () => void;
-  visible: boolean;
 }
 
 export default function TaskDetail({ task, onSave, onClose }: Props) {
   if (!task) {
     return '';
-  }
-  task = {
-  id: task.id,
-  template_id: task.template_id,
-  parent_id: task.parent_id,
-  title: 'TEST',
-  completed: false,
-  completed_at: null,
-  due_date: null,
-  created_at: "08/09/2025",
-  updated_at: null,
-  recurrence_rule: JSON.stringify({type:'none'}),
-  position: 2,
-  expanded: true,
-  private: true
-
   }
   // Basic fields
   const [title, setTitle] = useState(task.title);
@@ -51,15 +37,17 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
   const [showDuePicker, setShowDuePicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const { colors, styles, toggleTheme, theme } = useTheme();
-  const [endType, setEndType] = useState<"never" | "on" | "after">("never");
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const [occurrences, setOccurrences] = useState("");
+
   // Recurrence rule (parsed)
   const initialRule: RecurrenceRule = task.recurrence_rule
     ? JSON.parse(task.recurrence_rule)
     : { type: "none" };
+  if (initialRule.endDate) {
+    initialRule.endDate = new Date(initialRule.endDate);
+  }
 
   const [rule, setRule] = useState<RecurrenceRule>(initialRule);
+  const [occurrencesText, setOccurrencesText] = useState(rule.occurrences?rule.occurrences.toString():"1");
 
   const toggleDay = (day: number) => {
     const current = rule.days_of_week ?? [];
@@ -69,23 +57,43 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
 
     setRule({ ...rule, days_of_week: next });
   };
+  const setEndType = (newEndType: "never"|'on'|'after') => {
+    setRule({ ...rule, endType: newEndType})
+  };
+  const setEndDate = (endDate: Date | null) => {
+    setRule({ ...rule, endDate: endDate})
+  };
+  const setOccurrences = (occurrences: number) => {
+    setRule({ ...rule, occurrences: occurrences})
+  };
 
   const save = () => {
-    const updated: TaskInstance = {
-      ...task,
-      title,
-      private: privateTask,
+    const updated: TaskParams = {
+      id: task.id,
+      template_id: task.template_id,
+      parent_id: task.parent_id,
+      title:title,
+      completed: task.completed,
+      completed_at: task.completed_at,
       due_date: dueDate ? dueDate.toISOString() : null,
-      recurrence_rule: rule.type === "none" ? null : JSON.stringify(rule),
+      created_at: task.created_at,
       updated_at: new Date().toISOString(),
+      recurrence_rule: rule.type === "none" ? null : JSON.stringify(rule),
+      position: task.position,
+      expanded: task.expanded,
+      private: privateTask,
     };
 
     onSave(updated);
+    onClose();
   };
 
   return (
-    <Modal >
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
+    <Modal 
+      animationType="slide"
+      presentationStyle="pageSheet"
+      style={{ marginTop:60, paddingTop: 30}}>
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 30 }}>
 
       {/* Title */}
       <View style={{...styles.settingsRow, justifyContent:'center'}}>
@@ -113,7 +121,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
         )} */}
         {(showDuePicker || showEndPicker) &&(
         <DateTimePicker
-          value={(showDuePicker?dueDate:endDate) ?? new Date()}
+          value={(showDuePicker?dueDate:rule.endDate) ?? new Date()}
           onChange={(e, v) => {
             if (showDuePicker) {
               setShowDuePicker(false);
@@ -200,7 +208,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
               onPress={() => setEndType("never")} 
               style={styles.radioRow}
             >
-              <View style={[styles.radioDot, endType === "never" && styles.radioDotSelected]} />
+              <View style={[styles.radioDot, rule.endType === "never" && styles.radioDotSelected]} />
               <Text style={{color: colors.text}}>Never</Text>
             </Pressable>
 
@@ -209,19 +217,19 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
               onPress={() => setEndType("on")} 
               style={styles.radioRow}
             >
-              <View style={[styles.radioDot, endType === "on" && styles.radioDotSelected]} />
+              <View style={[styles.radioDot, rule.endType === "on" && styles.radioDotSelected]} />
               <Text style={{color: colors.text, marginRight: 6}}>On</Text>
 
               <Pressable
-                disabled={endType !== "on"}
+                disabled={rule.endType !== "on"}
                 onPress={() => setShowEndPicker(true)}
                 style={[
                   styles.settingButton,
-                  endType !== "on" && {opacity: 0.3}
+                  rule.endType !== "on" && {opacity: 0.7}
                 ]}
               >
                 <Text>
-                  {endDate ? endDate.toDateString() : "Select Date"}
+                  {rule.endDate ? rule.endDate.toDateString() : "Select Date"}
                 </Text>
               </Pressable>
             </Pressable>
@@ -231,19 +239,31 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
               onPress={() => setEndType("after")} 
               style={styles.radioRow}
             >
-              <View style={[styles.radioDot, endType === "after" && styles.radioDotSelected]} />
+              <View style={[styles.radioDot, rule.endType === "after" && styles.radioDotSelected]} />
               <Text style={{color: colors.text}}>After </Text>
 
               <TextInput
                 keyboardType="numeric"
-                editable={endType === "after"}
+                editable={rule.endType === "after"}
                 style={[
                   styles.input,
                   {maxWidth: 50},
-                  endType !== "after" && {opacity: 0.3}
+                  rule.endType !== "after" && {opacity: 0.7}
                 ]}
-                value={occurrences}
-                onChangeText={setOccurrences}
+                value={occurrencesText}
+                onChangeText={(text) => {
+                  setOccurrencesText(text);
+                }}
+                onBlur={() => {
+                  const num = parseInt(occurrencesText,10);
+                  if (!isNaN(num)) {
+                    setOccurrences(num);
+                  } else {
+                    setOccurrencesText("1");
+                    setOccurrences(1);
+                  }
+
+                }}
               />
 
               <Text style={{color: colors.text}}> occurrences</Text>
@@ -259,8 +279,8 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
       {rule.type !== "none" && (
         <View style={{...styles.detailRow}}>
           <Text style={{...styles.settingText, flex:1}}>Missed Task Behavior</Text>
-          <Pressable onPress={() => setSkippedIfMissed(!skipIfMissed)} style={styles.pressableButton}>
-            <Text style={styles.buttonText}>{skipIfMissed?'Reschedule':'Persist'}</Text>
+          <Pressable onPress={() => setRule({ ...rule, skipIfMissed: !rule.skipIfMissed})} style={styles.pressableButton}>
+            <Text style={styles.buttonText}>{rule.skipIfMissed?'Reschedule':'Persist'}</Text>
           </Pressable>
         </View>
       )}

@@ -1,12 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useTheme } from '../hooks/useTheme';
 import { TaskNode } from '../stores/taskStore';
-import { TaskInstance } from '../types';
 import { DraggableContext } from './DraggableContext';
-import TaskDetail from './TaskDetail';
 
 interface BaseNode {
   id: string;
@@ -39,9 +37,11 @@ interface BaseItemProps<T extends BaseNode> {
   closeSuggestions: () => void;
   registerRefs: (itemId: string, ref: View | null) => void;
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
+  minimalistView: boolean;
+  openDetailView?: (id: string) => void;
 }
 
-export const BaseItem = <T extends BaseNode>({
+export function BaseItem <T extends BaseNode>({
                                               node,
                                               showCompletionToggle = false,
                                               onToggleCompletion,
@@ -58,9 +58,12 @@ export const BaseItem = <T extends BaseNode>({
                                               toggleExpand,
                                               closeSuggestions,
                                               registerRefs,
-                                              handleDrop
-                                             }: BaseItemProps<T>) => {
+                                              handleDrop,
+                                              minimalistView,
+                                              openDetailView
+                                             }: BaseItemProps<T>) {
   const [expanded, setExpanded] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
@@ -134,6 +137,9 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
 
   const handleBlur = () => {
     onUpdateTitle(node.id, editTitle);
+      setTimeout(() => {
+        setIsFocused(textInputRef.current?.isFocused||false);
+      }, 200);
     closeSuggestions();
   };
   const hasChildren = node.children && node.children.length > 0;
@@ -154,11 +160,11 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
         onDrop={handleDrop}>
         <View style={styles.row} ref={itemRef}>
           {hasChildren ? 
-          <Pressable onPress={() => toggleExpand(parentId || null, node.id)} style={styles.icon}>
+          <Pressable onPress={() => {toggleExpand(parentId || null, node.id); Keyboard.dismiss()}} style={styles.icon}>
             {node.expanded ? <Ionicons name="caret-down-outline" size={18} style={styles.icon} /> :
               <Ionicons name="caret-forward-outline" size={18} style={styles.icon} />}
           </Pressable> :
-          <Pressable onPress={() => onAddSubItem("", node.id)} style={styles.icon} >
+          <Pressable onPress={() => {onAddSubItem("", node.id); Keyboard.dismiss();}} style={styles.icon} >
             <Ionicons name={"add-outline"} size={18} style={styles.icon} />
           </Pressable>}
 
@@ -168,41 +174,47 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
               <BouncyCheckbox
                 isChecked={'completed' in node ? (node as unknown as TaskNode).completed : false}
                 useBuiltInState={false}
-                onPress={async () => await onToggleCompletion(node.id)}
+                onPress={async () => {await onToggleCompletion(node.id); Keyboard.dismiss()}}
                 fillColor={colors.highlight}
               />
             </View>
           )}
-          <Text style={styles.input} onPress={() => {
-            console.log(node);
-            setSelectedTask(node as unknown as TaskNode);}}>{editTitle}</Text>
-
-          {/* Detail View Modal */}
-          <TaskDetail task={selectedTask as unknown as TaskInstance} onSave={() => console.log('save')} onClose={() => setSelectedTask(null)}
-          />
-          {/* <TextInput
-            ref={textInputRef}
-            style={styles.input}
-            autoFocus={focusedId === node.id}
-            value={editTitle}
-            onChangeText={handleTextChange}
-            onSubmitEditing={handleSubmit}
-            onBlur={handleBlur}
-            multiline={true}
-            returnKeyType="done"
-            submitBehavior='submit'
-          /> */}
-          {hasChildren? <Pressable onPress={() => generateList(node.id)} >
+          {/* <Text style={styles.input} onPress={() => {
+            setSelectedTask(node as unknown as TaskNode);}}>{editTitle}</Text> */}
+            {/* <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()} accessible={false}> */}
+          <View style={{flex:1, flexDirection:'row', position:'relative', alignItems:'center'}}>
+            <TextInput
+              ref={textInputRef}
+              style={[styles.input, isFocused&&{paddingRight:18}, minimalistView&&{marginRight: 10}]}
+              
+              autoFocus={focusedId === node.id}
+              value={editTitle}
+              onChangeText={handleTextChange}
+              onSubmitEditing={handleSubmit}
+              onBlur={handleBlur}
+              onFocus={() => setIsFocused(true)}
+              multiline={true}
+              returnKeyType="done"
+              submitBehavior='submit'
+            />
+            {isFocused &&(
+            <Pressable onPress={() => openDetailView?openDetailView(node.id):null } style={{...styles.icon, padding:0, position: 'absolute', right:12, }}>
+              <Ionicons name="menu-outline" size={36} style={{...styles.icon}}/>
+            </Pressable>)}
+          </View>
+          {/* </TouchableWithoutFeedback> */}
+          {!minimalistView?(hasChildren? <Pressable onPress={() => generateList(node.id)} >
             <Ionicons name={isTask ? "list-outline" : "checkbox-outline"} size={18} style={{...styles.icon }} />
-          </Pressable> : null}
+          </Pressable> : null):null}
 {/* 
           <Pressable onPress={() => hasChildren ? generateList(node.id) : onAddSubItem("", node.id)} >
             <Ionicons name={hasChildren ? isTask ? "list-outline" : "checkbox-outline" : "add-outline"} size={18} style={{ ...styles.icon }} />
           </Pressable> */}
 
-          <Pressable onPress={() => onDelete(parentId || null, node.id)} >
+          {!minimalistView &&(
+          <Pressable onPress={() => {onDelete(parentId || null, node.id); Keyboard.dismiss()}} >
             <Ionicons name="trash-outline" size={18} color={colors.icon} style={{marginRight:10, ...styles.icon }} />
-          </Pressable>
+          </Pressable>)}
         </View>
       </DraggableContext>
 
@@ -228,6 +240,8 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
               closeSuggestions={closeSuggestions}
               registerRefs={registerRefs}
               handleDrop={handleDrop}
+              minimalistView={minimalistView}
+              openDetailView={openDetailView}
             />
           ))}
           {num_completed>0?

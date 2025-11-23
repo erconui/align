@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { AddTaskParams, AddTemplateParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, AddTemplateParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 
 // Open database with async API
 const db = SQLite.openDatabaseAsync('tasks.db');
@@ -251,6 +251,45 @@ export const database = {
       );
     } catch (error) {
       console.error('Error updating task title:', error);
+      throw error;
+    }
+  },
+
+  // Update task title
+  updateTask: async (task: TaskParams): Promise<void> => {
+    try {
+      const dbInstance = await db;
+
+      const fields = [];
+      const values = [];
+
+      // Iterate through all keys in the update object
+      for (const [key, value] of Object.entries(task)) {
+        if (key === "id") continue; // don't update primary key
+        if (value === undefined) continue; // skip unset fields
+
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+
+      if (fields.length === 0) {
+        console.log("No changes to update");
+        return;
+      }
+
+      // Add id for WHERE clause
+      values.push(task.id);
+
+      const sql = `
+        UPDATE tasks
+        SET ${fields.join(", ")}
+        WHERE id = ?
+      `;
+
+      await dbInstance.runAsync(sql, values);
+
+    } catch (error) {
+      console.error("Error updating task:", error);
       throw error;
     }
   },
@@ -731,15 +770,16 @@ export const database = {
         [parentId, id]
       );
 
-      const parents = await dbInstance.getAllAsync<TaskInstance>(
-        'SELECT * FROM tasks WHERE template_id = ? and completed = 0', [parentId]);
-      for (const parent of parents) {
-        const tasks = await dbInstance.getAllAsync<TaskInstance>(
-          'SELECT * FROM tasks WHERE template_id = ? AND parent_id IS ? AND completed = 0', [id, parent.id]);
-          for (const task of tasks) {
-            database.deleteTask(task.id);
-          }
-      }
+      // TODO: Figure out how we want to handle updating tasks from templates 
+      // const parents = await dbInstance.getAllAsync<TaskInstance>(
+      //   'SELECT * FROM tasks WHERE template_id = ? and completed = 0', [parentId]);
+      // for (const parent of parents) {
+      //   const tasks = await dbInstance.getAllAsync<TaskInstance>(
+      //     'SELECT * FROM tasks WHERE template_id = ? AND parent_id IS ? AND completed = 0', [id, parent.id]);
+      //   for (const task of tasks) {
+      //     database.deleteTask(task.id);
+      //   }
+      // }
       
       // Check if template is now an orphan
       const result = await dbInstance.getFirstAsync<{ count: number }>(
@@ -773,8 +813,8 @@ export const database = {
       `, [id, id]);
 
       // Then delete the template itself
-      await dbInstance.runAsync('DELETE FROM templates WHERE id = ?', [id]);
-      await dbInstance.runAsync('DELETE FROM tasks WHERE template_id = ? AND completed = 0', [id]);
+      // await dbInstance.runAsync('DELETE FROM templates WHERE id = ?', [id]);
+      // await dbInstance.runAsync('DELETE FROM tasks WHERE template_id = ? AND completed = 0', [id]);
     } catch (error) {
       console.error('Error deleting template:', error);
       throw error;

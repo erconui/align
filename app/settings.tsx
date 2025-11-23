@@ -15,8 +15,10 @@ export default function SettingScreen() {
     saveTasks,
     saveTemplates,
     saveRelations,
-    hidden,
-    updatePrivacy
+    publicView,
+    gestures,
+    updatePrivacy,
+    updateInteractiveMode
   } = useTaskStore();
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -190,8 +192,14 @@ export default function SettingScreen() {
         </View>
         <View style={styles.settingsRow}>
           <Text style={{ color: colors.text, fontWeight: '800', flex: 1 }}>View Type:</Text>
-          <Pressable onPress={() => updatePrivacy(!hidden)} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
-            <Text style={{ color: colors.text, fontWeight: '500' }}>{hidden?'comprehensive':'private'}</Text>
+          <Pressable onPress={() => updatePrivacy(!publicView)} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
+            <Text style={{ color: colors.text, fontWeight: '500' }}>{publicView?'Public':'Comprehensive'}</Text>
+          </Pressable>
+        </View>
+        <View style={styles.settingsRow}>
+          <Text style={{ color: colors.text, fontWeight: '800', flex: 1 }}>Interactive Type:</Text>
+          <Pressable onPress={() => updateInteractiveMode(!gestures)} style={({ pressed }) => pressed ? styles.pressableButtonPressed : styles.settingButton}>
+            <Text style={{ color: colors.text, fontWeight: '500' }}>{gestures?'Minimalist':'Maximalist'}</Text>
           </Pressable>
         </View>
 

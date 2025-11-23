@@ -91,7 +91,7 @@ const createStyles = (colors: typeof Colors.light) => {
     row: { flexDirection: "row", alignItems: "center", minHeight:40 },
     input: {
       flex: 1,
-      padding: 8,
+      padding: 4,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.surface,

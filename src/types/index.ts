@@ -13,6 +13,10 @@ export interface TaskInstance {
   expanded: boolean;
   private: boolean;
 }
+export type TaskParams = 
+  Partial<Omit<TaskInstance,'id'>> & 
+  Pick<TaskInstance,'id'> & 
+  { after_id?: string | null; };
 
 export interface TaskTemplate {
   id: string;

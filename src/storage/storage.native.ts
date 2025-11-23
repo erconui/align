@@ -1,5 +1,5 @@
 import { database, initDatabase } from '../database/database';
-import { AddTaskParams, AddTemplateParams, TaskInstance, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, AddTemplateParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 
 const nativeStorage = {
   getRootTasks: async (): Promise<TaskInstance[]> => {
@@ -20,7 +20,8 @@ const nativeStorage = {
       let tasks = await database.getAllTasks();
       tasks = tasks.map(task => ({
         ...task,
-        completed: Boolean(task.completed) // or task.completed === 1
+        completed: Boolean(task.completed), // or task.completed === 1
+        private: Boolean(task.private)
       }));
       return tasks;
     } catch (error) {
@@ -39,6 +40,9 @@ const nativeStorage = {
   },
   updateTaskTitle: async (id: string, title: string): Promise<void> => {
     await database.updateTaskTitle(id, title);
+  },
+  updateTask: async (task: TaskParams): Promise<void> => {
+    await database.updateTask(task);
   },
   moveTask: async (id: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {

@@ -18,6 +18,8 @@ interface TaskItemProps {
   closeSuggestions: () => void;
   registerRefs: (itemId: string, ref: View | null) => void;
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
+  openDetailView: (itemId: string) => void;
+  minimalistView: boolean;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -34,7 +36,9 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                    toggleExpand,
                                                    closeSuggestions,
                                                    registerRefs,
-                                                   handleDrop
+                                                   handleDrop,
+                                                   minimalistView,
+                                                   openDetailView
                                                   }) => {
   return (
     <BaseItem
@@ -56,6 +60,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       closeSuggestions={closeSuggestions}
       registerRefs={registerRefs}
       handleDrop={handleDrop}
+      minimalistView={minimalistView}
+      openDetailView={openDetailView}
     />
   );
 };

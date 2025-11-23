@@ -1,3 +1,5 @@
+import TaskDetail from '@/src/components/TaskDetail';
+import { TaskInstance } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -39,7 +41,9 @@ export default function HomeScreen() {
     percentage,
     moveTask,
     setTaskView,
-    taskViewId
+    taskViewId,
+    gestures,
+    updateTask
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -51,7 +55,8 @@ export default function HomeScreen() {
   const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
-const [extraData, setExtraData] = useState(false);
+  const [extraData, setExtraData] = useState(false);
+  const [detailItem, setDetailItem] = useState<TaskInstance | null>(null);
 
   useEffect(() => {
     setSuggestionsVisible(false);
@@ -133,6 +138,14 @@ const [extraData, setExtraData] = useState(false);
 
   const registerItemLayout = (itemId: string, layout: {x:number; y:number; width:number; height:number}) => {
   };
+
+  const openDetailView = (itemId: string) => {
+    const task = flatTasks.find(t => t.id === itemId);
+    if (task) {
+      setDetailItem(task);
+    }
+  }
+
   const registerRefs = (itemId: string, ref: View | null) => {
     itemRefs.current[itemId] = ref;
   }
@@ -184,6 +197,15 @@ const [extraData, setExtraData] = useState(false);
       const layouts = calculateTreePositions();
       const dragged = layouts[itemId];
       if (!dragged) return;
+      // console.log(finalPosition.y, finalPosition.x, Math.abs(finalPosition.y) < ITEM_HEIGHT, finalPosition.x > INDENTATION_WIDTH*10)
+      if (Math.abs(finalPosition.y) < ITEM_HEIGHT && finalPosition.x >= INDENTATION_WIDTH*10) {
+        createTemplateFromTask(itemId);
+        return;
+      }
+      if (Math.abs(finalPosition.y) < ITEM_HEIGHT && finalPosition.x < -1*INDENTATION_WIDTH*10) {
+        deleteTask(itemId);
+        return;
+      }
 
       // Compute final drop position
       const dropY = dragged.y + finalPosition.y;
@@ -197,10 +219,9 @@ const [extraData, setExtraData] = useState(false);
       const lowestY = Object.values(layouts).length > 0 
         ? Math.min(...Object.values(layouts).map(layout => layout.y))
         : 0;
-      console.log(dropY, lowestY - 2*dragged.height/3, lowestY+2*dragged.height/3);
+      // console.log(dropY, lowestY - 2*dragged.height/3, lowestY+2*dragged.height/3);
       if (!targetEntry) {
         if (dropY < lowestY - 2*dragged.height) {
-          console.log("focused view of task");
           setTaskView(itemId);
         } else if (dropY < lowestY + 2*dragged.height/3) {
           moveTask(itemId, null, 0); // move it to the top of the list
@@ -267,98 +288,104 @@ const [extraData, setExtraData] = useState(false);
 
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }} >
-      {/* Header */}
-      <View style={{...styles.header, flexDirection:'row', alignItems:'center'}}>
-        {taskViewId? <View style={{flexDirection: 'row', justifyContent:'center'}}>
-          <Pressable onPress={() => setTaskView(null)} style={{justifyContent:'center'}}>
-            <Ionicons name="chevron-back" size={24} style={{...styles.headerText, marginBottom: 0, color: colors.buttonBorder, fontSize: 36}} /></Pressable>
-          <Text style={{...styles.headerText, marginBottom: 0}}>{title}:  </Text></View>
-          :null}
-        <View style={{flex: 1,alignItems:'center'}}>
-        <Text style={{ color: colors.muted }}>
-          {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
-        </Text>
-        <ProgressBar value={percentage}
-          progressColor={colors.highlight}
-          backgroundColor={colors.button}
-          textColor={percentage > 45 ? colors.text : colors.muted}
-          rounded
-          showPercent /></View>
-      </View>
-
-      {/* Global Suggestions */}
-      <GlobalSuggestions
-        suggestions={suggestions}
-        position={suggestionsPosition}
-        visible={suggestionsVisible}
-        keyboardHeight={keyboardHeight}
-        searchText={currentSearchText}
-        onSuggestionSelect={(suggestion) => {
-          if (suggestionsItemId) {
-            handleSuggestionSelect(suggestion, suggestionsItemId, suggestionsParentId);
-          }
-        }}
-      />
-
-      {/* Add Task Form */}
-      <View style={{ padding: 16, backgroundColor: colors.background, borderBottomColor: colors.border }}>
-        <View style={{ flexDirection: 'row' }}>
-          <TextInput
-            value={newTaskTitle}
-            onChangeText={setNewTaskTitle}
-            placeholder="Add a new task..."
-            placeholderTextColor={colors.muted}
-            onSubmitEditing={handleAddTask}
-            style={{ ...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding: 16, marginHorizontal: 0 }}
-          />
-          <TouchableOpacity
-            onPress={handleAddTask}
-            // disabled={!newTaskTitle.trim()}
-            style={{ ...styles.pressableButton, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
-          >
-            <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
-          </TouchableOpacity>
+      <View style={{ flex: 1, backgroundColor: colors.background }} >
+        {/* Header */}
+        <View style={{...styles.header, flexDirection:'row', alignItems:'center'}}>
+          {taskViewId? <View style={{flexDirection: 'row', justifyContent:'center'}}>
+            <Pressable onPress={() => {setTaskView(null); Keyboard.dismiss()}} style={{justifyContent:'center'}}>
+              <Ionicons name="chevron-back" size={24} style={{...styles.headerText, marginBottom: 0, color: colors.buttonBorder, fontSize: 36}} /></Pressable>
+            <Text style={{...styles.headerText, marginBottom: 0}}>{title}:  </Text></View>
+            :null}
+          <View style={{flex: 1,alignItems:'center'}}>
+          <Text style={{ color: colors.muted }}>
+            {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
+          </Text>
+          <ProgressBar value={percentage}
+            progressColor={colors.highlight}
+            backgroundColor={colors.button}
+            textColor={percentage > 45 ? colors.text : colors.muted}
+            rounded
+            showPercent /></View>
         </View>
 
-        {error && (
-          <Text style={{ color: '#ef4444', marginTop: 8, fontSize: 12 }}>{error}</Text>
-        )}
-      </View>
-      <View className="flex-1" onLayout={handleContainerLayout}
-          style={{marginBottom:containerLayout.y + keyboardHeight}}>
-        <FlatList
-          ref={flatListRef}
-          data={showCompleted?tasks:remainingTasks}
-              removeClippedSubviews={false}
-              // extraData={extraData} -- this doesn't work
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <TaskItem
-              key={item.id}
-              taskNode={item}
-              toggleTask={toggleTask}
-              deleteTask={deleteTask}
-              addSubTask={addSubTask}
-              addTaskAfter={addTaskAfter}
-              updateTaskTitle={updateTaskTitle}
-              focusedId={focusedId}
-              toggleExpand={async (parentId, id) => {
-                toggleTaskExpand(id);
-              }}
-              onInputMeasure={handleInputMeasure}
-              onTextChange={handleTextChange}
-              generateList={createTemplateFromTask}
-              closeSuggestions={closeSuggestions}
-              registerRefs={registerRefs}
-              handleDrop={handleDrop}
+        {/* Global Suggestions */}
+        <GlobalSuggestions
+          suggestions={suggestions}
+          position={suggestionsPosition}
+          visible={suggestionsVisible}
+          keyboardHeight={keyboardHeight}
+          searchText={currentSearchText}
+          onSuggestionSelect={(suggestion) => {
+            if (suggestionsItemId) {
+              handleSuggestionSelect(suggestion, suggestionsItemId, suggestionsParentId);
+            }
+          }}
+        />
+        {/* Detail View Modal */}
+        <TaskDetail task={detailItem} onSave={updateTask} onClose={() => setDetailItem(null)}
+        />
+
+        {/* Add Task Form */}
+        <View style={{ padding: 16, backgroundColor: colors.background, borderBottomColor: colors.border }}>
+          <View style={{ flexDirection: 'row' }}>
+            <TextInput
+              value={newTaskTitle}
+              onChangeText={setNewTaskTitle}
+              placeholder="Add a new task..."
+              placeholderTextColor={colors.muted}
+              onSubmitEditing={handleAddTask}
+              style={{ ...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding: 16, marginHorizontal: 0 }}
             />
-          )} />
-          {!showCompleted && (tasks.length-remainingTasks.length>0)?
-            <Pressable onPress={() => setShowCompleted(true)} style={{...styles.row}}>
-              <Text style={{...styles.input,backgroundColor: colors.progressBackground, textAlign: 'center'}}>{tasks.length-remainingTasks.length} tasks completed</Text>
-              </Pressable>:null}
+            <TouchableOpacity
+              onPress={() => {handleAddTask(); Keyboard.dismiss()}}
+              // disabled={!newTaskTitle.trim()}
+              style={{ ...styles.pressableButton, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
+            >
+              <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
+            </TouchableOpacity>
+          </View>
+
+          {error && (
+            <Text style={{ color: '#ef4444', marginTop: 8, fontSize: 12 }}>{error}</Text>
+          )}
+        </View>
+        <View className="flex-1" onLayout={handleContainerLayout}
+            style={{marginBottom:containerLayout.y + keyboardHeight}}>
+          <FlatList
+            ref={flatListRef}
+            keyboardShouldPersistTaps='handled'
+            data={showCompleted?tasks:remainingTasks}
+                removeClippedSubviews={false}
+                // extraData={extraData} -- this doesn't work
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <TaskItem
+                key={item.id}
+                taskNode={item}
+                toggleTask={toggleTask}
+                deleteTask={deleteTask}
+                addSubTask={addSubTask}
+                addTaskAfter={addTaskAfter}
+                updateTaskTitle={updateTaskTitle}
+                focusedId={focusedId}
+                minimalistView={gestures}
+                toggleExpand={async (parentId, id) => {
+                  toggleTaskExpand(id);
+                }}
+                onInputMeasure={handleInputMeasure}
+                onTextChange={handleTextChange}
+                generateList={createTemplateFromTask}
+                closeSuggestions={closeSuggestions}
+                registerRefs={registerRefs}
+                handleDrop={handleDrop}
+                openDetailView={openDetailView}
+              />
+            )} />
+            {!showCompleted && (tasks.length-remainingTasks.length>0)?
+              <Pressable onPress={() => {() => setShowCompleted(true); Keyboard.dismiss()}} style={{...styles.row}}>
+                <Text style={{...styles.input,backgroundColor: colors.progressBackground, textAlign: 'center'}}>{tasks.length-remainingTasks.length} tasks completed</Text>
+                </Pressable>:null}
+        </View>
       </View>
-    </View>
   );
 }
