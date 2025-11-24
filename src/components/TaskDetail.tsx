@@ -5,18 +5,25 @@ import React, { useState } from "react";
 import { Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 import { useTheme } from "../hooks/useTheme";
 
-import type { TaskInstance, TaskParams } from "../types";
+import type { RecurrenceRule, TaskInstance, TaskParams } from "../types";
 
-export interface RecurrenceRule {
-  type: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
-  interval?: number;
-  days_of_week?: number[];
-  skipIfMissed?: boolean;
-  endType: "never" | "on" | "after";
-  endDate: Date | null;
-  occurrences: number;
-}
-
+// export interface RecurrenceRule {
+//   type: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
+//   interval?: number;
+//   by_day?: number[];
+//   skipIfMissed?: boolean;
+//   endType: "never" | "on" | "after";
+//   endDate: Date | null;
+//   occurrences: number;
+// }
+const defaultRule: RecurrenceRule = {
+  frequency: 'none',
+  interval: 1,
+  skip_if_missed: false,
+  end_type: 'never',
+  end_date: null,
+  occurrences: 1
+};
 interface Props {
   task: TaskInstance | null;
   onSave: (updated: TaskParams) => void;
@@ -30,44 +37,54 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
   // Basic fields
   const [title, setTitle] = useState(task.title);
   const [privateTask, setPrivateTask] = useState(task.private);
-  const [skipIfMissed, setSkippedIfMissed] = useState(false);
+  const [skipIfMissed, setSkippedIfMissed] = useState(task.recurrence?.skip_if_missed || false);
   const [dueDate, setDueDate] = useState(
     task.due_date ? new Date(task.due_date) : null
   );
   const [showDuePicker, setShowDuePicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  const [frequency, setFrequency] = useState(task.recurrence?.frequency || 'none');
+  const [interval, setInterval] = useState<number>(task.recurrence?.interval || 0);
+  const [endType, setEndType] = useState(task.recurrence?.end_type || 'never');
+  const [endDate, setEndDate] = useState(task.recurrence?.end_date? new Date(task.recurrence?.end_date) : null);
+  const [byDay, setByDay] = useState(task.recurrence?.by_day);
   const { colors, styles, toggleTheme, theme } = useTheme();
 
-  // Recurrence rule (parsed)
-  const initialRule: RecurrenceRule = task.recurrence_rule
-    ? JSON.parse(task.recurrence_rule)
-    : { type: "none" };
-  if (initialRule.endDate) {
-    initialRule.endDate = new Date(initialRule.endDate);
-  }
 
-  const [rule, setRule] = useState<RecurrenceRule>(initialRule);
-  const [occurrencesText, setOccurrencesText] = useState(rule.occurrences?rule.occurrences.toString():"1");
+  // const [rule, setRule] = useState<RecurrenceRule>(task.recurrence || defaultRule);
+  // console.log(rule);
+  const [occurrencesText, setOccurrencesText] = useState(task.recurrence?.occurrences?task.recurrence.occurrences.toString():"1");
+  const [occurrences, setOccurrences] = useState(task.recurrence?.occurrences?task.recurrence.occurrences:1);
 
   const toggleDay = (day: number) => {
-    const current = rule.days_of_week ?? [];
+    const current = byDay ?? [];
     const next = current.includes(day)
       ? current.filter(d => d !== day)
       : [...current, day];
 
-    setRule({ ...rule, days_of_week: next });
+    setByDay(next);
   };
-  const setEndType = (newEndType: "never"|'on'|'after') => {
-    setRule({ ...rule, endType: newEndType})
-  };
-  const setEndDate = (endDate: Date | null) => {
-    setRule({ ...rule, endDate: endDate})
-  };
-  const setOccurrences = (occurrences: number) => {
-    setRule({ ...rule, occurrences: occurrences})
-  };
+  // const setEndType = (newEndType: "never"|'on'|'after') => {
+  //   setRule({ ...rule, end_type: newEndType})
+  // };
+  // const setEndDate = (endDate: Date | null) => {
+  //   setRule({ ...rule, end_date: endDate})
+  // };
+  // const setOccurrences = (occurrences: number) => {
+  //   console.log('update occurrences', occurrences);
+  //   setRule({ ...rule, occurrences: occurrences})
+  // };
 
   const save = () => {
+    const rule : RecurrenceRule = {
+      frequency: frequency,
+      interval: interval,
+      skip_if_missed: skipIfMissed,
+      end_type: endType,
+      end_date: endDate?endDate.toISOString() : null,
+      occurrences: occurrences
+    }
+    console.log('save rule',rule);
     const updated: TaskParams = {
       id: task.id,
       template_id: task.template_id,
@@ -78,7 +95,8 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
       due_date: dueDate ? dueDate.toISOString() : null,
       created_at: task.created_at,
       updated_at: new Date().toISOString(),
-      recurrence_rule: rule.type === "none" ? null : JSON.stringify(rule),
+      recurrence_rule_id: task.recurrence_rule_id,
+      recurrence: rule,
       position: task.position,
       expanded: task.expanded,
       private: privateTask,
@@ -116,12 +134,17 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
             {dueDate ? dueDate.toDateString() : "Select Due Date"}
           </Text>
         </Pressable>
+        {dueDate && (
+          <Pressable onPress={() => setDueDate(null)} style={styles.deleteButton}>
+            <Text style={{color: 'red'}}>Clear</Text>
+          </Pressable>
+        )}
         {/* {dueDate && (
           <Text>{dueDate.toDateString()}</Text>
         )} */}
         {(showDuePicker || showEndPicker) &&(
         <DateTimePicker
-          value={(showDuePicker?dueDate:rule.endDate) ?? new Date()}
+          value={(showDuePicker?dueDate:endDate) ?? new Date()}
           onChange={(e, v) => {
             if (showDuePicker) {
               setShowDuePicker(false);
@@ -146,8 +169,8 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
           <Text style={styles.settingText}>Repeat</Text>
           <Picker
           style={{...styles.detailButton,width: 150, height:50}}
-            selectedValue={rule.type}
-            onValueChange={(v) => setRule({ ...rule, type: v })}
+            selectedValue={frequency}
+            onValueChange={(v) => setFrequency(v)}
           >
             <Picker.Item label="None" value="none" />
             <Picker.Item label="Daily" value="daily" />
@@ -158,12 +181,12 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
           </Picker>
         </View>
       {/* Weekly or custom days */}
-      {(rule.type === "weekly" || rule.type === "custom") && (
+      {(frequency === "weekly" || frequency === "custom") && (
         <View style={{...styles.detailRow, flexDirection:'column', borderBottomWidth:0}}>
           <Text style={styles.settingText}>Days of Week</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d, idx) => {
-              const selected = rule.days_of_week?.includes(idx);
+              const selected = byDay?.includes(idx);
               return (
                 <Pressable
                   key={idx}
@@ -185,21 +208,20 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
       )}
 
       {/* Interval */}
-      {(rule.type !== "none" && rule.type !== "daily") && (
+      {(frequency !== "none" && frequency !== "daily") && (
         <View style={{...styles.detailRow, borderBottomWidth:0}}>
-          <Text style={{color:colors.text}}>Every N {rule.type === "weekly" ? "weeks" : rule.type + "s"}</Text>
+          <Text style={{color:colors.text}}>Every N {frequency === "weekly" ? "weeks" : frequency + "s"}</Text>
           <TextInput
             keyboardType="numeric"
-            value={String(rule.interval ?? 1)}
-            onChangeText={(txt) =>
-              setRule({ ...rule, interval: Number(txt) || 1 })
+            value={String(interval ?? 1)}
+            onChangeText={(txt) => setInterval(Number(txt) || 1)
             }
             // style={{...styles.input, padding: 8, borderWidth: 1, borderRadius: 8 }}
             style={styles.input}
           />
         </View>
       )}
-      {(rule.type !== "none") && (
+      {(frequency !== "none") && (
         <View>
           <Text style={styles.settingText}>Ends:</Text>
 
@@ -208,7 +230,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
               onPress={() => setEndType("never")} 
               style={styles.radioRow}
             >
-              <View style={[styles.radioDot, rule.endType === "never" && styles.radioDotSelected]} />
+              <View style={[styles.radioDot, endType === "never" && styles.radioDotSelected]} />
               <Text style={{color: colors.text}}>Never</Text>
             </Pressable>
 
@@ -217,19 +239,19 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
               onPress={() => setEndType("on")} 
               style={styles.radioRow}
             >
-              <View style={[styles.radioDot, rule.endType === "on" && styles.radioDotSelected]} />
+              <View style={[styles.radioDot, endType === "on" && styles.radioDotSelected]} />
               <Text style={{color: colors.text, marginRight: 6}}>On</Text>
 
               <Pressable
-                disabled={rule.endType !== "on"}
+                disabled={endType !== "on"}
                 onPress={() => setShowEndPicker(true)}
                 style={[
                   styles.settingButton,
-                  rule.endType !== "on" && {opacity: 0.7}
+                  endType !== "on" && {opacity: 0.7}
                 ]}
               >
                 <Text>
-                  {rule.endDate ? rule.endDate.toDateString() : "Select Date"}
+                  {endDate ? endDate.toDateString() : "Select Date"}
                 </Text>
               </Pressable>
             </Pressable>
@@ -239,23 +261,31 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
               onPress={() => setEndType("after")} 
               style={styles.radioRow}
             >
-              <View style={[styles.radioDot, rule.endType === "after" && styles.radioDotSelected]} />
+              <View style={[styles.radioDot, endType === "after" && styles.radioDotSelected]} />
               <Text style={{color: colors.text}}>After </Text>
 
               <TextInput
                 keyboardType="numeric"
-                editable={rule.endType === "after"}
+                editable={endType === "after"}
                 style={[
                   styles.input,
                   {maxWidth: 50},
-                  rule.endType !== "after" && {opacity: 0.7}
+                  endType !== "after" && {opacity: 0.7}
                 ]}
                 value={occurrencesText}
                 onChangeText={(text) => {
                   setOccurrencesText(text);
+                  const num = parseInt(text,10);
+                  console.log('occurrences',num);
+                  if (!isNaN(num)) {
+                    setOccurrences(Math.max(1,num));
+                  } else {
+                    setOccurrences(1);
+                  }
                 }}
                 onBlur={() => {
                   const num = parseInt(occurrencesText,10);
+                  console.log('occurrences',num);
                   if (!isNaN(num)) {
                     setOccurrences(num);
                   } else {
@@ -276,11 +306,11 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
 
 
       {/* Catch-up Behavior */}
-      {rule.type !== "none" && (
+      {frequency !== "none" && (
         <View style={{...styles.detailRow}}>
           <Text style={{...styles.settingText, flex:1}}>Missed Task Behavior</Text>
-          <Pressable onPress={() => setRule({ ...rule, skipIfMissed: !rule.skipIfMissed})} style={styles.pressableButton}>
-            <Text style={styles.buttonText}>{rule.skipIfMissed?'Reschedule':'Persist'}</Text>
+          <Pressable onPress={() => setSkippedIfMissed(!skipIfMissed)} style={styles.pressableButton}>
+            <Text style={styles.buttonText}>{skipIfMissed?'Reschedule':'Persist'}</Text>
           </Pressable>
         </View>
       )}

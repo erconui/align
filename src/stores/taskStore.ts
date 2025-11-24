@@ -222,7 +222,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       // console.log('load tasks');
       const tasks = await storage.getTasks();
-      const filteredTasks = get().publicView?tasks.filter(t=>!t.private):tasks;
+      // console.log(tasks);
+      const filteredTasks = get().publicView?tasks.filter((t:TaskInstance)=>!t.private):tasks;
 
       const tree = get().getTree(filteredTasks);
       // console.log('Loaded filteredTasks:');

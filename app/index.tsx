@@ -382,7 +382,7 @@ export default function HomeScreen() {
               />
             )} />
             {!showCompleted && (tasks.length-remainingTasks.length>0)?
-              <Pressable onPress={() => {() => setShowCompleted(true); Keyboard.dismiss()}} style={{...styles.row}}>
+              <Pressable onPress={() => {setShowCompleted(true); Keyboard.dismiss()}} style={{...styles.row}}>
                 <Text style={{...styles.input,backgroundColor: colors.progressBackground, textAlign: 'center'}}>{tasks.length-remainingTasks.length} tasks completed</Text>
                 </Pressable>:null}
         </View>

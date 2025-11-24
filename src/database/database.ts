@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { AddTaskParams, AddTemplateParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, AddTemplateParams, RecurrenceRule, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 import { migrations } from './migrations';
 
 // Open database with async API
@@ -178,29 +178,56 @@ async function runMigrations() {
 // Database operations
 export const database = {
   // Get all root tasks (tasks without parents)
-  getRootTasks: async (): Promise<TaskInstance[]> => {
-    try {
-      const dbInstance = await db;
-      return await dbInstance.getAllAsync<TaskInstance>(
-        `SELECT *
-         FROM tasks
-         WHERE parent_id IS NULL
-         ORDER BY position ASC`
-      );
-    } catch (error) {
-      console.error('Error getting root tasks:', error);
-      throw error;
-    }
-  },
-
   getAllTasks: async (): Promise<TaskInstance[]> => {
     try {
       const dbInstance = await db;
-      return await dbInstance.getAllAsync<TaskInstance>(
-        `SELECT *
-         FROM tasks
+      const rows = await dbInstance.getAllAsync<any>(
+        `SELECT 
+          t.id, t.template_id, t.parent_id,
+          t.title, t.completed, t.completed_at,
+          t.due_date, t.created_at, t.updated_at,
+          t.position, t.expanded, t.private,
+          t.recurrence_rule_id,
+          rr.id            AS rr_id,
+          rr.frequency     AS rr_frequency,
+          rr.interval      AS rr_interval,
+          rr.by_day        AS rr_by_day,
+          rr.skip_if_missed AS rr_skip_if_missed,
+          rr.end_type      AS rr_end_type,
+          rr.end_date      AS rr_end_date,
+          rr.occurrences   AS rr_occurrences
+         FROM tasks t
+         LEFT JOIN recurrence_rules rr ON t.recurrence_rule_id = rr.id
          ORDER BY position ASC`
       );
+      // console.log(rows[0]);
+
+      return rows.map(row => ({
+        id: row.id,
+        template_id: row.template_id,
+        parent_id: row.parent_id,
+        title: row.title,
+        completed: row.completed,
+        completed_at: row.completed_at,
+        due_date: row.due_date,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        position: row.position,
+        expanded: row.expanded,
+        private: row.private,
+        recurrence_rule_id: row.rr_id,
+        recurrence: row.recurrence_rule_id? {
+          id: row.rr_id,
+          frequency: row.rr_frequency,
+          interval: row.rr_interval,
+          by_day: row.rr_by_day,
+          skip_if_missed: row.rr_skip_if_missed,
+          end_type: row.rr_end_type,
+          end_date: row.rr_end_date,
+          occurrences: row.rr_occurrences
+        } : null
+      }));
+
     } catch (error) {
       console.error('Error getting all tasks:', error);
       throw error;
@@ -329,6 +356,74 @@ export const database = {
       throw error;
     }
   },
+  updateRecurrenceRule: async (id: string | null, rule: RecurrenceRule): Promise<string | null> => {
+    try {
+      const dbInstance = await db;
+      const fields = [];
+      const values = [];
+      for (const [key, value] of Object.entries(rule)) {
+        if (key === "id") continue; // don't update primary key
+        if (value === undefined) continue; // skip unset fields
+        if (key === 'recurrence') {
+
+          continue;
+        }
+
+        fields.push(key);
+        if (key === "end_date" && value instanceof Date) {
+          values.push(value.toISOString());
+        } else {
+          values.push(value);
+        }
+      }
+
+      if (fields.length === 0) {
+        console.log("No changes to update");
+        return null;
+      }
+      if (id) {
+        const setters = fields.map(col => `${col} = ?`).join(", ");
+        console.log('setters', setters);
+        console.log(values);
+        await dbInstance.runAsync(
+          `UPDATE recurrence_rules SET ${setters} WHERE id = ?`,
+          [...values, id]
+        );
+        return id;
+      } else {
+        const newId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        const columnNames = fields.join(", ");
+        console.log('insert',columnNames);
+        console.log(values);
+        await dbInstance.runAsync(
+          `INSERT INTO recurrence_rules (${columnNames}, id)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [...values, newId]
+        );
+        return newId;
+      }
+    } catch (error) {
+      console.error('Error updating recurrence rule', error);
+      throw error;
+    }
+  },
+  deleteRecurrenceRule: async (id: string): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      await dbInstance.runAsync(`
+        DELETE
+          FROM recurrence_rules
+          WHERE id = ?
+      `, [id]);
+      await dbInstance.runAsync(
+        'Update tasks set recurrence_rule_id = NULL where recurrence_rule_id IS ?',
+        [id]
+      );
+    } catch (error) {
+      console.error("Error deleting recurrence rule", error);
+      throw error;
+    }
+  },
 
   // Update task title
   updateTask: async (task: TaskParams): Promise<void> => {
@@ -337,10 +432,20 @@ export const database = {
 
       const fields = [];
       const values = [];
+      if (task.recurrence) {
+        if (task.recurrence.frequency === 'none' && task.recurrence_rule_id) {
+          await database.deleteRecurrenceRule(task.recurrence_rule_id);
+          delete task.recurrence_rule_id;
+        } else {
+          const rule_id = await database.updateRecurrenceRule(task.recurrence_rule_id || null, task.recurrence);
+          task.recurrence_rule_id = rule_id;
+        }
+      } 
 
       // Iterate through all keys in the update object
       for (const [key, value] of Object.entries(task)) {
         if (key === "id") continue; // don't update primary key
+        if (key === "recurrence") continue; // don't update recurrence rule
         if (value === undefined) continue; // skip unset fields
 
         fields.push(`${key} = ?`);
@@ -361,7 +466,7 @@ export const database = {
         WHERE id = ?
       `;
 
-      await dbInstance.runAsync(sql, values);
+      await dbInstance.runAsync(sql, values as unknown as (string|number|boolean|null));
 
     } catch (error) {
       console.error("Error updating task:", error);
@@ -1071,7 +1176,7 @@ export const database = {
             completed,
             completed_at,
             due_date,
-            recurrence_rule,
+            recurrence_rule_id,
             position,
             created_at,
             updated_at
@@ -1086,7 +1191,7 @@ export const database = {
             task.completed ? 1 : 0,
             task.completed_at ?? null,
             task.due_date ?? null,
-            task.recurrence_rule ?? null,
+            task.recurrence_rule_id ?? null,
             task.position ?? 0,
             task.created_at ?? new Date().toISOString(),
             task.updated_at ?? new Date().toISOString(),

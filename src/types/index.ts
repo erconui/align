@@ -8,15 +8,26 @@ export interface TaskInstance {
   due_date: string | null;
   created_at: string | null;
   updated_at: string | null;
-  recurrence_rule: string | null;
   position: number;
   expanded: boolean;
   private: boolean;
+  recurrence_rule_id: string | null;
+  recurrence?   : RecurrenceRule | null;
 }
 export type TaskParams = 
   Partial<Omit<TaskInstance,'id'>> & 
   Pick<TaskInstance,'id'> & 
   { after_id?: string | null; };
+
+export interface RecurrenceRule {
+  frequency: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
+  interval?: number;
+  by_day?: number[];
+  skip_if_missed?: boolean;
+  end_type: "never" | "on" | "after";
+  end_date: string | null;
+  occurrences: number;
+}
 
 export interface TaskTemplate {
   id: string;
