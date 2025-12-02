@@ -70,6 +70,7 @@ interface TaskStore {
   setTaskView: (parentId: string | null) => Promise<void>;
   setTemplateView: (parentId: string | null) => Promise<void>;
   updateInteractiveMode: (gestures: boolean) => Promise<void>;
+  getParentChains: (targetId?: string) => string[] | null;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -222,7 +223,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     try {
       // console.log('load tasks');
       const tasks = await storage.getTasks();
-      // console.log(tasks);
+      // console.log(tasks);r
       const filteredTasks = get().publicView?tasks.filter((t:TaskInstance)=>!t.private):tasks;
 
       const tree = get().getTree(filteredTasks);
@@ -712,5 +713,38 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     } catch (error) {
       set({error: (error as Error).message});
     }
+  },
+  getParentChains(targetId?: string): string[] | null {
+    const templates = get().templateHierarchy.templates;
+    const template = templates.find(t => t.id === targetId);
+    if (!template) {
+      return null;
+    }
+    const relations = get().templateHierarchy.relations;
+
+    const results: string[] = [];
+
+    function dfs(node: string, path: string[]) {
+      const parents = relations.filter(r => r.child_id === node);
+
+      if ( parents.length === 0 || (parents.length > 1 && node !== targetId) ) {
+        // push a joined string (parent -> ... -> child)
+        results.push([...path].reverse().join("/"));
+        return;
+      }
+      for (const p of parents) {
+        if (p.parent_id) {
+          const template = templates.find(t => t.id === p.parent_id);
+          if (template) {
+            dfs(p.parent_id, [...path, template.title]);
+          }
+        } else {
+          results.push([...path].reverse().join("/"));
+        }
+      }
+    }
+
+    dfs(targetId!, []);
+    return results;
   }
 }));

@@ -1,3 +1,5 @@
+import ListDetail from '@/src/components/ListDetail';
+import { TaskTemplate } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -40,7 +42,8 @@ export default function TemplateScreen() {
     getSuggestionExclusionIds,
     setTemplateView,
     gestures,
-    templateViewId
+    templateViewId,
+    getParentChains
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -52,6 +55,7 @@ export default function TemplateScreen() {
   const [containerLayout, setContainerLayout] = useState<{y: number}>({y: 0});
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [parentIds, setparentIds] = useState<string[]>([]);
+  const [detailItem, setDetailItem] = useState<TaskTemplate | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -173,6 +177,13 @@ export default function TemplateScreen() {
   const registerRefs = (itemId: string, ref: View | null) => {
     // itemLayouts.current[itemId] = layout;
     itemRefs.current[itemId] = ref;
+  }
+
+  const openDetailView = (itemId: string) => {
+    const list = templateHierarchy.templates.find(t => t.id === itemId);
+    if (list) {
+      setDetailItem(list);
+    }
   }
   // Measure only the list container once
   const handleContainerLayout = (event: any) => {
@@ -327,6 +338,10 @@ export default function TemplateScreen() {
         }}
       />
 
+      {/* Detail View Modal */}
+      <ListDetail task={detailItem} instances={getParentChains(detailItem?.id)} onSave={() => console.log('save')} onClose={() => setDetailItem(null)}
+      />
+      
       {/* Templates List */}
       <View className="flex-1" onLayout={handleContainerLayout}>
         {tree.length === 0 ? (
@@ -338,7 +353,7 @@ export default function TemplateScreen() {
         ) : (
           <FlatList
             data={tree}
-            // keyboardShouldPersistTaps={true}
+            keyboardShouldPersistTaps={true}
             removeClippedSubviews={false}
             style={{marginBottom:containerLayout.y + keyboardHeight}}
             keyExtractor={item => item.id}
@@ -362,6 +377,7 @@ export default function TemplateScreen() {
                 registerRefs={registerRefs}
                 handleDrop={handleDrop}
                 minimalistView={gestures}
+                openDetailView={openDetailView}
               />
             )}
           />

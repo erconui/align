@@ -2,19 +2,6 @@ import { database, initDatabase } from '../database/database';
 import { AddTaskParams, AddTemplateParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 
 const nativeStorage = {
-  getRootTasks: async (): Promise<TaskInstance[]> => {
-    try {
-      let tasks = await database.getRootTasks();
-      tasks = tasks.map(task => ({
-        ...task,
-        completed: Boolean(task.completed) // or task.completed === 1
-      }));
-      return tasks;
-    } catch (error) {
-      console.error('Error getting tasks from SQLite:', error);
-      return [];
-    }
-  },
   getTasks: async (): Promise<TaskInstance[]> => {
     try {
       let tasks = await database.getAllTasks();

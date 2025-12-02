@@ -32,6 +32,7 @@ export interface RecurrenceRule {
 export interface TaskTemplate {
   id: string;
   title: string;
+  private: boolean;
   created_at: string;
   updated_at: string;
 }

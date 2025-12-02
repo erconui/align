@@ -8,8 +8,6 @@ import {
   Keyboard,
   Pressable,
   Text,
-  TextInput,
-  TouchableOpacity,
   View
 } from 'react-native';
 import { ProgressBar } from 'rn-inkpad';
@@ -274,7 +272,7 @@ export default function HomeScreen() {
         }, 100);
       }
   };
-  const remainingTasks = tasks.filter(t => !t.completed || isWithinTime(t.completed_at, {minutes:5}) );
+  const remainingTasks = tasks.filter(t => !t.completed || isWithinTime(t.completed_at, {minutes:0}) );
   const remainingSubTasks = flatTasks.filter(t => !t.completed && remainingTasks.some(task => task.id == t.parent_id)).length;
   const num_completed = tasks.length - tasks.filter(t=> !t.completed).length;
   const num_tasks_remaining = tasks.length - num_completed;
@@ -290,14 +288,14 @@ export default function HomeScreen() {
   return (
       <View style={{ flex: 1, backgroundColor: colors.background }} >
         {/* Header */}
-        <View style={{...styles.header, flexDirection:'row', alignItems:'center'}}>
+        <View style={{...styles.header, marginBottom:10, flexDirection:'row', alignItems:'center'}}>
           {taskViewId? <View style={{flexDirection: 'row', justifyContent:'center'}}>
             <Pressable onPress={() => {setTaskView(null); Keyboard.dismiss()}} style={{justifyContent:'center'}}>
               <Ionicons name="chevron-back" size={24} style={{...styles.headerText, marginBottom: 0, color: colors.buttonBorder, fontSize: 36}} /></Pressable>
             <Text style={{...styles.headerText, marginBottom: 0}}>{title}:  </Text></View>
             :null}
           <View style={{flex: 1,alignItems:'center'}}>
-          <Text style={{ color: colors.muted }}>
+          <Text style={{ color: colors.muted, paddingBottom: 10 }}>
             {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
           </Text>
           <ProgressBar value={percentage}
@@ -324,31 +322,6 @@ export default function HomeScreen() {
         {/* Detail View Modal */}
         <TaskDetail task={detailItem} onSave={updateTask} onClose={() => setDetailItem(null)}
         />
-
-        {/* Add Task Form */}
-        <View style={{ padding: 16, backgroundColor: colors.background, borderBottomColor: colors.border }}>
-          <View style={{ flexDirection: 'row' }}>
-            <TextInput
-              value={newTaskTitle}
-              onChangeText={setNewTaskTitle}
-              placeholder="Add a new task..."
-              placeholderTextColor={colors.muted}
-              onSubmitEditing={handleAddTask}
-              style={{ ...styles.input, flex: 1, borderTopRightRadius: 0, borderBottomRightRadius: 0, padding: 16, marginHorizontal: 0 }}
-            />
-            <TouchableOpacity
-              onPress={() => {handleAddTask(); Keyboard.dismiss()}}
-              // disabled={!newTaskTitle.trim()}
-              style={{ ...styles.pressableButton, borderTopRightRadius: 8, borderBottomRightRadius: 8 }}
-            >
-              <Ionicons name="add" size={20} color={colors.tint} paddingVertical={styles.pressableButton.paddingVertical} />
-            </TouchableOpacity>
-          </View>
-
-          {error && (
-            <Text style={{ color: '#ef4444', marginTop: 8, fontSize: 12 }}>{error}</Text>
-          )}
-        </View>
         <View className="flex-1" onLayout={handleContainerLayout}
             style={{marginBottom:containerLayout.y + keyboardHeight}}>
           <FlatList
@@ -383,7 +356,7 @@ export default function HomeScreen() {
             )} />
             {!showCompleted && (tasks.length-remainingTasks.length>0)?
               <Pressable onPress={() => {setShowCompleted(true); Keyboard.dismiss()}} style={{...styles.row}}>
-                <Text style={{...styles.input,backgroundColor: colors.progressBackground, textAlign: 'center'}}>{tasks.length-remainingTasks.length} tasks completed</Text>
+                <Text style={{...styles.input,backgroundColor: colors.progressBackground, textAlign: 'center'}}>Show {tasks.length-remainingTasks.length} tasks completed</Text>
                 </Pressable>:null}
         </View>
       </View>

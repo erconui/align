@@ -20,6 +20,7 @@ interface TemplateItemProps {
   onTextChange?: (text: string) => void;
   closeSuggestions: () => void;
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
+  openDetailView: (itemId: string) => void;
   registerRefs: (itemId: string, ref: View | null) => void;
   minimalistView: boolean;
 }
@@ -42,7 +43,8 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
                                                            closeSuggestions,
                                                            registerRefs,
                                                            handleDrop,
-                                                           minimalistView
+                                                           minimalistView,
+                                                           openDetailView
                                                           }) => {
   const { createTemplate } = useTaskStore();
 
@@ -75,6 +77,7 @@ export const TemplateItem: React.FC<TemplateItemProps> = ({
       handleDrop={handleDrop}
       registerRefs={registerRefs}
       minimalistView={minimalistView}
+      openDetailView={openDetailView}
     />
   );
 };

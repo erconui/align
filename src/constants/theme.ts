@@ -29,7 +29,7 @@ export const Colors = {
     text: '#eceeecff',
     background: '#0f120fff',
     popupBackground: '#374737ff',
-    progressBackground: '#37473743',
+    progressBackground: '#2d9a2d43',
     tint: tintColorDark,
     icon: '#9ba69dff',
     border: '#222425',

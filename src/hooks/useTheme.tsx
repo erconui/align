@@ -29,8 +29,8 @@ const createStyles = (colors: typeof Colors.light) => {
   return StyleSheet.create({
     header: {
       ...Platform.select({
-        android: { paddingTop: 40 },
-        ios: { paddingTop: 20 } // optional iOS specific padding
+        android: { paddingTop: 50 },
+        ios: { paddingTop: 50 } // optional iOS specific padding
       }),
       paddingHorizontal: 24,
       paddingVertical: 16,

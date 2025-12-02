@@ -14,11 +14,6 @@ interface BaseNode {
   relId?: string;
 }
 
-// interface TaskNode extends BaseNode {
-//   completed: boolean;
-//   completed_at: string | null;
-// }
-
 interface BaseItemProps<T extends BaseNode> {
   node: T;
   showCompletionToggle?: boolean;
@@ -62,13 +57,11 @@ export function BaseItem <T extends BaseNode>({
                                               minimalistView,
                                               openDetailView
                                              }: BaseItemProps<T>) {
-  const [expanded, setExpanded] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
   const itemRef = useRef<View>(null);
-const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
 
   useEffect(() => {
     setEditTitle(node.title);
@@ -145,7 +138,7 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
   const hasChildren = node.children && node.children.length > 0;
   const children = showCompleted?node.children: node.children?.filter(child => {
     if ('completed' in child) {
-      return !(child as TaskNode).completed || isWithinTime((child as TaskNode).completed_at, {minutes:5});
+      return !(child as TaskNode).completed || isWithinTime((child as TaskNode).completed_at, {minutes:0});
     } else {
       return true;
     }
@@ -186,6 +179,7 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
             <TextInput
               ref={textInputRef}
               style={[styles.input, isFocused&&{paddingRight:18}, minimalistView&&{marginRight: 10}]}
+              placeholder='new task...'
               
               autoFocus={focusedId === node.id}
               value={editTitle}
@@ -197,19 +191,17 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
               returnKeyType="done"
               submitBehavior='submit'
             />
-            {isFocused &&(
-            <Pressable onPress={() => openDetailView?openDetailView(node.id):null } style={{...styles.icon, padding:0, position: 'absolute', right:12, }}>
-              <Ionicons name="menu-outline" size={36} style={{...styles.icon}}/>
+
+            {isFocused && openDetailView && (
+            <Pressable onPress={() => openDetailView(node.id) } style={{...styles.icon, padding:0, position: 'absolute', right:12, }}>
+              <Ionicons name="calendar-outline" size={24} style={{...styles.icon}}/>
             </Pressable>)}
           </View>
+
           {/* </TouchableWithoutFeedback> */}
           {!minimalistView?(hasChildren? <Pressable onPress={() => generateList(node.id)} >
             <Ionicons name={isTask ? "list-outline" : "checkbox-outline"} size={18} style={{...styles.icon }} />
           </Pressable> : null):null}
-{/* 
-          <Pressable onPress={() => hasChildren ? generateList(node.id) : onAddSubItem("", node.id)} >
-            <Ionicons name={hasChildren ? isTask ? "list-outline" : "checkbox-outline" : "add-outline"} size={18} style={{ ...styles.icon }} />
-          </Pressable> */}
 
           {!minimalistView &&(
           <Pressable onPress={() => {onDelete(parentId || null, node.id); Keyboard.dismiss()}} >
@@ -246,7 +238,7 @@ const [selectedTask, setSelectedTask] = useState<TaskNode | null>(null);
           ))}
           {num_completed>0?
             <Pressable onPress={() => setShowCompleted(true)} style={{paddingLeft: 20+18+4+18+2, ...styles.row}}>
-              <Text style={{...styles.input,backgroundColor: colors.progressBackground}}>{num_completed} tasks completed</Text>
+              <Text style={{...styles.input,backgroundColor: colors.progressBackground}}>{num_completed} tasks completed. Show Completed Tasks</Text>
               </Pressable>:null}
         </View>
       ):null}

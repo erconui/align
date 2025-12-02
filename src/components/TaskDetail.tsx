@@ -44,7 +44,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
   const [showDuePicker, setShowDuePicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [frequency, setFrequency] = useState(task.recurrence?.frequency || 'none');
-  const [interval, setInterval] = useState<number>(task.recurrence?.interval || 0);
+  const [interval, setInterval] = useState<number>(task.recurrence?.interval || 1);
   const [endType, setEndType] = useState(task.recurrence?.end_type || 'never');
   const [endDate, setEndDate] = useState(task.recurrence?.end_date? new Date(task.recurrence?.end_date) : null);
   const [byDay, setByDay] = useState(task.recurrence?.by_day);
