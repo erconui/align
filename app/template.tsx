@@ -1,5 +1,5 @@
 import ListDetail from '@/src/components/ListDetail';
-import { TaskTemplate } from '@/src/types';
+import { TaskTemplate, TaskTemplateRelation } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -43,7 +43,8 @@ export default function TemplateScreen() {
     setTemplateView,
     gestures,
     templateViewId,
-    getParentChains
+    getParentChains,
+    updateList
   } = useTaskStore();
   const [newTemplateTitle, setNewTemplateTitle] = useState('');
   const [expandedTemplates, setExpandedTemplates] = useState<Set<string>>(new Set());
@@ -56,6 +57,7 @@ export default function TemplateScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [parentIds, setparentIds] = useState<string[]>([]);
   const [detailItem, setDetailItem] = useState<TaskTemplate | null>(null);
+  const [parent, setParent] = useState<TaskTemplate | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -105,7 +107,6 @@ export default function TemplateScreen() {
     setSuggestionsPosition(position);
     setSuggestionsItemId(itemId);
     setSuggestionsParentId(parentId || null);
-    setSuggestionsVisible(true);
     if (parentId) {
       setparentIds(getSuggestionExclusionIds(parentId, itemId));
     } else {
@@ -180,10 +181,17 @@ export default function TemplateScreen() {
   }
 
   const openDetailView = (itemId: string) => {
-    const list = templateHierarchy.templates.find(t => t.id === itemId);
+    const rel = templateHierarchy.relations.find(rel => rel.id === itemId);
+    const list = templateHierarchy.templates.find(t => rel?.child_id === t.id);
     if (list) {
       setDetailItem(list);
+      const parent = templateHierarchy.templates.find(t => t.id === rel?.parent_id)
+      setParent(parent || null);
     }
+  }
+  const setListDetailInfo = (rel: TaskTemplateRelation) => {
+    const template = templateHierarchy.templates.find(t => t.id == rel.child_id);
+    setDetailItem(template || null);
   }
   // Measure only the list container once
   const handleContainerLayout = (event: any) => {
@@ -339,7 +347,7 @@ export default function TemplateScreen() {
       />
 
       {/* Detail View Modal */}
-      <ListDetail task={detailItem} instances={getParentChains(detailItem?.id)} onSave={() => console.log('save')} onClose={() => setDetailItem(null)}
+      <ListDetail task={detailItem} parent={parent} instances={getParentChains(detailItem?.id)} onSave={updateList} onClose={() => setDetailItem(null)}
       />
       
       {/* Templates List */}

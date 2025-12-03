@@ -36,6 +36,16 @@ export interface TaskTemplate {
   created_at: string;
   updated_at: string;
 }
+export type ListParams = 
+  Partial<Omit<TaskTemplate,'id'>> & 
+  Pick<TaskTemplate,'id'> & 
+  { parent_id?: string | null;
+    after_id?: string | null;
+    position?: number | null;
+    expanded?: boolean;
+    rootLevel?: boolean;
+    unlink?: boolean;
+   };
 
 export interface TaskTemplateRelation {
   id: string;
@@ -59,7 +69,6 @@ export interface AddTemplateParams {
   template_id?: string | null;
   parent_id?: string | null;
   title: string;
-  completed: boolean;
   position?: number | null;
   after_id?: string | null;
   expanded?: boolean;

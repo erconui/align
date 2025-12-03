@@ -112,10 +112,11 @@ export default function HomeScreen() {
     setSuggestionsPosition(position);
     setSuggestionsItemId(itemId);
     setSuggestionsParentId(parentId || null);
-    setSuggestionsVisible(true);
+    // setSuggestionsVisible(true);
   };
 
   const handleTextChange = (text: string) => {
+    console.log('handle text change', text);
     setCurrentSearchText(text);
     setSuggestionsVisible(text.length > 0);
   };

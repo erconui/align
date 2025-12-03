@@ -26,9 +26,14 @@ export const GlobalSuggestions = ({
   const { colors, styles } = useTheme();
   // Filter suggestions based on search text
   const filteredSuggestions = useMemo(() =>
-    suggestions.filter(template =>
-      template.title.toLowerCase().includes(searchText.toLowerCase()) && !removeIds?.includes(template.id)
-    ),
+    suggestions.filter(template => {
+      const titleWords = template.title.toLowerCase().split(/\s+/);
+      const query = searchText.toLowerCase();
+
+      const matchesStart = titleWords.some(word => word.startsWith(query)) || template.title.toLocaleLowerCase().startsWith(query);
+
+      return matchesStart && !removeIds?.includes(template.id);
+    }),
     [suggestions, searchText, removeIds]
   );
   const duplicateTitles = useMemo(() => {

@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { AddTaskParams, AddTemplateParams, RecurrenceRule, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, AddTemplateParams, ListParams, RecurrenceRule, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 import { migrations } from './migrations';
 
 // Open database with async API
@@ -800,7 +800,7 @@ export const database = {
         throw new Error('Task not found');
       }
       // Create the template from task
-      const templateId = await database.createTemplate({ title: task.title, parent_id: parentInstanceId, completed: false, expanded: false });
+      const templateId = await database.createTemplate({ title: task.title, parent_id: parentInstanceId, expanded: false });
       // Recursively create templates from task children
       const childTasks = await dbInstance.getAllAsync<TaskInstance>('SELECT * FROM tasks WHERE parent_id = ?', [taskId]);
       for (const childTask of childTasks) {
@@ -1054,6 +1054,91 @@ export const database = {
       }
     } catch (error) {
       console.error('Error replacing template:', error);
+      throw error;
+    }
+  },
+  updateList: async (list: ListParams): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      if (list.rootLevel !== undefined) {
+        if (list.rootLevel) {
+          const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          const result = await dbInstance.getFirstAsync<{ position: number }>(
+            'SELECT COALESCE(MAX(position) + 1, 0) as position FROM template_relations WHERE parent_id IS ?',
+            [null]);
+          let position = result?.position ?? 0;
+          await dbInstance.runAsync(
+            'INSERT INTO template_relations (id, parent_id, child_id, position, expanded) VALUES (?, ?, ?, ?, ?)',
+            [relId, null, list.id, position, false]
+          );
+        } else {
+          database.removeTemplate(null, list.id);
+        }
+        delete list['rootLevel'];
+      }
+
+      if (list.unlink !== undefined) {
+        const rel = await dbInstance.getFirstAsync<TaskTemplateRelation>(
+        'SELECT * FROM template_relations WHERE child_id = ? AND parent_id IS ?',[list.id, list.parent_id||null]
+        );
+        const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+        await dbInstance.runAsync(
+          `INSERT INTO templates (id, title) 
+          SELECT  ?, title FROM templates WHERE id = ?`,
+          [id, list.id]
+        );
+        await dbInstance.runAsync(
+          'UPDATE template_relations SET child_id = ? WHERE id IS ?',
+          [id, rel!.id]
+        );
+        const relations = await dbInstance.getAllAsync<TaskTemplateRelation>(
+        'SELECT * FROM template_relations WHERE parent_id IS ?',[list.id]
+        );
+        relations.forEach(async relation => {
+          console.log('rel', relation);
+          const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+          await dbInstance.runAsync(`
+            INSERT INTO template_relations (
+              id, parent_id, child_id, position, expanded, created_at, updated_at)
+              SELECT ?, ?, child_id, position, expanded, created_at, updated_at
+              FROM template_relations WHERE id = ?`,
+            [relId, id, relation.id]);
+        });
+        delete list['unlink'];
+      }
+      delete list['parent_id'];
+
+      const fields = [];
+      const values = [];
+      // Iterate through all keys in the update object
+      for (const [key, value] of Object.entries(list)) {
+        if (key === "id") continue; // don't update primary key
+        if (key === "recurrence") continue; // don't update recurrence rule
+        if (value === undefined) continue; // skip unset fields
+
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+
+      if (fields.length === 0) {
+        console.log("No changes to update");
+        return;
+      }
+
+      // Add id for WHERE clause
+      values.push(list.id);
+
+      const sql = `
+        UPDATE templates
+        SET ${fields.join(", ")}
+        WHERE id = ?
+      `;
+      console.log(sql);
+      console.log(values);
+
+      await dbInstance.runAsync(sql, values as unknown as (string|number|boolean|null));
+    } catch (error) {
+      console.error('Error updating template:', error);
       throw error;
     }
   },

@@ -1,5 +1,5 @@
 import { database, initDatabase } from '../database/database';
-import { AddTaskParams, AddTemplateParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, AddTemplateParams, ListParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 
 const nativeStorage = {
   getTasks: async (): Promise<TaskInstance[]> => {
@@ -45,8 +45,13 @@ const nativeStorage = {
 
   getTemplateHierarchy: async (): Promise<{ templates: TaskTemplate[], relations: TaskTemplateRelation[] }> => {
     const hierarchy = await database.getTemplateHierarchy();
+    let templates = hierarchy.templates.map(template => ({
+      ...template,
+      private: Boolean(template.private)
+    }));
+
     return {
-      templates: hierarchy.templates,
+      templates: templates,
       relations: hierarchy.relations.map(rel => ({ ...rel, expanded: Boolean(rel.expanded) }))
     };
   },
@@ -153,6 +158,9 @@ const nativeStorage = {
       throw error;
     }
   },
+  updateList: async (list: ListParams) => {
+    await database.updateList(list);
+  }
 };
 
 export const initStorage = async (): Promise<void> => {

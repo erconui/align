@@ -79,16 +79,24 @@ export function BaseItem <T extends BaseNode>({
     } else if (showCompleted) {
       setTimeout(() => {
         setShowCompleted(false);
-        
       }, 10*1000);
     }
   }, [showCompleted, node.expanded]);
-
   useEffect(() => {
     if (focusedId === node.id && textInputRef.current) {
       textInputRef.current.focus();
     }
   }, [focusedId, node.id]);
+  useEffect(() => {
+    if (onInputMeasure && textInputRef.current) {
+      textInputRef.current.measure((x, y, width, height, pageX, pageY) => {
+        onInputMeasure({ x: pageX, y: pageY + height, width }, node.id, parentId || null);
+      });
+    }
+    // if (isFocused && onTextChange) {
+    //   onTextChange(node.title);
+    // }
+  }, [isFocused]);
 
   useEffect(() => {
     const id = isTask?node.id:node.relId!;
@@ -193,7 +201,7 @@ export function BaseItem <T extends BaseNode>({
             />
 
             {isFocused && openDetailView && (
-            <Pressable onPress={() => openDetailView(node.id) } style={{...styles.icon, padding:0, position: 'absolute', right:12, }}>
+            <Pressable onPress={() => openDetailView(node.relId?node.relId:node.id) } style={{...styles.icon, padding:0, position: 'absolute', right:12, }}>
               <Ionicons name="calendar-outline" size={24} style={{...styles.icon}}/>
             </Pressable>)}
           </View>

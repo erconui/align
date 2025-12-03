@@ -3,46 +3,55 @@ import React, { useState } from "react";
 import { FlatList, Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 import { useTheme } from "../hooks/useTheme";
 
-import type { TaskParams, TaskTemplate } from "../types";
+import type { ListParams, TaskTemplate } from "../types";
 
 interface Props {
   task: TaskTemplate | null;
+  parent: TaskTemplate | null;
   instances: string[] | null;
-  onSave: (updated: TaskParams) => void;
+  onSave: (updated: ListParams) => void;
   onClose: () => void;
 }
 
-export default function ListDetail({ task, instances, onSave, onClose }: Props) {
+export default function ListDetail({ task, parent, instances, onSave, onClose }: Props) {
   if (!task) {
     return '';
   }
   // Basic fields
   const [title, setTitle] = useState(task.title);
   const [privateList, setPrivateList] = useState(task.private);
-  const [rootLevel, setRootLevel] = useState(false);
+  const isRoot = parent?false:true;
+  const hasRoot = instances?.includes("");
+  const [rootLevel, setRootLevel] = useState(hasRoot || isRoot);
+  const [ unlink, setUnlink ] = useState(false);
   const { colors, styles, toggleTheme, theme } = useTheme();
-  console.log(instances);
+  const parents = instances?.filter(i => i !== "" && (parent?!i.endsWith(parent?.title):true));
+  if (hasRoot && parent) {
+    parents?.unshift("Root");
+  }
+  const rootRemovable = parents?parents.length > 0:false;
+  const canUnlink = instances?instances.length > 1:false;
+  console.log('test', instances);
 
   const save = () => {
-    // console.log('save rule',rule);
-    // const updated: TaskParams = {
-    //   id: task.id,
-    //   template_id: task.template_id,
-    //   parent_id: task.parent_id,
-    //   title:title,
-    //   completed: task.completed,
-    //   completed_at: task.completed_at,
-    //   due_date: dueDate ? dueDate.toISOString() : null,
-    //   created_at: task.created_at,
-    //   updated_at: new Date().toISOString(),
-    //   recurrence_rule_id: task.recurrence_rule_id,
-    //   recurrence: rule,
-    //   position: task.position,
-    //   expanded: task.expanded,
-    //   private: privateList,
-    // };
+    const updated: ListParams = {
+      id: task.id,
+      title:title,
+      updated_at: new Date().toISOString(),
+      private: privateList,
+      parent_id: parent?.id || null
+    };
+    console.log(isRoot, hasRoot, rootLevel, rootRemovable);
+    if ((!rootLevel && rootRemovable) || ( rootLevel && !isRoot && !hasRoot )) {
+      updated.rootLevel = rootLevel;
+    }
+    if (canUnlink && unlink) {
+      updated.unlink = unlink;
+    }
 
-    // onSave(updated);
+    console.log(updated);
+
+    onSave(updated);
     onClose();
   };
 
@@ -65,6 +74,10 @@ export default function ListDetail({ task, instances, onSave, onClose }: Props) 
           // style={{ padding: 8, borderWidth: 1, borderRadius: 8 }}
         />
       </View>
+      <View style={styles.settingsRow}>
+        <Text style={styles.settingText}>Parent</Text>
+        <Text style={{...styles.settingText, textAlign:'right'}}>{parent?parent.title:"Root"}</Text>
+      </View>
 
       {/* Private */}
       <View style={styles.settingsRow}>
@@ -72,25 +85,20 @@ export default function ListDetail({ task, instances, onSave, onClose }: Props) 
         <Switch value={privateList} onValueChange={setPrivateList} />
       </View>
       
-      <View style={styles.settingsRow}>
+      { (!hasRoot || rootRemovable) && (<View style={styles.settingsRow}>
         <Text style={styles.settingText}>Root level</Text>
         <Switch value={rootLevel} onValueChange={setRootLevel} />
-      </View>
+      </View>)}
 
-      { instances?(
+      { parents && parents.length > 0?(
         <View style={{flex: 1}}>
           <View style={{...styles.settingsRow, borderBottomWidth:0}}>
-            <Text style={styles.settingText}>Instances of list</Text>
-            <Switch value={privateList} onValueChange={setPrivateList} />
-            <Pressable onPress={() => console.log('unlink')} style={styles.settingButton}>
-              <Text>
-                Unlink
-              </Text>
-            </Pressable>
+            <Text style={styles.settingText}>Unlink from other instances</Text>
+            <Switch value={unlink} onValueChange={setUnlink} />
           </View>
 
           <FlatList
-            data={instances}
+            data={parents}
             style={{ flex: 1 }}
             contentContainerStyle={{ paddingVertical: 10 }}
             keyExtractor={(item, index) => index.toString()}

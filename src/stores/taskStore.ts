@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { initStorage, storage } from '../storage/storage';
-import { AddTaskParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
+import { AddTaskParams, ListParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
 
 export type TaskNode = TaskInstance & { children: TaskNode[] };
 export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
@@ -71,6 +71,7 @@ interface TaskStore {
   setTemplateView: (parentId: string | null) => Promise<void>;
   updateInteractiveMode: (gestures: boolean) => Promise<void>;
   getParentChains: (targetId?: string) => string[] | null;
+  updateList: (list: ListParams) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -603,6 +604,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   loadTemplates: async () => {
     try {
       const hierarchy = await storage.getTemplateHierarchy();
+      const filteredTemplates = get().publicView?hierarchy.templates.filter((t:TaskTemplate)=>!t.private):hierarchy.templates;
+      hierarchy.templates = filteredTemplates;
       const newTree = get().buildTemplateTree(hierarchy.templates, hierarchy.relations);
       set({
         tree: newTree,
@@ -746,5 +749,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     dfs(targetId!, []);
     return results;
+  },
+  updateList: async (list: ListParams) => {
+    try {
+      await storage.updateList(list);
+      await get().loadTemplates();
+    } catch (error) {
+      set({error: (error as Error).message});
+    }
   }
 }));
