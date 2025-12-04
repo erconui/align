@@ -1,18 +1,22 @@
 import TaskDetail from '@/src/components/TaskDetail';
 import { TaskInstance } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Button,
   FlatList,
   Keyboard,
   Pressable,
+  Switch,
   Text,
   View
 } from 'react-native';
 import { ProgressBar } from 'rn-inkpad';
 import { GlobalSuggestions } from '../src/components/GlobalSuggestions';
 import { TaskItem } from '../src/components/TaskItem';
+import TaskSettings from '../src/components/TaskSettings';
 import { useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
@@ -41,7 +45,11 @@ export default function HomeScreen() {
     setTaskView,
     taskViewId,
     gestures,
-    updateTask
+    updateTask,
+    mode,
+    setMode,
+    publicView,
+    updatePrivacy
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -55,6 +63,7 @@ export default function HomeScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [extraData, setExtraData] = useState(false);
   const [detailItem, setDetailItem] = useState<TaskInstance | null>(null);
+  const drawerRef = useRef(null);
 
   useEffect(() => {
     setSuggestionsVisible(false);
@@ -296,18 +305,53 @@ export default function HomeScreen() {
             <Text style={{...styles.headerText, marginBottom: 0}}>{title}:  </Text></View>
             :null}
           <View style={{flex: 1,alignItems:'center'}}>
-          <Text style={{ color: colors.muted, paddingBottom: 10 }}>
-            {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
-          </Text>
-          <ProgressBar value={percentage}
-            progressColor={colors.highlight}
-            backgroundColor={colors.button}
-            textColor={percentage > 45 ? colors.text : colors.muted}
-            rounded
-            showPercent /></View>
+            <Text style={{ color: colors.muted, paddingBottom: 10 }}>
+              {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
+            </Text>
+            <ProgressBar value={percentage}
+              progressColor={colors.highlight}
+              backgroundColor={colors.button}
+              textColor={percentage > 45 ? colors.text : colors.muted}
+              rounded
+              showPercent />
+          </View>
+          <Pressable onPress={() => {drawerRef.current.open(); Keyboard.dismiss()}} style={{justifyContent:'center'}}>
+            <Ionicons name="ellipsis-horizontal-outline" size={24} style={{...styles.headerText, marginBottom: 0, color: colors.buttonBorder, fontSize: 24, paddingBottom:20, paddingLeft:20}} />
+          </Pressable>
         </View>
 
-        {/* Global Suggestions */}
+        <TaskSettings ref={drawerRef}>
+          <View style={{ flex: 1, padding: 20 }}>
+            <Text style={{ fontSize: 20, marginBottom: 20 }}>Settings</Text>
+            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
+              <Text>Show completed tasks</Text>
+              <Switch value={showCompleted} onValueChange={setShowCompleted} />
+            </View>
+            <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
+              <Text>Show private</Text>
+              <Switch value={!publicView} onValueChange={(value) => updatePrivacy(!value)} />
+            </View>
+            <View style={{flexDirection:'row', justifyContent:'space-between',alignItems:'center' }}>
+              <Text>Mode</Text>
+              <Picker
+                selectedValue={mode}
+                onValueChange={(itemValue, itemIndex) => setMode(itemValue)}
+                style={{width:150}}
+
+                >
+                <Picker.Item label="single" value="single" />
+                <Picker.Item label='agenda' value='agenda' />
+                <Picker.Item label='current' value='current' />
+                <Picker.Item label='backlog' value='backlog' />
+                <Picker.Item label='all' value='all' />
+              </Picker>
+            </View>
+
+            <Button title="Close" onPress={() => drawerRef.current.close()} />
+          </View>
+        </TaskSettings>
+
+          {/* Global Suggestions */}
         <GlobalSuggestions
           suggestions={suggestions}
           position={suggestionsPosition}
@@ -355,10 +399,6 @@ export default function HomeScreen() {
                 openDetailView={openDetailView}
               />
             )} />
-            {!showCompleted && (tasks.length-remainingTasks.length>0)?
-              <Pressable onPress={() => {setShowCompleted(true); Keyboard.dismiss()}} style={{...styles.row}}>
-                <Text style={{...styles.input,backgroundColor: colors.progressBackground, textAlign: 'center'}}>Show {tasks.length-remainingTasks.length} tasks completed</Text>
-                </Pressable>:null}
         </View>
       </View>
   );

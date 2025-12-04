@@ -21,10 +21,12 @@ interface TaskStore {
   taskViewId: string|null;
   templateViewId: string|null;
   gestures: boolean;
+  mode: 'single'|'agenda'|'current'|'backlog'|'all';
 
   // Actions
   init: () => Promise<void>;
   initDB: () => Promise<void>;
+  setMode: (mode: string) => Promise<void>;
   loadTasks: () => Promise<void>;
   updateTask: (task: TaskParams) => Promise<void>;
   getTree: (tasks: TaskInstance[]) => TaskNode[];
@@ -72,6 +74,7 @@ interface TaskStore {
   updateInteractiveMode: (gestures: boolean) => Promise<void>;
   getParentChains: (targetId?: string) => string[] | null;
   updateList: (list: ListParams) => Promise<void>;
+  getFirstUncompletedTask: (tree: TaskNode[]) => TaskNode[];
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -89,7 +92,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   taskViewId: null,
   templateViewId: null,
   gestures:false,
+  mode:'current',
 
+  setMode: async (mode: string) => {
+    set({mode: mode});
+    console.log('mode set to ', get().mode);
+    await get().loadTasks();
+  },
   setTaskView: async (id: string | null) => {
     set({taskViewId: id});
     await get().loadTasks();
@@ -220,14 +229,44 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ isLoading: false });
     }
   },
+  getFirstUncompletedTask: (tree: TaskNode[]) => {
+    console.log('recursive', tree);
+    let firstUncompletedTask: TaskNode | null = null;
+    for (const node of tree) {
+      if (!node.completed) {
+        firstUncompletedTask = node;
+        break;
+      }
+    }
+    if (firstUncompletedTask?.children.length > 0) {
+      console.log('children');
+      return get().getFirstUncompletedTask(firstUncompletedTask.children);
+    } else if (firstUncompletedTask) {
+      console.log('found uncompleted task', firstUncompletedTask);
+      return firstUncompletedTask;
+    } else {
+      console.log('no options');
+      return [];
+    }
+  },
   loadTasks: async () => {
     try {
       // console.log('load tasks');
       const tasks = await storage.getTasks();
       // console.log(tasks);r
-      const filteredTasks = get().publicView?tasks.filter((t:TaskInstance)=>!t.private):tasks;
+      let filteredTasks = get().publicView?tasks.filter((t:TaskInstance)=>!t.private):tasks;
 
-      const tree = get().getTree(filteredTasks);
+      let tree = get().getTree(filteredTasks);
+      console.log('update task: ', get().mode, get().mode === 'single');
+      if (get().mode === 'single') {
+        let node = get().getFirstUncompletedTask(tree);
+
+        console.log('filter for single', node);
+        tree = [node];
+        console.log('filtered tree',tree);
+        filteredTasks = tasks.filter((t:TaskInstance)=>t.id === tree[0].id);
+        console.log('filtered tasks',filteredTasks);
+      }
       // console.log('Loaded filteredTasks:');
       // for (const t of tree) {
       //   console.log(t);
@@ -382,7 +421,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   toggleTask: async (id: string) => {
     try {
-      const task = get().flatTasks.find(t => t.id === id);
+      const tasks = await storage.getTasks();
+      const task = tasks.find(t => t.id === id);
       if (!task) return;
 
       await storage.toggleTask(id, !task.completed);
@@ -394,7 +434,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   recursiveUpdateChildren: async (id: string, completed: boolean) => {
-    const subtasks = get().flatTasks.filter((task) => task.parent_id === id);
+      const tasks = await storage.getTasks();
+    const subtasks = tasks.filter((task) => task.parent_id === id);
     for (const subtask of subtasks) {
       if (subtask.completed !== completed) {
         await storage.toggleTask(subtask.id, completed);
@@ -403,15 +444,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   recursiveUpdateParents: async (id: string | null, completed: boolean) => {
-    const task = get().flatTasks.find(t => t.id === id);
+      const tasks = await storage.getTasks();
+    const task = tasks.find(t => t.id === id);
     if (!task) return;
-    const parent = get().flatTasks.find((t) => t.id === task.parent_id);
+    const parent = tasks.find((t) => t.id === task.parent_id);
     if (!parent) return;
     if (parent.completed === completed) return; // if the parent already matches the state of the current task, exit
 
     let updateParent = true;
     if (completed) { // to check off parent, all siblings must be checked off as well
-      const siblings = await get().flatTasks.filter((t) => t.parent_id === task.parent_id && t.id !== task.id);
+      const siblings = tasks.filter((t) => t.parent_id === task.parent_id && t.id !== task.id);
 
       siblings.forEach((sibling) => {
         // If there are any siblings that do not match the updated completed state then don't change the parent

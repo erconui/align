@@ -8,7 +8,8 @@ const nativeStorage = {
       tasks = tasks.map(task => ({
         ...task,
         completed: Boolean(task.completed), // or task.completed === 1
-        private: Boolean(task.private)
+        private: Boolean(task.private),
+        backlog: Boolean(task.backlog)
       }));
       return tasks;
     } catch (error) {

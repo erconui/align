@@ -11,6 +11,8 @@ export interface TaskInstance {
   position: number;
   expanded: boolean;
   private: boolean;
+  backlog: boolean;
+  labels: string
   recurrence_rule_id: string | null;
   recurrence?   : RecurrenceRule | null;
 }
