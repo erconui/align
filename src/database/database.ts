@@ -299,8 +299,8 @@ export const database = {
       }
       if (id) {
         const setters = fields.map(col => `${col} = ?`).join(", ");
-        console.log('setters', setters);
-        console.log(values);
+        // console.log('setters', setters);
+        // console.log(values);
         await dbInstance.runAsync(
           `UPDATE recurrence_rules SET ${setters} WHERE id = ?`,
           [...values, id]
@@ -309,8 +309,8 @@ export const database = {
       } else {
         const newId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         const columnNames = fields.join(", ");
-        console.log('insert',columnNames);
-        console.log(values);
+        // console.log('insert',columnNames);
+        // console.log(values);
         await dbInstance.runAsync(
           `INSERT INTO recurrence_rules (${columnNames}, id)
           VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -383,13 +383,48 @@ export const database = {
       `;
 
       await dbInstance.runAsync(sql, values as unknown as (string|number|boolean|null));
+      console.log('update backlog recursion');
+      if (task.backlog !== undefined) {
+      console.log('update backlog recursion2');
+        const ids = await database.getAllDescendantIds(task.id);
+        console.log('ids', ids);
+        if (ids.length !== 0) {
+
+        // step 2: build placeholders (?, ?, ?, ...)
+        const placeholders = ids.map(() => "?").join(", ");
+
+        const sql = `UPDATE tasks SET backlog = ? WHERE id IN (${placeholders})`;
+
+        await dbInstance.runAsync(sql, [task.backlog ? 1 : 0, ...ids]);
+        }
+      }
 
     } catch (error) {
       console.error("Error updating task:", error);
       throw error;
     }
   },
+  getAllDescendantIds: async (parentId: string) => {
+    console.log('test');
+    const all: string[] = [];
+    const dbInstance = await db;
 
+    async function traverse(id: string) {
+      const rows = await dbInstance.getAllAsync<string>(
+        `SELECT id FROM tasks WHERE parent_id = ?`,
+        [id]
+      );
+      console.log('rows',rows);
+
+      for (const row of rows) {
+        all.push(row.id);
+        await traverse(row.id);
+      }
+    }
+
+    await traverse(parentId);
+    return all;
+  },
   moveTask: async (id: string, targetId: string, levelsOffset: number): Promise<void> => {
     try {
       const dbInstance = await db;
@@ -1011,7 +1046,7 @@ export const database = {
         'SELECT * FROM template_relations WHERE parent_id IS ?',[list.id]
         );
         relations.forEach(async relation => {
-          console.log('rel', relation);
+          // console.log('rel', relation);
           const relId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
           await dbInstance.runAsync(`
             INSERT INTO template_relations (
@@ -1049,8 +1084,8 @@ export const database = {
         SET ${fields.join(", ")}
         WHERE id = ?
       `;
-      console.log(sql);
-      console.log(values);
+      // console.log(sql);
+      // console.log(values);
 
       await dbInstance.runAsync(sql, values as unknown as (string|number|boolean|null));
     } catch (error) {

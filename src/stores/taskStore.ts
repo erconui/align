@@ -245,7 +245,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     }
   },
   getFirstUncompletedTask: (tree: TaskNode[]) => {
-    console.log('recursive', tree);
+    // console.log('recursive', tree);
     let firstUncompletedTask: TaskNode | null = null;
     for (const node of tree) {
       if (!node.completed) {
@@ -254,13 +254,13 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
     }
     if (firstUncompletedTask?.children.length || 0 > 0) {
-      console.log('children');
+      // console.log('children');
       return get().getFirstUncompletedTask(firstUncompletedTask!.children);
     } else if (firstUncompletedTask) {
-      console.log('found uncompleted task', firstUncompletedTask);
+      // console.log('found uncompleted task', firstUncompletedTask);
       return firstUncompletedTask;
     } else {
-      console.log('no options');
+      // console.log('no options');
       return null;
     }
   },
@@ -280,16 +280,16 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ percentage: get().calculatePercentage(tree) * 100 });
       get().calculateNumberTasksLeft(tree);
       let dateTree : DateTask[] = [];
-      console.log('update task: ', get().mode, get().mode === 'single');
+      // console.log('update task: ', get().mode, get().mode === 'single');
       if (get().mode === 'single') {
         let node = get().getFirstUncompletedTask(tree);
 
-        console.log('filter for single', node);
+        // console.log('filter for single', node);
         if (node) {
           tree = [node];
-          console.log('filtered tree',tree);
+          // console.log('filtered tree',tree);
           filteredTasks = tasks.filter((t:TaskInstance)=>t.id === node.id);
-          console.log('filtered tasks',filteredTasks);
+          // console.log('filtered tasks',filteredTasks);
         } else {
           tree = [];
         }
@@ -297,7 +297,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       if (get().mode === 'agenda') {
         tree = get().getTreeByDate(filteredTasks);
         dateTree = get().insertDateHeaders(tree);
-        console.log(dateTree);
+        // console.log(dateTree);
       } else {
         tree.forEach(task => {
           dateTree.push({type: 'task', data: task});
