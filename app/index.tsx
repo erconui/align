@@ -1,5 +1,5 @@
 import TaskDetail from '@/src/components/TaskDetail';
-import { TaskInstance } from '@/src/types';
+import { TaskInstance, TaskNode } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useRef, useState } from 'react';
@@ -48,7 +48,8 @@ export default function HomeScreen() {
     mode,
     setMode,
     publicView,
-    updatePrivacy
+    updatePrivacy,
+    num_tasks_remaining
   } = useTaskStore();
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -70,6 +71,8 @@ export default function HomeScreen() {
     // scrollToFocusedItem();
   }, [focusedId]);
   useEffect(() => {
+    // Force re-render when showCompleted changes
+    setExtraData(prev => !prev);
     if (showCompleted) {
       setTimeout(() => {
         setShowCompleted(false);
@@ -173,29 +176,40 @@ export default function HomeScreen() {
   // Core function: Calculate all positions from tree data
   const calculateTreePositions = () => {
     const positions: Record<string, { x: number; y: number; width: number; height: number }> = {};
-    let currentY = containerLayout.y;// + HEADER_HEIGHT;
+    let currentY = containerLayout.y;
+    const HEADER_HEIGHT = 37.33; // Approximate header height
 
-    const traverse = (nodes: any[], depth: number = 0) => {
-      nodes.forEach(node => {
-        // Calculate position for this node
-        positions[node.id] = {
-          x: depth * INDENTATION_WIDTH,
-          y: currentY,
-          width: 400 - (depth * INDENTATION_WIDTH), // Adjust based on your screen
-          height: ITEM_HEIGHT
-        };
-        
-        currentY += ITEM_HEIGHT;
-        
-        // Recursively traverse children if expanded
-        if (node.expanded && node.children && node.children.length > 0) {
-          traverse(node.children, depth + 1);
-        }
-      });
+    const traverse = (node: TaskNode, depth: number = 0) => {
+      // Calculate position for this node
+      positions[node.id] = {
+        x: depth * INDENTATION_WIDTH,
+        y: currentY,
+        width: 400 - (depth * INDENTATION_WIDTH), // Adjust based on your screen
+        height: ITEM_HEIGHT
+      };
+      currentY += ITEM_HEIGHT;
+      
+      // Recursively traverse children if expanded
+      if (node.expanded && node.children && node.children.length > 0) {
+        node.children.forEach(child => {
+          traverse(child, depth + 1);
+        });
+      }
     };
 
-    // Start with root nodes (no parentId)
-    traverse(tasks);
+    // Traverse through DateTask array - headers and tasks both affect Y position
+    tasks.forEach(item => {
+      if (item.type === 'header') {
+        // Headers take up space too
+        currentY += HEADER_HEIGHT;
+      } else if (item.type === 'task') {
+        const taskNode = item.data as TaskNode;
+        // Only calculate positions for root-level tasks (matching taskViewId filter)
+        if ((taskNode.parent_id === taskViewId) || (!taskNode.parent_id && !taskViewId)) {
+          traverse(taskNode, 0);
+        }
+      }
+    });
     
     return positions;
   };
@@ -260,37 +274,7 @@ export default function HomeScreen() {
 
     return now - date <= totalMs;
   };
-  const scrollToFocusedItem = () => {
-    if (!focusedId || !flatListRef.current) return;
-    
-    // Find the index of the focused item in your data array
-    const dataToUse = showCompleted ? tasks : remainingTasks;
-    const focusedIndex = dataToUse.findIndex(item => item.id === focusedId);
-    
-    if (focusedIndex !== -1) {
-      // Scroll to the focused item with a small delay to ensure it's rendered
-      setTimeout(() => {
-        if (flatListRef){
-          flatListRef.current?.scrollToIndex({
-            index: focusedIndex,
-            animated: true,
-            viewPosition: 0.5, // Center the item in the view
-            viewOffset: 50, // Add some offset from top/bottom
-          });
-        }
-        }, 100);
-      }
-  };
-  const remainingTasks = tasks.filter(t => !t.completed || isWithinTime(t.completed_at, {minutes:0}) );
-  const remainingSubTasks = flatTasks.filter(t => !t.completed && remainingTasks.some(task => task.id == t.parent_id)).length;
-  const num_completed = tasks.length - tasks.filter(t=> !t.completed).length;
-  const num_tasks_remaining = tasks.length - num_completed;
-  const getTitle = () => {
-    if (taskViewId) {
-        return (<Text style={{ color: colors.muted, marginTop: 4 }}> {taskViewId?flatTasks.find(t=>t.id===taskViewId)?.title:null}
-        </Text>);
-    } 
-  };
+
   const title = taskViewId?flatTasks.find(t=>t.id===taskViewId)?.title:null;
 
 
@@ -305,7 +289,7 @@ export default function HomeScreen() {
             :null}
           <View style={{flex: 1,alignItems:'center'}}>
             <Text style={{ color: colors.muted, paddingBottom: 10 }}>
-              {num_tasks_remaining} {num_tasks_remaining === 1 ? 'task' : 'tasks'} and {remainingSubTasks} {remainingSubTasks === 1 ? 'subtask' : 'subtasks'} remaining
+              {num_tasks_remaining[0]} {num_tasks_remaining[0] === 1 ? 'task' : 'tasks'} and {num_tasks_remaining[1]}{num_tasks_remaining[1] === 1 ? 'subtask' : 'subtasks'} remaining
             </Text>
             <ProgressBar value={percentage}
               progressColor={colors.highlight}
@@ -369,34 +353,106 @@ export default function HomeScreen() {
           <FlatList
             ref={flatListRef}
             keyboardShouldPersistTaps='handled'
-            data={showCompleted?tasks:remainingTasks}
-                removeClippedSubviews={false}
-                // extraData={extraData} -- this doesn't work
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <TaskItem
-                key={item.id}
-                taskNode={item}
-                toggleTask={toggleTask}
-                deleteTask={deleteTask}
-                addSubTask={addSubTask}
-                addTaskAfter={addTaskAfter}
-                updateTaskTitle={updateTaskTitle}
-                focusedId={focusedId}
-                minimalistView={gestures}
-                toggleExpand={async (parentId, id) => {
-                  toggleTaskExpand(id);
-                }}
-                onInputMeasure={handleInputMeasure}
-                onTextChange={handleTextChange}
-                generateList={createTemplateFromTask}
-                closeSuggestions={closeSuggestions}
-                registerRefs={registerRefs}
-                handleDrop={handleDrop}
-                openDetailView={openDetailView}
-                showCompletedAll={showCompleted}
-              />
-            )} />
+            data={tasks}
+            removeClippedSubviews={false}
+            extraData={extraData}
+            keyExtractor={(item, index) => {
+              if (item.type === 'header') {
+                return `header-${item.data}`;
+              } else {
+                return (item.data as TaskNode).id;
+              }
+            }}
+            renderItem={({ item }) => {
+              if (item.type === 'header') {
+                // Render date header
+                const dateStr = item.data as string;
+                
+                // Handle "No due date" header
+                if (dateStr === 'No due date') {
+                  return (
+                    <View style={{ paddingVertical: 8, paddingHorizontal: 20, backgroundColor: colors.button }}>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>
+                        No due date
+                      </Text>
+                    </View>
+                  );
+                }
+                
+                // Try to parse as date
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) {
+                  // Invalid date, just show the string
+                  return (
+                    <View style={{ paddingVertical: 8, paddingHorizontal: 20, backgroundColor: colors.button }}>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>
+                        {dateStr}
+                      </Text>
+                    </View>
+                  );
+                }
+                
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                const dateOnly = new Date(date);
+                dateOnly.setHours(0, 0, 0, 0);
+                
+                let dateLabel = dateStr;
+                if (dateOnly.getTime() === today.getTime()) {
+                  dateLabel = 'Today';
+                } else if (dateOnly.getTime() === tomorrow.getTime()) {
+                  dateLabel = 'Tomorrow';
+                } else if (dateOnly.getTime() === yesterday.getTime()) {
+                  dateLabel = 'Yesterday';
+                } else {
+                  dateLabel = date.toLocaleDateString(undefined, { 
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+                }
+                
+                return (
+                  <View style={{ paddingVertical: 8, paddingHorizontal: 20, backgroundColor: colors.button }}>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>
+                      {dateLabel}
+                    </Text>
+                  </View>
+                );
+              } else {
+                // Render task
+                const taskNode = item.data as TaskNode;
+                return (
+                  <TaskItem
+                    key={taskNode.id}
+                    taskNode={taskNode}
+                    toggleTask={toggleTask}
+                    deleteTask={deleteTask}
+                    addSubTask={addSubTask}
+                    addTaskAfter={addTaskAfter}
+                    updateTaskTitle={updateTaskTitle}
+                    focusedId={focusedId}
+                    minimalistView={gestures}
+                    toggleExpand={async (parentId, id) => {
+                      toggleTaskExpand(id);
+                    }}
+                    onInputMeasure={handleInputMeasure}
+                    onTextChange={handleTextChange}
+                    generateList={createTemplateFromTask}
+                    closeSuggestions={closeSuggestions}
+                    registerRefs={registerRefs}
+                    handleDrop={handleDrop}
+                    openDetailView={openDetailView}
+                    showCompletedAll={showCompleted}
+                  />
+                );
+              }
+            }} />
         </View>
       </View>
   );

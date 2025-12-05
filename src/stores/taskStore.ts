@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { initStorage, storage } from '../storage/storage';
 import {
   AddTaskParams,
+  DateTask,
   ListParams,
   Mode,
   Suggestion,
@@ -15,7 +16,7 @@ import {
 
 
 interface TaskStore {
-  tasks: TaskNode[];
+  tasks: DateTask[];
   flatTasks: TaskInstance[];
   tree: TemplateNode[];
   flatTemplates: TaskTemplate[];
@@ -30,6 +31,7 @@ interface TaskStore {
   templateViewId: string|null;
   gestures: boolean;
   mode: Mode;
+  num_tasks_remaining: number[];
 
   // Actions
   init: () => Promise<void>;
@@ -38,6 +40,8 @@ interface TaskStore {
   loadTasks: () => Promise<void>;
   updateTask: (task: TaskParams) => Promise<void>;
   getTree: (tasks: TaskInstance[]) => TaskNode[];
+  getTreeByDate: (tasks: TaskInstance[]) => TaskNode[];
+  insertDateHeaders: (tasks: TaskNode[]) => DateTask[];
   addTask: (task: AddTaskParams) => Promise<string>;
   addSubTask: (title: string, parentId: string | null) => Promise<string>;
   addTaskAfter: (title: string, afterId: string | null) => Promise<string>;
@@ -84,6 +88,7 @@ interface TaskStore {
   getParentChains: (targetId?: string) => string[] | null;
   updateList: (list: ListParams) => Promise<void>;
   getFirstUncompletedTask: (tree: TaskNode[]) => TaskNode | null;
+  calculateNumberTasksLeft: (tree: TaskNode[]) => void;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -102,6 +107,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   templateViewId: null,
   gestures:false,
   mode:'current',
+  num_tasks_remaining: [0,0],
 
   setMode: async (mode:  Mode) => {
     set({mode: mode});
@@ -271,6 +277,9 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
 
       let tree = get().getTree(filteredTasks);
+      set({ percentage: get().calculatePercentage(tree) * 100 });
+      get().calculateNumberTasksLeft(tree);
+      let dateTree : DateTask[] = [];
       console.log('update task: ', get().mode, get().mode === 'single');
       if (get().mode === 'single') {
         let node = get().getFirstUncompletedTask(tree);
@@ -285,22 +294,21 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
           tree = [];
         }
       }
-      // if (get().mode === 'agenda') {
-      //   tree = get().getTreeByDate(filteredTasks);
-      //   set({ percentage: get().calculatePercentage(tree) * 100 });
-      //   dateTree = get().insertDateHeaders(tree);
-      //   console.log(dateTree);
-      // } else {
-      //   tree.forEach(task => {
-      //     dateTree.push({type: 'task', data: task});
-      //   });
-      // }
+      if (get().mode === 'agenda') {
+        tree = get().getTreeByDate(filteredTasks);
+        dateTree = get().insertDateHeaders(tree);
+        console.log(dateTree);
+      } else {
+        tree.forEach(task => {
+          dateTree.push({type: 'task', data: task});
+        });
+      }
       // console.log('Loaded filteredTasks:');
       // for (const t of tree) {
       //   console.log(t);
       // }
       set({
-        tasks: tree,
+        tasks: dateTree,
         flatTasks: filteredTasks,
         error: null
       });
@@ -334,6 +342,84 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
 
     return roots;
   },
+  getTreeByDate: (tasks: TaskInstance[]) => {
+    const map = new Map<string, TaskNode>();
+    const roots: TaskNode[] = [];
+    const viewId = get().taskViewId;
+
+    // Clone tasks into nodes
+    tasks.forEach(t => map.set(t.id, { ...t, children: [] }));
+
+    // Due-date compatibility rule
+    const compatible = (parent: TaskInstance, child: TaskInstance) => {
+      // If parent has no date but child has a date → extract child (not compatible)
+      if (!parent.due_date && child.due_date) return false;
+      // If child has no date → child inherits parent's date (stay attached)
+      if (!child.due_date) return true;
+      // If both have dates → must match to stay attached
+      return parent.due_date === child.due_date;
+    };
+
+    // Build with due-date overrides
+    tasks.forEach(t => {
+      const node = map.get(t.id)!;
+
+      // If this is a direct root
+      if (t.parent_id === viewId || !t.parent_id) {
+        roots.push(node);
+        return;
+      }
+
+      const parent = map.get(t.parent_id);
+
+      // Attach normally if compatible, otherwise treat as root
+      if (parent && compatible(parent, t)) parent.children.push(node);
+      else roots.push(node);
+    });
+
+    // Simple sort: due_date → position
+    const sortNodes = (arr: TaskNode[]) => {
+      arr.sort((a, b) => (
+        (a.due_date ?? "") === (b.due_date ?? "")
+          ? a.position - b.position
+          : (a.due_date ?? "9999")!.localeCompare(b.due_date ?? "9999")
+      ));
+      arr.forEach(n => sortNodes(n.children));
+    };
+
+    sortNodes(roots);
+
+    return roots;
+  },
+  insertDateHeaders: (nodes: TaskNode[]) => {
+    let result: DateTask[] = [];
+
+    let lastDate: string | null | undefined = undefined;
+    let hasSeenUndated = false;
+
+    nodes.forEach(task => {
+      const date = task.due_date ?? null;
+
+      if (date === null) {
+        // Task without due date
+        if (!hasSeenUndated) {
+          result.push({ type: "header", data: "No due date" });
+          hasSeenUndated = true;
+        }
+      } else {
+        // Task with due date
+        if (date !== lastDate) {
+          // Insert a new header
+          result.push({ type: "header", data: date });
+          lastDate = date;
+        }
+      }
+
+      result.push({ type: "task", data: task });
+    });
+
+    return result;
+  },
   calculatePercentage: (tree: TaskNode[]): number => {
     let completion = 0.0;
     for (const task of tree) {
@@ -345,6 +431,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       }
     }
     return completion;
+  },
+  calculateNumberTasksLeft: async (tree: TaskNode[]) => {
+    try {
+      const num_tasks = tree.filter(t => !t.completed).length;
+      const num_subtasks = tree.flatMap(t => t.children).filter(t => !t.completed).length;
+      set({num_tasks_remaining: [num_tasks, num_subtasks]});
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
   },
   addTask: async (task: AddTaskParams): Promise<string> => {
     try {

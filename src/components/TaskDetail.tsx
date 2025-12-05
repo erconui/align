@@ -7,15 +7,6 @@ import { useTheme } from "../hooks/useTheme";
 
 import type { RecurrenceRule, TaskInstance, TaskParams } from "../types";
 
-// export interface RecurrenceRule {
-//   type: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
-//   interval?: number;
-//   by_day?: number[];
-//   skipIfMissed?: boolean;
-//   endType: "never" | "on" | "after";
-//   endDate: Date | null;
-//   occurrences: number;
-// }
 const defaultRule: RecurrenceRule = {
   frequency: 'none',
   interval: 1,
@@ -65,16 +56,6 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
 
     setByDay(next);
   };
-  // const setEndType = (newEndType: "never"|'on'|'after') => {
-  //   setRule({ ...rule, end_type: newEndType})
-  // };
-  // const setEndDate = (endDate: Date | null) => {
-  //   setRule({ ...rule, end_date: endDate})
-  // };
-  // const setOccurrences = (occurrences: number) => {
-  //   console.log('update occurrences', occurrences);
-  //   setRule({ ...rule, occurrences: occurrences})
-  // };
 
   const save = () => {
     const rule : RecurrenceRule = {

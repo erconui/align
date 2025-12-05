@@ -76,7 +76,10 @@ export interface AddTemplateParams {
   expanded?: boolean;
 }
 
-
+export interface DateTask {
+  type: 'header'|'task';
+  data: TaskNode | string;
+}
 export type TaskNode = TaskInstance & { children: TaskNode[] };
 export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
 export type Suggestion = TaskTemplate & { parents: string[] };
