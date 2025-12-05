@@ -37,6 +37,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
   // Basic fields
   const [title, setTitle] = useState(task.title);
   const [privateTask, setPrivateTask] = useState(task.private);
+  const [backlogTask, setBacklogTask] = useState(task.backlog);
   const [skipIfMissed, setSkippedIfMissed] = useState(task.recurrence?.skip_if_missed || false);
   const [dueDate, setDueDate] = useState(
     task.due_date ? new Date(task.due_date) : null
@@ -100,6 +101,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
       position: task.position,
       expanded: task.expanded,
       private: privateTask,
+      backlog: backlogTask
     };
 
     onSave(updated);
@@ -321,6 +323,11 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
         <Switch value={privateTask} onValueChange={setPrivateTask} />
       </View>
 
+      {/* Private */}
+      <View style={styles.settingsRow}>
+        <Text style={styles.settingText}>Backlog</Text>
+        <Switch value={backlogTask} onValueChange={setBacklogTask} />
+      </View>
       {/* Save */}
       <Pressable
         onPress={save} style={styles.pressableButton}

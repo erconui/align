@@ -140,8 +140,8 @@ async function runMigrations() {
     `);
 
     const current = await getCurrentVersion();
-    console.log(current);
-    console.log(migrations);
+    console.log('database version',current);
+    console.log('migrations list',migrations);
 
     for ( const m of migrations ) {
       if (m.version > current) {
@@ -183,10 +183,10 @@ export const database = {
       const dbInstance = await db;
       const rows = await dbInstance.getAllAsync<any>(
         `SELECT 
-          t.id, t.template_id, t.parent_id,
+          t.id, t.template_id, t.parent_id, t.labels,
           t.title, t.completed, t.completed_at,
           t.due_date, t.created_at, t.updated_at,
-          t.position, t.expanded, t.private,
+          t.position, t.expanded, t.private, t.backlog,
           t.recurrence_rule_id,
           rr.id            AS rr_id,
           rr.frequency     AS rr_frequency,
@@ -215,6 +215,8 @@ export const database = {
         position: row.position,
         expanded: row.expanded,
         private: row.private,
+        backlog: row.backlog,
+        labels: row.labels,
         recurrence_rule_id: row.rr_id,
         recurrence: row.recurrence_rule_id? {
           id: row.rr_id,
@@ -304,6 +306,24 @@ export const database = {
     }
   },
 
+  // Update task completion status
+  toggleBacklog: async (id: string, backlog: boolean): Promise<void> => {
+    try {
+      const dbInstance = await db;
+      await dbInstance.runAsync(
+        `UPDATE tasks
+         SET backlog = ?
+         WHERE id = ?`,
+        [
+          backlog ? 1 : 0,
+          id
+        ]
+      );
+    } catch (error) {
+      console.error('Error toggling task:', error);
+      throw error;
+    }
+  },
   // Delete a task and all its subtasks
   deleteTask: async (id: string): Promise<void> => {
     try {
@@ -429,6 +449,7 @@ export const database = {
   updateTask: async (task: TaskParams): Promise<void> => {
     try {
       const dbInstance = await db;
+      console.log('update task', task);
 
       const fields = [];
       const values = [];
@@ -466,6 +487,8 @@ export const database = {
         WHERE id = ?
       `;
 
+      console.log(sql);
+      console.log(values);
       await dbInstance.runAsync(sql, values as unknown as (string|number|boolean|null));
 
     } catch (error) {

@@ -75,3 +75,10 @@ export interface AddTemplateParams {
   after_id?: string | null;
   expanded?: boolean;
 }
+
+
+export type TaskNode = TaskInstance & { children: TaskNode[] };
+export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
+export type Suggestion = TaskTemplate & { parents: string[] };
+
+export type Mode =  'single'|'agenda'|'current'|'backlog'|'all';

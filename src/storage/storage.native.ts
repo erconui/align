@@ -5,6 +5,7 @@ const nativeStorage = {
   getTasks: async (): Promise<TaskInstance[]> => {
     try {
       let tasks = await database.getAllTasks();
+      console.log('storage', tasks);
       tasks = tasks.map(task => ({
         ...task,
         completed: Boolean(task.completed), // or task.completed === 1
@@ -22,6 +23,9 @@ const nativeStorage = {
   },
   toggleTask: async (id: string, isCompleted: boolean): Promise<void> => {
     await database.toggleTask(id, isCompleted);
+  },
+  toggleBacklog: async (id: string, backlog: boolean): Promise<void> => {
+    await database.toggleTask(id, backlog);
   },
   deleteTask: async (id: string): Promise<void> => {
     await database.deleteTask(id);

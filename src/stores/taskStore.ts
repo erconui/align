@@ -1,10 +1,18 @@
 import { create } from 'zustand';
 import { initStorage, storage } from '../storage/storage';
-import { AddTaskParams, ListParams, TaskInstance, TaskParams, TaskTemplate, TaskTemplateRelation } from '../types';
+import {
+  AddTaskParams,
+  ListParams,
+  Mode,
+  Suggestion,
+  TaskInstance,
+  TaskNode,
+  TaskParams,
+  TaskTemplate,
+  TaskTemplateRelation,
+  TemplateNode
+} from '../types';
 
-export type TaskNode = TaskInstance & { children: TaskNode[] };
-export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
-export type Suggestion = TaskTemplate & { parents: string[] };
 
 interface TaskStore {
   tasks: TaskNode[];
@@ -21,12 +29,12 @@ interface TaskStore {
   taskViewId: string|null;
   templateViewId: string|null;
   gestures: boolean;
-  mode: 'single'|'agenda'|'current'|'backlog'|'all';
+  mode: Mode;
 
   // Actions
   init: () => Promise<void>;
   initDB: () => Promise<void>;
-  setMode: (mode: string) => Promise<void>;
+  setMode: (mode: Mode) => Promise<void>;
   loadTasks: () => Promise<void>;
   updateTask: (task: TaskParams) => Promise<void>;
   getTree: (tasks: TaskInstance[]) => TaskNode[];
@@ -42,6 +50,7 @@ interface TaskStore {
   recursiveUpdateParents: (id: string | null, completed: boolean) => Promise<void>;
   moveTask: (id: string, targetId: string | null, levelsOffset: number) => Promise<void>;
   saveTasks: (tasks: TaskInstance[]) => Promise<void>;
+  toggleBacklog: (id: string) => Promise<void>;
 
   // templates
   createTemplate: (title: string, parentId: string | null, expanded?: boolean) => Promise<string>;
@@ -74,7 +83,7 @@ interface TaskStore {
   updateInteractiveMode: (gestures: boolean) => Promise<void>;
   getParentChains: (targetId?: string) => string[] | null;
   updateList: (list: ListParams) => Promise<void>;
-  getFirstUncompletedTask: (tree: TaskNode[]) => TaskNode[];
+  getFirstUncompletedTask: (tree: TaskNode[]) => TaskNode | null;
 }
 
 export const useTaskStore = create<TaskStore>((set, get) => ({
@@ -94,7 +103,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   gestures:false,
   mode:'current',
 
-  setMode: async (mode: string) => {
+  setMode: async (mode:  Mode) => {
     set({mode: mode});
     console.log('mode set to ', get().mode);
     await get().loadTasks();
@@ -238,15 +247,15 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         break;
       }
     }
-    if (firstUncompletedTask?.children.length > 0) {
+    if (firstUncompletedTask?.children.length || 0 > 0) {
       console.log('children');
-      return get().getFirstUncompletedTask(firstUncompletedTask.children);
+      return get().getFirstUncompletedTask(firstUncompletedTask!.children);
     } else if (firstUncompletedTask) {
       console.log('found uncompleted task', firstUncompletedTask);
       return firstUncompletedTask;
     } else {
       console.log('no options');
-      return [];
+      return null;
     }
   },
   loadTasks: async () => {
@@ -255,6 +264,11 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       const tasks = await storage.getTasks();
       // console.log(tasks);r
       let filteredTasks = get().publicView?tasks.filter((t:TaskInstance)=>!t.private):tasks;
+      if (get().mode === 'current') {
+        filteredTasks = filteredTasks.filter((t:TaskInstance) => !t.backlog);
+      } else if (get().mode === 'backlog') {
+        filteredTasks = filteredTasks.filter((t:TaskInstance) => t.backlog);
+      }
 
       let tree = get().getTree(filteredTasks);
       console.log('update task: ', get().mode, get().mode === 'single');
@@ -262,11 +276,25 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
         let node = get().getFirstUncompletedTask(tree);
 
         console.log('filter for single', node);
-        tree = [node];
-        console.log('filtered tree',tree);
-        filteredTasks = tasks.filter((t:TaskInstance)=>t.id === tree[0].id);
-        console.log('filtered tasks',filteredTasks);
+        if (node) {
+          tree = [node];
+          console.log('filtered tree',tree);
+          filteredTasks = tasks.filter((t:TaskInstance)=>t.id === node.id);
+          console.log('filtered tasks',filteredTasks);
+        } else {
+          tree = [];
+        }
       }
+      // if (get().mode === 'agenda') {
+      //   tree = get().getTreeByDate(filteredTasks);
+      //   set({ percentage: get().calculatePercentage(tree) * 100 });
+      //   dateTree = get().insertDateHeaders(tree);
+      //   console.log(dateTree);
+      // } else {
+      //   tree.forEach(task => {
+      //     dateTree.push({type: 'task', data: task});
+      //   });
+      // }
       // console.log('Loaded filteredTasks:');
       // for (const t of tree) {
       //   console.log(t);
@@ -419,10 +447,22 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       set({ error: (error as Error).message });
     }
   },
+  toggleBacklog: async (id: string) => {
+    try {
+      const tasks = await storage.getTasks();
+      const task = tasks.find((t: TaskInstance) => t.id === id);
+      if (!task) return;
+
+      await storage.toggleBacklog(id, !task.backlog);
+      await get().loadTasks();
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
   toggleTask: async (id: string) => {
     try {
       const tasks = await storage.getTasks();
-      const task = tasks.find(t => t.id === id);
+      const task = tasks.find((t:TaskInstance) => t.id === id);
       if (!task) return;
 
       await storage.toggleTask(id, !task.completed);
@@ -435,7 +475,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   recursiveUpdateChildren: async (id: string, completed: boolean) => {
       const tasks = await storage.getTasks();
-    const subtasks = tasks.filter((task) => task.parent_id === id);
+    const subtasks = tasks.filter((task: TaskInstance) => task.parent_id === id);
     for (const subtask of subtasks) {
       if (subtask.completed !== completed) {
         await storage.toggleTask(subtask.id, completed);
@@ -445,17 +485,17 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   recursiveUpdateParents: async (id: string | null, completed: boolean) => {
       const tasks = await storage.getTasks();
-    const task = tasks.find(t => t.id === id);
+    const task = tasks.find((t:TaskInstance) => t.id === id);
     if (!task) return;
-    const parent = tasks.find((t) => t.id === task.parent_id);
+    const parent = tasks.find((t:TaskInstance) => t.id === task.parent_id);
     if (!parent) return;
     if (parent.completed === completed) return; // if the parent already matches the state of the current task, exit
 
     let updateParent = true;
     if (completed) { // to check off parent, all siblings must be checked off as well
-      const siblings = tasks.filter((t) => t.parent_id === task.parent_id && t.id !== task.id);
+      const siblings = tasks.filter((t:TaskInstance) => t.parent_id === task.parent_id && t.id !== task.id);
 
-      siblings.forEach((sibling) => {
+      siblings.forEach((sibling:TaskInstance) => {
         // If there are any siblings that do not match the updated completed state then don't change the parent
         if (sibling.id !== task.id && sibling.completed !== completed) {
           updateParent = false;

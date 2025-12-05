@@ -5,7 +5,6 @@ import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Button,
   FlatList,
   Keyboard,
   Pressable,
@@ -63,7 +62,7 @@ export default function HomeScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [extraData, setExtraData] = useState(false);
   const [detailItem, setDetailItem] = useState<TaskInstance | null>(null);
-  const drawerRef = useRef(null);
+  const drawerRef = useRef<{ open: () => void; close: () => void } | null>(null);
 
   useEffect(() => {
     setSuggestionsVisible(false);
@@ -74,7 +73,7 @@ export default function HomeScreen() {
     if (showCompleted) {
       setTimeout(() => {
         setShowCompleted(false);
-      }, 10*1000);
+      }, 60*1000);
     }
   }, [showCompleted]);
   useEffect(() => {
@@ -315,7 +314,7 @@ export default function HomeScreen() {
               rounded
               showPercent />
           </View>
-          <Pressable onPress={() => {drawerRef.current.open(); Keyboard.dismiss()}} style={{justifyContent:'center'}}>
+          <Pressable onPress={() => { drawerRef.current?.open?.(); Keyboard.dismiss(); }} style={{justifyContent:'center'}}>
             <Ionicons name="ellipsis-horizontal-outline" size={24} style={{...styles.headerText, marginBottom: 0, color: colors.buttonBorder, fontSize: 24, paddingBottom:20, paddingLeft:20}} />
           </Pressable>
         </View>
@@ -346,8 +345,6 @@ export default function HomeScreen() {
                 <Picker.Item label='all' value='all' />
               </Picker>
             </View>
-
-            <Button title="Close" onPress={() => drawerRef.current.close()} />
           </View>
         </TaskSettings>
 
@@ -397,6 +394,7 @@ export default function HomeScreen() {
                 registerRefs={registerRefs}
                 handleDrop={handleDrop}
                 openDetailView={openDetailView}
+                showCompletedAll={showCompleted}
               />
             )} />
         </View>

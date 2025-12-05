@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { TaskNode } from '../stores/taskStore';
+import { TaskNode } from '../types/index';
 import { BaseItem } from './BaseItem';
 
 interface TaskItemProps {
@@ -20,6 +20,7 @@ interface TaskItemProps {
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
   openDetailView: (itemId: string) => void;
   minimalistView: boolean;
+  showCompletedAll: boolean;
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({
@@ -38,7 +39,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({
                                                    registerRefs,
                                                    handleDrop,
                                                    minimalistView,
-                                                   openDetailView
+                                                   openDetailView,
+                                                   showCompletedAll
                                                   }) => {
   return (
     <BaseItem
@@ -62,6 +64,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({
       handleDrop={handleDrop}
       minimalistView={minimalistView}
       openDetailView={openDetailView}
+      showCompletedAll={showCompletedAll}
     />
   );
 };

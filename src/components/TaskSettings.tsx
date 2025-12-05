@@ -1,16 +1,27 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState, useEffect } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
-  View,
-  Modal,
   Animated,
-  StyleSheet,
+  Button,
   Dimensions,
+  Modal,
+  StyleSheet,
   TouchableWithoutFeedback,
+  View
 } from 'react-native';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-const SettingsDrawer = forwardRef(
+type SettingsDrawerProps = {
+  children: React.ReactNode;
+  drawerWidth?: number;
+  drawerPosition?: 'left' | 'right';
+  backdropColor?: string;
+};
+type SettingsDrawerHandle = {
+  open: () => void;
+  close: () => void;
+};
+const SettingsDrawer = forwardRef<SettingsDrawerHandle, SettingsDrawerProps>(
   (
     {
       children,
@@ -22,6 +33,11 @@ const SettingsDrawer = forwardRef(
   ) => {
     const [visible, setVisible] = useState(false);
     const translateX = useRef(new Animated.Value(drawerPosition === 'left' ? -drawerWidth : drawerWidth)).current;
+    const close = () => {
+      if(ref) {
+        (ref as React.RefObject<SettingsDrawerHandle>).current?.close();
+      }
+    };
 
     // Ensure translateX resets when reopening
     useEffect(() => {
@@ -53,7 +69,7 @@ const SettingsDrawer = forwardRef(
 
     return (
       <Modal visible={visible} transparent animationType="none">
-        <TouchableWithoutFeedback onPress={() => ref.current.close()}>
+        <TouchableWithoutFeedback onPress={close}>
           <View style={[styles.backdrop, { backgroundColor: backdropColor }]} />
         </TouchableWithoutFeedback>
         <Animated.View
@@ -67,6 +83,7 @@ const SettingsDrawer = forwardRef(
           ]}
         >
           {children}
+          <Button title="Close" onPress={close} />
         </Animated.View>
       </Modal>
     );

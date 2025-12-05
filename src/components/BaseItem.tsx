@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Keyboard, Pressable, Text, TextInput, View } from "react-native";
 import BouncyCheckbox from "react-native-bouncy-checkbox";
 import { useTheme } from '../hooks/useTheme';
-import { TaskNode } from '../stores/taskStore';
+import { TaskNode } from '../types/index';
 import { DraggableContext } from './DraggableContext';
 
 interface BaseNode {
@@ -34,6 +34,7 @@ interface BaseItemProps<T extends BaseNode> {
   handleDrop: (itemId: string, finalPosition: { x: number; y: number }) => void;
   minimalistView: boolean;
   openDetailView?: (id: string) => void;
+  showCompletedAll: boolean;
 }
 
 export function BaseItem <T extends BaseNode>({
@@ -55,10 +56,11 @@ export function BaseItem <T extends BaseNode>({
                                               registerRefs,
                                               handleDrop,
                                               minimalistView,
-                                              openDetailView
+                                              openDetailView,
+                                              showCompletedAll
                                              }: BaseItemProps<T>) {
   const [isFocused, setIsFocused] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(showCompletedAll);
   const [editTitle, setEditTitle] = useState(node.title);
   const textInputRef = useRef<TextInput>(null);
   const itemRef = useRef<View>(null);
@@ -79,9 +81,12 @@ export function BaseItem <T extends BaseNode>({
     } else if (showCompleted) {
       setTimeout(() => {
         setShowCompleted(false);
-      }, 10*1000);
+      }, 60*1000);
     }
   }, [showCompleted, node.expanded]);
+  useEffect(() => {
+    setShowCompleted(showCompletedAll);
+  }, [showCompletedAll]);
   useEffect(() => {
     if (focusedId === node.id && textInputRef.current) {
       textInputRef.current.focus();
@@ -242,6 +247,7 @@ export function BaseItem <T extends BaseNode>({
               handleDrop={handleDrop}
               minimalistView={minimalistView}
               openDetailView={openDetailView}
+              showCompletedAll={showCompletedAll}
             />
           ))}
           {num_completed>0?
