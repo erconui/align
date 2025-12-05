@@ -320,7 +320,8 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
     // Build hierarchy
     tasks?.forEach(task => {
       const node = map.get(task.id)!;
-      if (task.parent_id === get().taskViewId) {
+      const parentExistsInList = task.parent_id && map.has(task.parent_id);
+      if (task.parent_id === get().taskViewId || !parentExistsInList) {
         roots.push(node);
       } else if (task.parent_id) {
         const parent = map.get(task.parent_id);
