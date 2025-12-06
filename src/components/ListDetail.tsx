@@ -61,7 +61,7 @@ export default function ListDetail({ task, parent, instances, onSave, onClose }:
     <Modal 
       animationType="slide"
       transparent>
-      <View style={{ flex: 1, backgroundColor: colors.background, marginTop: insets.top }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, marginTop: insets.top, marginBottom: insets.bottom }}>
 
       {/* Title */}
       <View style={{...styles.settingsRow, justifyContent:'center'}}>

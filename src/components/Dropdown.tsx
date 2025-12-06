@@ -23,11 +23,11 @@ export function Dropdown({ value, onChange, options }) {
   });
 
   return (
-    <View style={{ marginBottom: 20 }}>
+    <View style={{ }}>
       {/* Label */}
-      <Text style={{ fontSize: 16, marginBottom: 6, fontWeight: "600" }}>
+      {/* <Text style={{ fontSize: 16, marginBottom: 6, fontWeight: "600" }}>
         Mode
-      </Text>
+      </Text> */}
 
       {/* Dropdown Header */}
       <Pressable
@@ -42,13 +42,13 @@ export function Dropdown({ value, onChange, options }) {
           alignItems: "center",
         }}
       >
-        <Text style={styles.settingText}>
+        <Text style={styles.DropdownText}>
           {value.charAt(0).toUpperCase() + value.slice(1)}
         </Text>
         <Ionicons
           name={open ? "chevron-up" : "chevron-down"}
           size={20}
-          color="#444"
+          color={colors.button}
         />
       </Pressable>
 
@@ -75,7 +75,7 @@ export function Dropdown({ value, onChange, options }) {
               backgroundColor: option === value ? colors.progressBackground : colors.popupBackground,
             }}
           >
-            <Text style={styles.settingText}>
+            <Text style={styles.DropdownText}>
               {option.charAt(0).toUpperCase() + option.slice(1)}
             </Text>
           </Pressable>

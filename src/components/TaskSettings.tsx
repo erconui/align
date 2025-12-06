@@ -1,7 +1,6 @@
 import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   Animated,
-  Button,
   Dimensions,
   Modal,
   TouchableWithoutFeedback,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../hooks/useTheme';
+import Button from './Button';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -84,11 +84,12 @@ const SettingsDrawer = forwardRef<SettingsDrawerHandle, SettingsDrawerProps>(
               transform: [{ translateX }],
               [drawerPosition]: 0,
               marginTop: insets.top,
+              marginBottom: insets.bottom,
             },
           ]}
         >
           {children}
-          <Button title="Close" onPress={close} />
+          <Button title="Close" onPress={close} style={{borderWidth:0, justifyContent:'center', height:40}} />
         </Animated.View>
       </Modal>
     );

@@ -347,7 +347,7 @@ export default function TemplateScreen() {
       />
 
       {/* Detail View Modal */}
-      <ListDetail task={detailItem} parent={parent} instances={getParentChains(detailItem?.id)} onSave={updateList} onClose={() => setDetailItem(null)}
+      <ListDetail task={detailItem} parent={parent} instances={getParentChains(detailItem?.id)} onSave={updateList} onClose={() => {setDetailItem(null); Keyboard.dismiss()}}
       />
       
       {/* Templates List */}

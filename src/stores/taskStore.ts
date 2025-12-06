@@ -297,7 +297,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
       if (get().mode === 'agenda') {
         tree = get().getTreeByDate(filteredTasks);
         dateTree = get().insertDateHeaders(tree);
-        // console.log(dateTree);
+        console.log(dateTree);
       } else {
         tree.forEach(task => {
           dateTree.push({type: 'task', data: task});

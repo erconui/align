@@ -1,12 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
 import React, { useState } from "react";
 import { Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 import { useTheme } from "../hooks/useTheme";
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RecurrenceRule, TaskInstance, TaskParams } from "../types";
+import { Dropdown } from './Dropdown';
 
 const defaultRule: RecurrenceRule = {
   frequency: 'none',
@@ -90,12 +90,13 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
     onSave(updated);
     onClose();
   };
+  const frequencyOptions = ['none', 'daily', 'weekly', 'monthly', 'yearly', 'custom'];
 
   return (
     <Modal 
       animationType="slide"
       transparent>
-      <View style={{ flex: 1, backgroundColor: colors.background, marginTop: insets.top }}>
+      <View style={{ flex: 1, backgroundColor: colors.background, marginTop: insets.top, marginBottom: insets.bottom }}>
 
       {/* Title */}
       <View style={{...styles.settingsRow, justifyContent:'center'}}>
@@ -123,9 +124,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
             <Text style={{color: 'red'}}>Clear</Text>
           </Pressable>
         )}
-        {/* {dueDate && (
-          <Text>{dueDate.toDateString()}</Text>
-        )} */}
+
         {(showDuePicker || showEndPicker) &&(
         <DateTimePicker
           value={(showDuePicker?dueDate:endDate) ?? new Date()}
@@ -151,18 +150,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
       <View style={styles.detailContainer}>
         <View style={{...styles.detailRow, borderBottomWidth:0}}>
           <Text style={styles.settingText}>Repeat</Text>
-          <Picker
-          style={{...styles.detailButton,width: 150, height:50}}
-            selectedValue={frequency}
-            onValueChange={(v) => setFrequency(v)}
-          >
-            <Picker.Item label="None" value="none" />
-            <Picker.Item label="Daily" value="daily" />
-            <Picker.Item label="Weekly" value="weekly" />
-            <Picker.Item label="Monthly" value="monthly" />
-            <Picker.Item label="Yearly" value="yearly" />
-            <Picker.Item label="Custom…" value="custom" />
-          </Picker>
+          <Dropdown value={frequency} onChange={(v:typeof frequency) => setFrequency(v)} options={frequencyOptions}/>
         </View>
       {/* Weekly or custom days */}
       {(frequency === "weekly" || frequency === "custom") && (

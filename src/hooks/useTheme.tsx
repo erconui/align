@@ -45,6 +45,7 @@ const createStyles = (colors: typeof Colors.light) => {
       color: colors.text
     },
     settingText: {color: colors.text, fontWeight: '800', flex: 1},
+    DropdownText: {color: colors.text, fontSize: 16 },
     settingsRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',

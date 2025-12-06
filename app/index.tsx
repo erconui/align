@@ -283,9 +283,10 @@ export default function HomeScreen() {
     if (node.type === 'task') {
       return !(node.data as TaskNode).completed || isWithinTime((node.data as TaskNode).completed_at, {minutes:0});
     } else {
-      return false;
+      return true;
     }
   });
+  console.log('filtered', filtered);
   const modeOptions = modes.map(m => ({
     label: m.charAt(0).toUpperCase() + m.slice(1),
     value: m,
@@ -350,7 +351,7 @@ export default function HomeScreen() {
           }}
         />
         {/* Detail View Modal */}
-        <TaskDetail task={detailItem} onSave={updateTask} onClose={() => setDetailItem(null)}
+        <TaskDetail task={detailItem} onSave={updateTask} onClose={() => {setDetailItem(null); Keyboard.dismiss();}}
         />
         <View className="flex-1" onLayout={handleContainerLayout}
             style={{marginBottom:containerLayout.y + keyboardHeight}}>
@@ -369,6 +370,7 @@ export default function HomeScreen() {
             }}
             renderItem={({ item }) => {
               if (item.type === 'header') {
+                console.log('render header');
                 // Render date header
                 const dateStr = item.data as string;
                 
@@ -420,6 +422,7 @@ export default function HomeScreen() {
                     day: 'numeric'
                   });
                 }
+                console.log(dateLabel);
                 
                 return (
                   <View style={{ paddingVertical: 8, paddingHorizontal: 20, backgroundColor: colors.button }}>

@@ -3,13 +3,13 @@ import { Pressable, StyleProp, Text, ViewStyle } from 'react-native';
 import { useTheme } from '../hooks/useTheme';
 
 type Props = {
-  label: string;
+  title: string;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
   textColor?: string;
 };
 
-export default function Button({ label, onPress, style, textColor }: Props) {
+export default function Button({ title, onPress, style, textColor }: Props) {
   const { colors, styles } = useTheme();
 
   return (
@@ -20,8 +20,8 @@ export default function Button({ label, onPress, style, textColor }: Props) {
         style, // allow overrides
       ]}
     >
-      <Text style={{ color: colors.text ?? '#fff', fontWeight: '500' }}>
-        {label}
+      <Text style={{ color: colors.text ?? '#fff', fontWeight: '500', textAlign:'center' }}>
+        {title}
       </Text>
     </Pressable>
   );
