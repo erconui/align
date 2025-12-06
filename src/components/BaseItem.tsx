@@ -27,7 +27,7 @@ interface BaseItemProps<T extends BaseNode> {
   focusedId: string | null;
   parentId?: string | null;
   isTask: boolean;
-  onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
+  onInputMeasure?: (position: { x: number; y: number; width: number, height: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
   closeSuggestions: () => void;
   registerRefs: (itemId: string, ref: View | null) => void;
@@ -95,7 +95,7 @@ export function BaseItem <T extends BaseNode>({
   useEffect(() => {
     if (onInputMeasure && textInputRef.current) {
       textInputRef.current.measure((x, y, width, height, pageX, pageY) => {
-        onInputMeasure({ x: pageX, y: pageY + height, width }, node.id, parentId || null);
+        onInputMeasure({ x: pageX, y: pageY + height, width, height }, node.id, parentId || null);
       });
     }
     // if (isFocused && onTextChange) {
@@ -118,7 +118,7 @@ export function BaseItem <T extends BaseNode>({
     }
     if (text.length > 0 && onInputMeasure && textInputRef.current) {
       textInputRef.current.measure((x, y, width, height, pageX, pageY) => {
-        onInputMeasure({ x: pageX, y: pageY + height, width }, node.id, parentId || null);
+        onInputMeasure({ x: pageX, y: pageY + height, width, height }, node.id, parentId || null);
       });
     }
   };
@@ -151,7 +151,7 @@ export function BaseItem <T extends BaseNode>({
   const hasChildren = node.children && node.children.length > 0;
   const children = showCompleted?node.children: node.children?.filter(child => {
     if ('completed' in child) {
-      return !(child as TaskNode).completed || isWithinTime((child as TaskNode).completed_at, {minutes:0});
+      return !(child as TaskNode).completed || isWithinTime((child as TaskNode).completed_at, {minutes:0.5});
     } else {
       return true;
     }
@@ -160,7 +160,11 @@ export function BaseItem <T extends BaseNode>({
 
 
   return (
-    <View style={[{ backgroundColor: colors.background }]}>
+    <View style={[{ backgroundColor: colors.background }]} onLayout={e => {
+    const { x, y, width, height } = e.nativeEvent.layout;
+    
+    // setItemHeights(h => ({ ...h, [item.id]: height }));
+  }}>
       <DraggableContext
         itemId={node.relId?node.relId:node.id}
         onDrop={handleDrop}>

@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 import { useTheme } from "../hooks/useTheme";
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RecurrenceRule, TaskInstance, TaskParams } from "../types";
 
 const defaultRule: RecurrenceRule = {
@@ -41,6 +42,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
   const [endDate, setEndDate] = useState(task.recurrence?.end_date? new Date(task.recurrence?.end_date) : null);
   const [byDay, setByDay] = useState(task.recurrence?.by_day);
   const { colors, styles, toggleTheme, theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
 
   // const [rule, setRule] = useState<RecurrenceRule>(task.recurrence || defaultRule);
@@ -66,7 +68,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
       end_date: endDate?endDate.toISOString() : null,
       occurrences: occurrences
     }
-    console.log('save rule',rule);
+    // console.log('save rule',rule);
     const updated: TaskParams = {
       id: task.id,
       template_id: task.template_id,
@@ -92,9 +94,8 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
   return (
     <Modal 
       animationType="slide"
-      presentationStyle="pageSheet"
-      style={{ marginTop:60, paddingTop: 30}}>
-      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 30 }}>
+      transparent>
+      <View style={{ flex: 1, backgroundColor: colors.background, marginTop: insets.top }}>
 
       {/* Title */}
       <View style={{...styles.settingsRow, justifyContent:'center'}}>
@@ -259,7 +260,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
                 onChangeText={(text) => {
                   setOccurrencesText(text);
                   const num = parseInt(text,10);
-                  console.log('occurrences',num);
+                  // console.log('occurrences',num);
                   if (!isNaN(num)) {
                     setOccurrences(Math.max(1,num));
                   } else {
@@ -268,7 +269,7 @@ export default function TaskDetail({ task, onSave, onClose }: Props) {
                 }}
                 onBlur={() => {
                   const num = parseInt(occurrencesText,10);
-                  console.log('occurrences',num);
+                  // console.log('occurrences',num);
                   if (!isNaN(num)) {
                     setOccurrences(num);
                   } else {

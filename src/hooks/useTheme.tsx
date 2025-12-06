@@ -163,6 +163,22 @@ const createStyles = (colors: typeof Colors.light) => {
       color: colors.text,
       fontSize: 16,
     },
+    backdrop: {
+      flex: 1,
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+    },
+    drawer: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      backgroundColor: colors.background,
+      shadowColor: '#000',
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+      elevation: 10,
+    },
   })
 };
 

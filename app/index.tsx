@@ -1,7 +1,7 @@
+import { Dropdown } from '@/src/components/Dropdown';
 import TaskDetail from '@/src/components/TaskDetail';
-import { TaskInstance, TaskNode } from '@/src/types';
+import { Mode, TaskInstance, TaskNode, modes } from '@/src/types';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,7 +19,7 @@ import TaskSettings from '../src/components/TaskSettings';
 import { useTheme } from '../src/hooks/useTheme';
 import { useTaskStore } from '../src/stores/taskStore';
 
-const ITEM_HEIGHT = 37.33;
+const ITEM_HEIGHT = 40;
 const INDENTATION_WIDTH = 20;
 
 export default function HomeScreen() {
@@ -64,6 +64,7 @@ export default function HomeScreen() {
   const [extraData, setExtraData] = useState(false);
   const [detailItem, setDetailItem] = useState<TaskInstance | null>(null);
   const drawerRef = useRef<{ open: () => void; close: () => void } | null>(null);
+  const [itemHeights, setItemHeights] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setSuggestionsVisible(false);
@@ -119,15 +120,16 @@ export default function HomeScreen() {
     // }
   };
 
-  const handleInputMeasure = (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => {
+  const handleInputMeasure = (position: { x: number; y: number; width: number, height: number }, itemId: string, parentId: string | null) => {
     setSuggestionsPosition(position);
     setSuggestionsItemId(itemId);
     setSuggestionsParentId(parentId || null);
+    setItemHeights(h => ({ ...h, [itemId]: position.height }));
     // setSuggestionsVisible(true);
   };
 
   const handleTextChange = (text: string) => {
-    console.log('handle text change', text);
+    // console.log('handle text change', text);
     setCurrentSearchText(text);
     setSuggestionsVisible(text.length > 0);
   };
@@ -277,6 +279,17 @@ export default function HomeScreen() {
 
   const title = taskViewId?flatTasks.find(t=>t.id===taskViewId)?.title:null;
 
+  const filtered = showCompleted?tasks:tasks.filter(node => {
+    if (node.type === 'task') {
+      return !(node.data as TaskNode).completed || isWithinTime((node.data as TaskNode).completed_at, {minutes:0});
+    } else {
+      return false;
+    }
+  });
+  const modeOptions = modes.map(m => ({
+    label: m.charAt(0).toUpperCase() + m.slice(1),
+    value: m,
+  }));
 
   return (
       <View style={{ flex: 1, backgroundColor: colors.background }} >
@@ -305,30 +318,21 @@ export default function HomeScreen() {
 
         <TaskSettings ref={drawerRef}>
           <View style={{ flex: 1, padding: 20 }}>
-            <Text style={{ fontSize: 20, marginBottom: 20 }}>Settings</Text>
+            <Text style={styles.headerText}>Settings</Text>
             <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
-              <Text>Show completed tasks</Text>
+              <Text style={styles.settingText}>Show completed tasks</Text>
               <Switch value={showCompleted} onValueChange={setShowCompleted} />
             </View>
             <View style={{flexDirection:'row', justifyContent:'space-between', alignItems:'center'}}>
-              <Text>Show private</Text>
+              <Text style={styles.settingText}>Show private</Text>
               <Switch value={!publicView} onValueChange={(value) => updatePrivacy(!value)} />
             </View>
-            <View style={{flexDirection:'row', justifyContent:'space-between',alignItems:'center' }}>
-              <Text>Mode</Text>
-              <Picker
-                selectedValue={mode}
-                onValueChange={(itemValue, itemIndex) => setMode(itemValue)}
-                style={{width:150}}
 
-                >
-                <Picker.Item label="single" value="single" />
-                <Picker.Item label='agenda' value='agenda' />
-                <Picker.Item label='current' value='current' />
-                <Picker.Item label='backlog' value='backlog' />
-                <Picker.Item label='all' value='all' />
-              </Picker>
-            </View>
+            <Dropdown
+              value={mode}
+              onChange={(m: Mode) => setMode(m)}
+              options={modes}
+            />
           </View>
         </TaskSettings>
 
@@ -353,7 +357,7 @@ export default function HomeScreen() {
           <FlatList
             ref={flatListRef}
             keyboardShouldPersistTaps='handled'
-            data={tasks}
+            data={filtered}
             removeClippedSubviews={false}
             extraData={extraData}
             keyExtractor={(item, index) => {

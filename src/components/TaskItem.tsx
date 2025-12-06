@@ -12,7 +12,7 @@ interface TaskItemProps {
   addTaskAfter: (title: string, afterId: string | null) => void;
   updateTaskTitle: (id: string, title: string) => void;
   focusedId: string | null;
-  onInputMeasure?: (position: { x: number; y: number; width: number }, itemId: string, parentId: string | null) => void;
+  onInputMeasure?: (position: { x: number; y: number; width: number, height: number }, itemId: string, parentId: string | null) => void;
   onTextChange?: (text: string) => void;
   toggleExpand: (parentId: string | null, id: string) => void;
   closeSuggestions: () => void;

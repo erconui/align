@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { FlatList, Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 import { useTheme } from "../hooks/useTheme";
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ListParams, TaskTemplate } from "../types";
 
 interface Props {
@@ -31,7 +32,8 @@ export default function ListDetail({ task, parent, instances, onSave, onClose }:
   }
   const rootRemovable = parents?parents.length > 0:false;
   const canUnlink = instances?instances.length > 1:false;
-  console.log('test', instances);
+  // console.log('test', instances);
+  const insets = useSafeAreaInsets();
 
   const save = () => {
     const updated: ListParams = {
@@ -41,7 +43,7 @@ export default function ListDetail({ task, parent, instances, onSave, onClose }:
       private: privateList,
       parent_id: parent?.id || null
     };
-    console.log(isRoot, hasRoot, rootLevel, rootRemovable);
+    // console.log(isRoot, hasRoot, rootLevel, rootRemovable);
     if ((!rootLevel && rootRemovable) || ( rootLevel && !isRoot && !hasRoot )) {
       updated.rootLevel = rootLevel;
     }
@@ -49,7 +51,7 @@ export default function ListDetail({ task, parent, instances, onSave, onClose }:
       updated.unlink = unlink;
     }
 
-    console.log(updated);
+    // console.log(updated);
 
     onSave(updated);
     onClose();
@@ -58,9 +60,8 @@ export default function ListDetail({ task, parent, instances, onSave, onClose }:
   return (
     <Modal 
       animationType="slide"
-      presentationStyle="pageSheet"
-      style={{ marginTop:60, paddingTop: 30}}>
-      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 30 }}>
+      transparent>
+      <View style={{ flex: 1, backgroundColor: colors.background, marginTop: insets.top }}>
 
       {/* Title */}
       <View style={{...styles.settingsRow, justifyContent:'center'}}>

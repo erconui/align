@@ -83,5 +83,13 @@ export interface DateTask {
 export type TaskNode = TaskInstance & { children: TaskNode[] };
 export type TemplateNode = TaskTemplate & { children: TaskTemplate[], expanded: boolean, relId: string, position: number };
 export type Suggestion = TaskTemplate & { parents: string[] };
+export const modes = [
+  "single",
+  "agenda",
+  "current",
+  "backlog",
+  "all",
+] as const;
 
-export type Mode =  'single'|'agenda'|'current'|'backlog'|'all';
+export type Mode = typeof modes[number];
+// export type Mode =  'single'|'agenda'|'current'|'backlog'|'all';

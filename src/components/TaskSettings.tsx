@@ -4,10 +4,11 @@ import {
   Button,
   Dimensions,
   Modal,
-  StyleSheet,
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../hooks/useTheme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -33,6 +34,9 @@ const SettingsDrawer = forwardRef<SettingsDrawerHandle, SettingsDrawerProps>(
   ) => {
     const [visible, setVisible] = useState(false);
     const translateX = useRef(new Animated.Value(drawerPosition === 'left' ? -drawerWidth : drawerWidth)).current;
+    const insets = useSafeAreaInsets();
+    const { colors, styles } = useTheme();
+    
     const close = () => {
       if(ref) {
         (ref as React.RefObject<SettingsDrawerHandle>).current?.close();
@@ -79,6 +83,7 @@ const SettingsDrawer = forwardRef<SettingsDrawerHandle, SettingsDrawerProps>(
               width: drawerWidth,
               transform: [{ translateX }],
               [drawerPosition]: 0,
+              marginTop: insets.top,
             },
           ]}
         >
@@ -91,22 +96,3 @@ const SettingsDrawer = forwardRef<SettingsDrawerHandle, SettingsDrawerProps>(
 );
 
 export default SettingsDrawer;
-
-const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  drawer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 10,
-  },
-});
